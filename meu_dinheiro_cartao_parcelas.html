@@ -55,7 +55,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
 .ti-arrow-right::before{content:"→"}
 .btn-green{width:100%;margin-top:4px;background:#1D9E75;color:#fff;border:none;padding:9px;border-radius:var(--border-radius-md);font-size:14px;cursor:pointer;font-weight:500}
 .btn-green:hover{background:#0F6E56}
-.section-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:1.25rem 0 .75rem}
+.section-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:1.25rem 0 .5rem}
 table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 th{text-align:left;padding:8px 6px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;font-size:12px}
 td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -153,8 +153,8 @@ td:last-child{white-space:normal}
       <button onclick="changeResumoMonth(1)" aria-label="Próximo mês">›</button>
       <button class="today-btn" onclick="goResumoCurrentMonth()">Mês atual</button>
     </div>
-    <div class="section-title">Gr&aacute;fico do dinheiro</div>
-    <div id="resumo-bars"><div class="empty">Nenhuma movimenta&ccedil;&atilde;o ainda.</div></div>
+    <div class="section-title">Gráfico do dinheiro</div>
+    <div id="resumo-bars"><div class="empty">Nenhuma movimentação ainda.</div></div>
   </div>
 
   <!-- EXTRATO -->
@@ -175,16 +175,40 @@ td:last-child{white-space:normal}
           <option value="">Selecione subcategoria</option>
         </select>
       </div>
-      <div class="row row1"><input type="text" id="ext-desc" placeholder="Descrição (ex: salário, aluguel...)"/></div>
-      <div class="row row1"><input type="number" id="ext-val" placeholder="Valor (R$)" min="0" step="0.01"/></div>
+      <div class="row row2">
+        <select id="ext-gasto-tipo">
+          <option value="">Tipo de gasto</option>
+          <option value="fixo">Gasto fixo</option>
+          <option value="variavel">Gasto variável</option>
+        </select>
+        <select id="ext-pagamento">
+          <option value="">Forma de pagamento</option>
+          <option value="dinheiro">Dinheiro</option>
+          <option value="pix">Pix</option>
+          <option value="debito">Débito</option>
+          <option value="boleto">Boleto</option>
+          <option value="transferencia">Transferência</option>
+          <option value="debito_automatico">Débito automático</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="row row1">
+        <input type="text" id="ext-desc" placeholder="Descrição (opcional)"/>
+      </div>
+      <div class="row row1">
+        <input type="number" id="ext-val" placeholder="Valor (R$)" min="0" step="0.01"/>
+      </div>
       <button class="btn-green" onclick="addExtrato()"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar lançamento</button>
     </div>
+
     <div class="month-switch" aria-label="Escolher mês do extrato">
       <button onclick="changeExtratoMonth(-1)" aria-label="Mês anterior">‹</button>
       <div class="current-month" id="ext-month-label">Mês atual</div>
       <button onclick="changeExtratoMonth(1)" aria-label="Próximo mês">›</button>
       <button class="today-btn" onclick="goExtratoCurrentMonth()">Mês atual</button>
     </div>
+
+    <div class="section-title">Lançamentos</div>
     <div id="ext-wrap"><div class="empty">Nenhum lançamento ainda.</div></div>
   </div>
 
@@ -193,18 +217,32 @@ td:last-child{white-space:normal}
     <div class="add-form">
       <div class="row row3">
         <input type="date" id="cc-data"/>
-        <select id="cc-tipo"><option value="compra">Compra à vista</option><option value="parcelado">Parcelado</option><option value="pagamento">Pagamento fatura</option></select>
+        <select id="cc-tipo">
+          <option value="compra">Compra à vista</option>
+          <option value="parcelado">Parcelado</option>
+          <option value="pagamento">Pagamento fatura</option>
+        </select>
         <input type="number" id="cc-venc-dia" placeholder="O cartão vence dia" min="1" max="31"/>
       </div>
-      <div class="row row1"><input type="text" id="cc-desc" placeholder="Descrição (ex: geladeira, roupa...)"/></div>
+      <div class="row row1">
+        <input type="text" id="cc-desc" placeholder="Descrição (ex: geladeira, roupa...)"/>
+      </div>
       <div class="row row2">
         <input type="number" id="cc-val" placeholder="Valor total (R$)" min="0" step="0.01"/>
         <div id="cc-parcelas-wrap" style="display:none">
           <select id="cc-parcelas">
-            <option value="2">2x</option><option value="3">3x</option><option value="4">4x</option>
-            <option value="5">5x</option><option value="6">6x</option><option value="7">7x</option>
-            <option value="8">8x</option><option value="9">9x</option><option value="10">10x</option>
-            <option value="11">11x</option><option value="12">12x</option><option value="18">18x</option>
+            <option value="2">2x</option>
+            <option value="3">3x</option>
+            <option value="4">4x</option>
+            <option value="5">5x</option>
+            <option value="6">6x</option>
+            <option value="7">7x</option>
+            <option value="8">8x</option>
+            <option value="9">9x</option>
+            <option value="10">10x</option>
+            <option value="11">11x</option>
+            <option value="12">12x</option>
+            <option value="18">18x</option>
             <option value="24">24x</option>
           </select>
         </div>
@@ -230,7 +268,7 @@ td:last-child{white-space:normal}
     <div id="cc-wrap"><div class="empty">Nenhuma compra ainda.</div></div>
 
     <div class="section-title">Comprometimento por mês</div>
-    <div class="hint">Mostra quanto você deve no cartão em cada mês futuro</div>
+    <div class="hint">Mostra quanto você deve no cartão em cada mês futuro.</div>
     <div id="cc-timeline"><div class="empty">Nenhuma compra ainda.</div></div>
   </div>
 
@@ -239,10 +277,22 @@ td:last-child{white-space:normal}
     <div class="add-form">
       <div class="row row2">
         <input type="date" id="inv-data"/>
-        <select id="inv-tipo"><option>CDB</option><option>Tesouro Direto</option><option>Ações</option><option>Fundo</option><option>Poupança</option><option>Cripto</option><option>Outro</option></select>
+        <select id="inv-tipo">
+          <option>CDB</option>
+          <option>Tesouro Direto</option>
+          <option>Ações</option>
+          <option>Fundo</option>
+          <option>Poupança</option>
+          <option>Cripto</option>
+          <option>Outro</option>
+        </select>
       </div>
-      <div class="row row1"><input type="text" id="inv-desc" placeholder="Descrição (ex: CDB Banco X, PETR4...)"/></div>
-      <div class="row row1"><input type="number" id="inv-val" placeholder="Valor investido (R$)" min="0" step="0.01"/></div>
+      <div class="row row1">
+        <input type="text" id="inv-desc" placeholder="Descrição (ex: CDB Banco X, PETR4...)"/>
+      </div>
+      <div class="row row1">
+        <input type="number" id="inv-val" placeholder="Valor investido (R$)" min="0" step="0.01"/>
+      </div>
       <button class="btn-green" onclick="addInvest()"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar investimento</button>
     </div>
     <div class="cards">
@@ -285,10 +335,10 @@ let resumoMes=new Date();
 let extratoMes=new Date();
 let cartaoMes=new Date();
 
-function fmt(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmt(v){return'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function today(){return new Date().toISOString().split('T')[0];}
 function mesStr(y,m){return MESES[m]+'/'+String(y).slice(2);}
-function monthKey(y,m){return y+'-'+String(m).padStart(2,'0');}
+function monthKey(y,m){return y+'-'+String(m+1).padStart(2,'0');}
 function isoDate(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
 
 function updateCategories(){
@@ -309,9 +359,9 @@ function updateSubcategorias(){
     subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>';
     return;
   }
-  const subcategorias=CATEGORIAS[tipo][categoria]||[];
+  const subcategorias=(CATEGORIAS[tipo]&&CATEGORIAS[tipo][categoria])||[];
   if(subcategorias.length===0){
-    subcategoriaSelect.innerHTML='<option value="'+categoria+'">'+categoria+'</option>';
+    subcategoriaSelect.innerHTML=`<option value="${categoria}">${categoria}</option>`;
   } else {
     subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>'+
       subcategorias.map(sub=>`<option value="${sub}">${sub}</option>`).join('');
@@ -319,15 +369,19 @@ function updateSubcategorias(){
 }
 
 function dueDateFor(baseDate,dueDay,offset){
-  const startOffset=baseDate.getDate()>dueDay?1:0;
-  const dueBase=new Date(baseDate.getFullYear(),baseDate.getMonth()+startOffset+offset,1);
-  const lastDay=new Date(dueBase.getFullYear(),dueBase.getMonth()+1,0).getDate();
-  return new Date(dueBase.getFullYear(),dueBase.getMonth(),Math.min(dueDay,lastDay),12);
+  const base=new Date(baseDate.getFullYear(),baseDate.getMonth(),1);
+  const add=(baseDate.getDate()>dueDay?1:0)+offset;
+  base.setMonth(base.getMonth()+add);
+  const lastDay=new Date(base.getFullYear(),base.getMonth()+1,0).getDate();
+  const day=Math.min(dueDay,lastDay);
+  return new Date(base.getFullYear(),base.getMonth(),day,12,0,0);
 }
+
 function isSameMonthDate(data,y,m){
   const d=new Date(data+'T12:00:00');
   return d.getFullYear()===y&&d.getMonth()===m;
 }
+
 function changeResumoMonth(delta){
   resumoMes=new Date(resumoMes.getFullYear(),resumoMes.getMonth()+delta,1);
   updateResumo();
@@ -358,6 +412,7 @@ document.getElementById('cc-tipo').addEventListener('change',function(){
   p.style.display=this.value==='parcelado'?'block':'none';
   updatePreview();
 });
+
 document.getElementById('cc-val').addEventListener('input',updatePreview);
 document.getElementById('cc-parcelas').addEventListener('change',updatePreview);
 document.getElementById('cc-data').addEventListener('change',updatePreview);
@@ -402,13 +457,34 @@ function addExtrato(){
   const subcategoria=document.getElementById('ext-subcategoria').value;
   const desc=document.getElementById('ext-desc').value.trim();
   const tipo=document.getElementById('ext-tipo').value;
+  const gastoTipo=document.getElementById('ext-gasto-tipo').value;
+  const pagamento=document.getElementById('ext-pagamento').value;
   const val=parseFloat(document.getElementById('ext-val').value);
-  if(!desc||isNaN(val)||val<=0||!categoria||!subcategoria){alert('Preencha todos os campos.');return;}
-  S.extrato.push({id:Date.now(),data,desc,tipo,categoria,subcategoria,val});
+  if(isNaN(val)||val<=0||!categoria||!subcategoria){
+    alert('Preencha categoria, subcategoria e valor.');
+    return;
+  }
+  if(tipo==='saida' && (!gastoTipo || !pagamento)){
+    alert('Para saídas, informe tipo de gasto e forma de pagamento.');
+    return;
+  }
+  S.extrato.push({
+    id:Date.now(),
+    data,
+    desc,
+    tipo,
+    categoria,
+    subcategoria,
+    val,
+    gastoTipo: tipo==='saida'?gastoTipo:'',
+    pagamento: tipo==='saida'?pagamento:''
+  });
   document.getElementById('ext-desc').value='';
   document.getElementById('ext-val').value='';
   document.getElementById('ext-categoria').value='';
   document.getElementById('ext-subcategoria').value='';
+  document.getElementById('ext-gasto-tipo').value='';
+  document.getElementById('ext-pagamento').value='';
   renderExtrato();updateResumo();
 }
 
@@ -417,7 +493,7 @@ function addCartao(){
   const desc=document.getElementById('cc-desc').value.trim();
   const tipo=document.getElementById('cc-tipo').value;
   const val=parseFloat(document.getElementById('cc-val').value);
-  if(!desc||isNaN(val)||val<=0){alert('Preencha todos os campos.');return;}
+  if(!desc||isNaN(val)||val<=0){alert('Preencha descrição e valor.');return;}
   const vencDia=Math.min(31,Math.max(1,parseInt(document.getElementById('cc-venc-dia').value)||10));
   const n=tipo==='parcelado'?parseInt(document.getElementById('cc-parcelas').value):1;
   const primeiraParcela=dueDateFor(new Date(data+'T12:00:00'),vencDia,0);
@@ -517,8 +593,10 @@ function renderCartao(){
   if(!keys.length){tl.innerHTML='<div class="empty">Nenhuma compra ainda.</div>';}
   else{
     tl.innerHTML='<div class="timeline">'+keys.map(k=>{
-      const [y,m]=k.split('-').map(Number);
-      const label=mesStr(y,m);
+      const [y,mStr]=k.split('-');
+      const yNum=parseInt(y,10);
+      const mNum=parseInt(mStr,10)-1;
+      const label=mesStr(yNum,mNum);
       const v=map[k];
       const pct=Math.round(v/maxVal*100);
       const isNow=k===nowKey;
@@ -566,17 +644,62 @@ function renderExtrato(){
     <div class="plain-card"><strong>Saídas: ${fmt(saidasMes)}</strong><span>Gastos lançados direto no extrato.</span></div>
     <div class="plain-card"><strong>Parcelas cartão: ${fmt(cartaoMes)}</strong><span>Compras do cartão com vencimento em ${monthLabel}.</span></div>
   </div>`;
-  if(!rows.length){wrap.innerHTML=resumo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
-  wrap.innerHTML=resumo+aviso+'<table><thead><tr><th style="width:70px">Data</th><th>Descrição</th><th style="width:90px">Categoria</th><th style="width:60px">Tipo</th><th style="width:90px">Valor</th><th style="width:24px"></th></tr></thead><tbody>'+
-    rows.map(r=>{
-      const d=new Date(r.data+'T12:00:00');
-      const bc=r.tipo==='entrada'?'b-entrada':r.tipo==='cartao'?'b-cartao':'b-saida';
-      const tipoLabel=r.tipo==='cartao'?'parcela':r.tipo;
-      const color=r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#BA7517':'#A32D2D';
-      const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button>`;
-      const categoria=r.subcategoria||'-';
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">${r.desc}</td><td style="font-size:11px;color:var(--color-text-secondary)">${categoria}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
-    }).join('')+'</tbody></table>';
+
+  if(!rows.length){
+    wrap.innerHTML=resumo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';
+    return;
+  }
+
+  const hoje=new Date(today()+'T12:00:00');
+  const ateHoje=rows.filter(r=>new Date(r.data+'T12:00:00')<=hoje);
+  const futuros=rows.filter(r=>new Date(r.data+'T12:00:00')>hoje);
+
+  function renderTabela(lista,titulo){
+    if(!lista.length)return '';
+    return `
+      <div class="section-title">${titulo}</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Data</th>
+            <th>Descrição</th>
+            <th style="width:90px">Categoria</th>
+            <th style="width:60px">Tipo</th>
+            <th style="width:90px">Valor</th>
+            <th style="width:24px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lista.map(r=>{
+            const d=new Date(r.data+'T12:00:00');
+            const bc=r.tipo==='entrada'?'b-entrada':r.tipo==='cartao'?'b-cartao':'b-saida';
+            const tipoLabel=r.tipo==='cartao'?'parcela':r.tipo;
+            const color=r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#BA7517':'#A32D2D';
+            const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button>`;
+            const categoria=r.subcategoria||'-';
+            const isDebAuto=r.pagamento==='debito_automatico';
+            const destaqueFuturo=(r.tipo==='cartao'||isDebAuto)&&new Date(r.data+'T12:00:00')>hoje;
+            const extraLabel=destaqueFuturo?' (futuro)':'';
+            return `
+              <tr>
+                <td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td>
+                <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.desc||'-'}</td>
+                <td style="font-size:11px;color:var(--color-text-secondary)">${categoria}</td>
+                <td><span class="badge ${bc}">${tipoLabel}${extraLabel}</span></td>
+                <td style="font-weight:500;color:${color}">${fmt(r.val)}</td>
+                <td>${action}</td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  wrap.innerHTML=
+    resumo+
+    aviso+
+    renderTabela(ateHoje,'Até hoje')+
+    renderTabela(futuros,'Futuros no mês (parcelas e débitos automáticos)');
 }
 
 function renderInvest(){
