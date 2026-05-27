@@ -64,6 +64,8 @@ td:last-child{white-space:normal}
 .b-compra{background:#FAEEDA;color:#633806}
 .b-pagamento{background:#E1F5EE;color:#085041}
 .b-cartao{background:#FAEEDA;color:#633806}
+.b-entrada{background:#E1F5EE;color:#085041}
+.b-saida{background:#FAEEDA;color:#633806}
 .del{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:14px;padding:1px 4px;border-radius:4px}
 .del:hover{color:#A32D2D}
 .empty{text-align:center;color:var(--color-text-secondary);padding:2rem;font-size:14px}
@@ -160,7 +162,18 @@ td:last-child{white-space:normal}
     <div class="add-form">
       <div class="row row2">
         <input type="date" id="ext-data"/>
-        <select id="ext-tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select>
+        <select id="ext-tipo" onchange="updateCategories()">
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+        </select>
+      </div>
+      <div class="row row2">
+        <select id="ext-categoria" onchange="updateSubcategorias()">
+          <option value="">Selecione categoria</option>
+        </select>
+        <select id="ext-subcategoria">
+          <option value="">Selecione subcategoria</option>
+        </select>
       </div>
       <div class="row row1"><input type="text" id="ext-desc" placeholder="Descrição (ex: salário, aluguel...)"/></div>
       <div class="row row1"><input type="number" id="ext-val" placeholder="Valor (R$)" min="0" step="0.01"/></div>
@@ -243,14 +256,68 @@ td:last-child{white-space:normal}
 <script>
 const S={extrato:[],cartao:[],invest:[]};
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+const CATEGORIAS={
+  entrada:{
+    'Trabalho':['Salário','Freelance','Comissão','Hora extra','Bônus','Décimo terceiro'],
+    'Renda extra':['Venda de produtos','Venda online','Artesanato','Delivery','Motorista de aplicativo','Afiliados','Criação de conteúdo','Aulas particulares','Consultoria'],
+    'Benefícios':['Vale alimentação','Vale refeição','Auxílio','Bolsa','Pensão','Aposentadoria'],
+    'Outras entradas':['Presentes em dinheiro','Reembolso','Pix recebido','Cashback','Restituição']
+  },
+  saida:{
+    'Casa':['Aluguel','Financiamento','Condomínio','Conta de água','Conta de luz','Conta de gás','Internet','Telefone','IPTU','Manutenção da casa','Faxina','Móveis','Decoração','Eletrodomésticos','Eletrônicos','Segurança residencial'],
+    'Alimentação':['Supermercado','Feira','Padaria','Açougue','Delivery','Restaurante','Lanche','Café','Marmita','Bebidas'],
+    'Transporte':['Combustível','Uber / 99','Ônibus','Metrô','Pedágio','Estacionamento','Manutenção do carro','Seguro do carro','IPVA','Parcelas do veículo','Bicicleta','Táxi'],
+    'Saúde':['Plano de saúde','Consulta médica','Dentista','Medicamentos','Academia','Terapia','Exames','Óculos','Suplementos'],
+    'Educação':['Faculdade','Curso online','Curso técnico','Idiomas','Livros','Material escolar','Assinaturas educacionais'],
+    'Lazer e entretenimento':['Cinema','Shows','Viagens','Passeios','Streaming','Jogos','Eventos','Festas','Bar','Hobbies'],
+    'Compras pessoais':['Roupas','Sapatos','Acessórios','Perfumes','Cosméticos','Joias'],
+    'Família e filhos':['Escola','Creche','Fraldas','Brinquedos','Pensão','Material infantil','Roupas infantis'],
+    'Pets':['Ração','Veterinário','Banho e tosa','Medicamentos','Acessórios pet'],
+    'Tecnologia':['Celular','Notebook','Softwares','Computador','Assinaturas digitais','Games','Equipamentos'],
+    'Impostos e taxas':['Multas','Imposto de renda'],
+    'Doações e apoio':[],
+    'Outros':['Presentes','Emergências','Compras diversas','Serviços gerais']
+  }
+};
+
 let resumoMes=new Date();
 let extratoMes=new Date();
 let cartaoMes=new Date();
+
 function fmt(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function today(){return new Date().toISOString().split('T')[0];}
 function mesStr(y,m){return MESES[m]+'/'+String(y).slice(2);}
 function monthKey(y,m){return y+'-'+String(m).padStart(2,'0');}
 function isoDate(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+
+function updateCategories(){
+  const tipo=document.getElementById('ext-tipo').value;
+  const categoriaSelect=document.getElementById('ext-categoria');
+  const subcategoriaSelect=document.getElementById('ext-subcategoria');
+  const categorias=CATEGORIAS[tipo]||{};
+  categoriaSelect.innerHTML='<option value="">Selecione categoria</option>'+
+    Object.keys(categorias).map(cat=>`<option value="${cat}">${cat}</option>`).join('');
+  subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>';
+}
+
+function updateSubcategorias(){
+  const tipo=document.getElementById('ext-tipo').value;
+  const categoria=document.getElementById('ext-categoria').value;
+  const subcategoriaSelect=document.getElementById('ext-subcategoria');
+  if(!categoria){
+    subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>';
+    return;
+  }
+  const subcategorias=CATEGORIAS[tipo][categoria]||[];
+  if(subcategorias.length===0){
+    subcategoriaSelect.innerHTML='<option value="'+categoria+'">'+categoria+'</option>';
+  } else {
+    subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>'+
+      subcategorias.map(sub=>`<option value="${sub}">${sub}</option>`).join('');
+  }
+}
+
 function dueDateFor(baseDate,dueDay,offset){
   const startOffset=baseDate.getDate()>dueDay?1:0;
   const dueBase=new Date(baseDate.getFullYear(),baseDate.getMonth()+startOffset+offset,1);
@@ -323,7 +390,7 @@ function showPage(id,btn){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
-  if(id==='extrato')renderExtrato();
+  if(id==='extrato'){renderExtrato();updateCategories();}
   if(id==='cartao')renderCartao();
   if(id==='invest')renderInvest();
   updateResumo();
@@ -331,13 +398,17 @@ function showPage(id,btn){
 
 function addExtrato(){
   const data=document.getElementById('ext-data').value||today();
+  const categoria=document.getElementById('ext-categoria').value;
+  const subcategoria=document.getElementById('ext-subcategoria').value;
   const desc=document.getElementById('ext-desc').value.trim();
   const tipo=document.getElementById('ext-tipo').value;
   const val=parseFloat(document.getElementById('ext-val').value);
-  if(!desc||isNaN(val)||val<=0){alert('Preencha todos os campos.');return;}
-  S.extrato.push({id:Date.now(),data,desc,tipo,val});
+  if(!desc||isNaN(val)||val<=0||!categoria||!subcategoria){alert('Preencha todos os campos.');return;}
+  S.extrato.push({id:Date.now(),data,desc,tipo,categoria,subcategoria,val});
   document.getElementById('ext-desc').value='';
   document.getElementById('ext-val').value='';
+  document.getElementById('ext-categoria').value='';
+  document.getElementById('ext-subcategoria').value='';
   renderExtrato();updateResumo();
 }
 
@@ -496,14 +567,15 @@ function renderExtrato(){
     <div class="plain-card"><strong>Parcelas cartão: ${fmt(cartaoMes)}</strong><span>Compras do cartão com vencimento em ${monthLabel}.</span></div>
   </div>`;
   if(!rows.length){wrap.innerHTML=resumo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
-  wrap.innerHTML=resumo+aviso+'<table><thead><tr><th style="width:70px">Data</th><th>Descrição</th><th style="width:70px">Tipo</th><th style="width:90px">Valor</th><th style="width:24px"></th></tr></thead><tbody>'+
+  wrap.innerHTML=resumo+aviso+'<table><thead><tr><th style="width:70px">Data</th><th>Descrição</th><th style="width:90px">Categoria</th><th style="width:60px">Tipo</th><th style="width:90px">Valor</th><th style="width:24px"></th></tr></thead><tbody>'+
     rows.map(r=>{
       const d=new Date(r.data+'T12:00:00');
-      const bc=r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':'b-compra';
+      const bc=r.tipo==='entrada'?'b-entrada':r.tipo==='cartao'?'b-cartao':'b-saida';
       const tipoLabel=r.tipo==='cartao'?'parcela':r.tipo;
       const color=r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#BA7517':'#A32D2D';
       const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button>`;
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:170px;overflow:hidden;text-overflow:ellipsis">${r.desc}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
+      const categoria=r.subcategoria||'-';
+      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">${r.desc}</td><td style="font-size:11px;color:var(--color-text-secondary)">${categoria}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
     }).join('')+'</tbody></table>';
 }
 
@@ -605,6 +677,7 @@ function updateResumo(){
 
 document.querySelectorAll('input[type="date"]').forEach(el=>el.value=today());
 document.getElementById('cc-venc-dia').value='10';
+updateCategories();
 updateResumo();
 </script>
 </body>
