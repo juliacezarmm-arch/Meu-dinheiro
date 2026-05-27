@@ -162,7 +162,7 @@ td:last-child{white-space:normal}
     <div class="add-form">
       <div class="row row2">
         <input type="date" id="ext-data"/>
-        <select id="ext-tipo" onchange="updateCategories()">
+        <select id="ext-tipo" onchange="updateCategories(); toggleSaidaCampos();">
           <option value="entrada">Entrada</option>
           <option value="saida">Saída</option>
         </select>
@@ -175,7 +175,7 @@ td:last-child{white-space:normal}
           <option value="">Selecione subcategoria</option>
         </select>
       </div>
-      <div class="row row2">
+      <div class="row row2" id="ext-saida-row">
         <select id="ext-gasto-tipo">
           <option value="">Tipo de gasto</option>
           <option value="fixo">Gasto fixo</option>
@@ -193,7 +193,7 @@ td:last-child{white-space:normal}
         </select>
       </div>
       <div class="row row1">
-        <input type="text" id="ext-desc" placeholder="Descrição (opcional)"/>
+        <input type="text" id="ext-desc" placeholder="Descrição (opcional)" maxlength="40"/>
       </div>
       <div class="row row1">
         <input type="number" id="ext-val" placeholder="Valor (R$)" min="0" step="0.01"/>
@@ -225,7 +225,7 @@ td:last-child{white-space:normal}
         <input type="number" id="cc-venc-dia" placeholder="O cartão vence dia" min="1" max="31"/>
       </div>
       <div class="row row1">
-        <input type="text" id="cc-desc" placeholder="Descrição (ex: geladeira, roupa...)"/>
+        <input type="text" id="cc-desc" placeholder="Descrição (ex: geladeira, roupa...)" maxlength="40"/>
       </div>
       <div class="row row2">
         <input type="number" id="cc-val" placeholder="Valor total (R$)" min="0" step="0.01"/>
@@ -288,7 +288,7 @@ td:last-child{white-space:normal}
         </select>
       </div>
       <div class="row row1">
-        <input type="text" id="inv-desc" placeholder="Descrição (ex: CDB Banco X, PETR4...)"/>
+        <input type="text" id="inv-desc" placeholder="Descrição (ex: CDB Banco X, PETR4...)" maxlength="40"/>
       </div>
       <div class="row row1">
         <input type="number" id="inv-val" placeholder="Valor investido (R$)" min="0" step="0.01"/>
@@ -365,6 +365,19 @@ function updateSubcategorias(){
   } else {
     subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>'+
       subcategorias.map(sub=>`<option value="${sub}">${sub}</option>`).join('');
+  }
+}
+
+/* MOSTRAR CAMPOS DE SAÍDA APENAS QUANDO TIPO = SAÍDA */
+function toggleSaidaCampos(){
+  const tipo=document.getElementById('ext-tipo').value;
+  const row=document.getElementById('ext-saida-row');
+  if(tipo==='saida'){
+    row.style.display='grid';
+  }else{
+    row.style.display='none';
+    document.getElementById('ext-gasto-tipo').value='';
+    document.getElementById('ext-pagamento').value='';
   }
 }
 
@@ -445,7 +458,7 @@ function showPage(id,btn){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
-  if(id==='extrato'){renderExtrato();updateCategories();}
+  if(id==='extrato'){renderExtrato();updateCategories();toggleSaidaCampos();}
   if(id==='cartao')renderCartao();
   if(id==='invest')renderInvest();
   updateResumo();
@@ -801,6 +814,7 @@ function updateResumo(){
 document.querySelectorAll('input[type="date"]').forEach(el=>el.value=today());
 document.getElementById('cc-venc-dia').value='10';
 updateCategories();
+toggleSaidaCampos();
 updateResumo();
 </script>
 </body>
