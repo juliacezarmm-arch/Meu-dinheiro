@@ -53,6 +53,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
 .ti-receipt::before{content:"≡"}
 .ti-credit-card::before{content:"▭"}
 .ti-trending-up::before{content:"↗"}
+.ti-flag::before{content:"⚑"}
 .ti-pig-money::before{content:"$"}
 .ti-plus::before{content:"+"}
 .ti-x::before{content:"×"}
@@ -117,6 +118,13 @@ td:last-child{white-space:normal}
 .bank-card .bank-due{font-size:12px;position:relative;z-index:1;opacity:.9}
 .bank-card .bank-chip{width:34px;height:24px;border-radius:6px;background:rgba(255,255,255,.72);margin-bottom:10px;position:relative;z-index:1}
 .bank-card .del{position:absolute;right:8px;top:8px;color:#fff;background:rgba(0,0,0,.18)}
+.goal-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.goal-card{background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:1rem}
+.goal-card h3{font-size:15px;margin-bottom:4px}
+.goal-meta{font-size:12px;color:var(--color-text-secondary);margin-bottom:.75rem}
+.goal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.75rem}
+.goal-actions button{background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:8px;font-size:12px;cursor:pointer}
+.goal-actions button:hover{border-color:#9FE1CB}
 @media(max-width:520px){
   .chart-head{flex-direction:column}
   .chart-total{white-space:normal}
@@ -140,6 +148,7 @@ td:last-child{white-space:normal}
     <button onclick="showPage('extrato',this)"><i class="ti ti-receipt" aria-hidden="true"></i> Extrato</button>
     <button onclick="showPage('cartao',this)"><i class="ti ti-credit-card" aria-hidden="true"></i> Cartão</button>
     <button onclick="showPage('invest',this)"><i class="ti ti-trending-up" aria-hidden="true"></i> Investimentos</button>
+    <button onclick="showPage('metas',this)"><i class="ti ti-flag" aria-hidden="true"></i> Metas</button>
   </nav>
 
   <!-- RESUMO -->
@@ -172,11 +181,14 @@ td:last-child{white-space:normal}
     <div class="add-form">
       <div class="row row2">
         <input type="date" id="ext-data"/>
-        <select id="ext-tipo" onchange="updateCategories();toggleSaidaCampos();"><option value="entrada">Entrada</option><option value="saida">Saída</option></select>
+        <select id="ext-tipo" onchange="updateCategories();toggleSaidaCampos();"><option value="entrada">Entrada</option><option value="saida">Saída</option><option value="investimento">Investimento</option><option value="meta">Meta</option></select>
       </div>
-      <div class="row row2">
+      <div class="row row2" id="ext-cat-row">
         <select id="ext-categoria" onchange="updateSubcategorias()"><option value="">Selecione categoria</option></select>
         <select id="ext-subcategoria"><option value="">Selecione subcategoria</option></select>
+      </div>
+      <div class="row row1" id="ext-invest-row">
+        <select id="ext-invest-dest"><option value="">Escolha o destino</option></select>
       </div>
       <div class="row row2" id="ext-saida-row">
         <select id="ext-gasto-tipo">
@@ -195,7 +207,7 @@ td:last-child{white-space:normal}
           <option value="outro">Outro</option>
         </select>
       </div>
-      <div class="row row1"><input type="text" id="ext-desc" placeholder="Descrição (opcional)" maxlength="40"/></div>
+      <div class="row row1" id="ext-desc-row"><input type="text" id="ext-desc" placeholder="Descrição (opcional)" maxlength="40"/></div>
       <div class="row row1"><input type="number" id="ext-val" placeholder="Valor (R$)" min="0" step="0.01"/></div>
       <button class="btn-green" onclick="addExtrato()"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar lançamento</button>
     </div>
@@ -227,10 +239,12 @@ td:last-child{white-space:normal}
 
     <div class="section-title">Novo lançamento no cartão</div>
     <div class="add-form">
-      <input type="hidden" id="cc-data"/>
       <div class="row row2">
+        <input type="date" id="cc-data"/>
         <select id="cc-card"><option value="">Escolha o cartão</option></select>
-        <select id="cc-tipo"><option value="compra">Compra à vista</option><option value="parcelado">Parcelado</option><option value="pagamento">Pagamento fatura</option></select>
+      </div>
+      <div class="row row1">
+        <select id="cc-tipo"><option value="compra">Compra à vista</option><option value="parcelado">Parcelado</option></select>
       </div>
       <div class="row row1"><input type="text" id="cc-desc" placeholder="Descrição (ex: geladeira, roupa...)"/></div>
       <div class="row row2">
@@ -273,19 +287,33 @@ td:last-child{white-space:normal}
   <!-- INVESTIMENTOS -->
   <div id="page-invest" class="page">
     <div class="add-form">
-      <div class="row row2">
-        <input type="date" id="inv-data"/>
-        <select id="inv-tipo"><option>CDB</option><option>Tesouro Direto</option><option>Ações</option><option>Fundo</option><option>Poupança</option><option>Cripto</option><option>Outro</option></select>
+      <div class="row row1">
+        <select id="inv-tipo"><option>Poupança</option><option>CDB</option><option>CDI</option><option>Tesouro Direto</option><option>Ações</option><option>Fundos de investimento</option><option>Fundos imobiliários</option><option>ETF</option><option>Previdência privada</option><option>LCI/LCA</option><option>Debêntures</option><option>Cripto</option><option>Conta remunerada</option><option>Outro</option></select>
       </div>
-      <div class="row row1"><input type="text" id="inv-desc" placeholder="Descrição (ex: CDB Banco X, PETR4...)"/></div>
-      <div class="row row1"><input type="number" id="inv-val" placeholder="Valor investido (R$)" min="0" step="0.01"/></div>
-      <button class="btn-green" onclick="addInvest()"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar investimento</button>
+      <div class="row row1"><input type="text" id="inv-desc" placeholder="Nome do investimento (ex: CDB Banco X, Poupança)" maxlength="40"/></div>
+      <button class="btn-green" onclick="addInvest()"><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar investimento</button>
     </div>
     <div class="cards">
       <div class="card"><div class="label">Total investido</div><div class="value blue" id="inv-total">R$ 0</div></div>
-      <div class="card"><div class="label">Aplicações</div><div class="value" id="inv-qtd">0</div></div>
+      <div class="card"><div class="label">Rendimento</div><div class="value green" id="inv-rend">R$ 0</div></div>
+      <div class="card"><div class="label">Investimentos</div><div class="value" id="inv-qtd">0</div></div>
     </div>
     <div id="inv-wrap"><div class="empty">Nenhum investimento ainda.</div></div>
+  </div>
+
+  <!-- METAS -->
+  <div id="page-metas" class="page">
+    <div class="add-form">
+      <div class="row row1"><input type="text" id="meta-desc" placeholder="Nome da meta (ex: computador, viagem, reserva)" maxlength="40"/></div>
+      <div class="row row1"><input type="number" id="meta-val" placeholder="Valor da meta (R$)" min="0" step="0.01"/></div>
+      <button class="btn-green" onclick="addMeta()"><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar meta</button>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="label">Guardado em metas</div><div class="value blue" id="meta-total">R$ 0</div></div>
+      <div class="card"><div class="label">Metas cadastradas</div><div class="value" id="meta-qtd">0</div></div>
+      <div class="card"><div class="label">Progresso médio</div><div class="value green" id="meta-progresso">0%</div></div>
+    </div>
+    <div id="meta-wrap"><div class="empty">Nenhuma meta ainda.</div></div>
   </div>
 </div>
 
@@ -365,7 +393,7 @@ function goCartaoCurrentMonth(){
 }
 
 function setupCollapsibleForms(){
-  const labels=['Adicionar no extrato','Registrar cartão','Adicionar compra no cartão','Adicionar investimento'];
+  const labels=['Adicionar no extrato','Registrar cartão','Adicionar compra no cartão','Cadastrar investimento','Cadastrar meta'];
   document.querySelectorAll('.add-form').forEach((form,i)=>{
     if(form.dataset.ready)return;
     form.dataset.ready='1';
@@ -386,6 +414,12 @@ function updateCategories(){
   const tipo=document.getElementById('ext-tipo').value;
   const categoriaSelect=document.getElementById('ext-categoria');
   const subcategoriaSelect=document.getElementById('ext-subcategoria');
+  if(tipo==='investimento'||tipo==='meta'){
+    categoriaSelect.innerHTML='<option value="'+(tipo==='meta'?'Meta':'Investimento')+'">'+(tipo==='meta'?'Meta':'Investimento')+'</option>';
+    subcategoriaSelect.innerHTML='<option value="">Destino escolhido</option>';
+    renderInvestDestinationOptions();
+    return;
+  }
   const categorias=CATEGORIAS[tipo]||{};
   categoriaSelect.innerHTML='<option value="">Selecione categoria</option>'+Object.keys(categorias).map(cat=>`<option value="${cat}">${cat}</option>`).join('');
   subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>';
@@ -403,12 +437,20 @@ function updateSubcategorias(){
 function toggleSaidaCampos(){
   const tipo=document.getElementById('ext-tipo').value;
   const row=document.getElementById('ext-saida-row');
+  const investRow=document.getElementById('ext-invest-row');
+  const catRow=document.getElementById('ext-cat-row');
+  const descRow=document.getElementById('ext-desc-row');
   if(tipo==='saida')row.style.display='grid';
   else{
     row.style.display='none';
     document.getElementById('ext-gasto-tipo').value='';
     document.getElementById('ext-pagamento').value='';
   }
+  const isDestino=tipo==='investimento'||tipo==='meta';
+  investRow.style.display=isDestino?'grid':'none';
+  catRow.style.display=isDestino?'none':'grid';
+  descRow.style.display=isDestino?'none':'grid';
+  if(isDestino)document.getElementById('ext-desc').value='';
 }
 
 document.getElementById('cc-tipo').addEventListener('change',function(){
@@ -488,6 +530,15 @@ function objToItems(obj,color){
   return Object.keys(obj).map(label=>({label,val:obj[label],color}));
 }
 
+function renderInvestDestinationOptions(){
+  const select=document.getElementById('ext-invest-dest');
+  if(!select)return;
+  const tipo=document.getElementById('ext-tipo')?document.getElementById('ext-tipo').value:'';
+  const lista=(tipo==='investimento'||tipo==='meta')?S.invest.filter(i=>i.kind===tipo):S.invest;
+  const label=tipo==='meta'?'Escolha a meta':tipo==='investimento'?'Escolha o investimento':'Escolha o destino';
+  select.innerHTML='<option value="">'+label+'</option>'+lista.map(i=>`<option value="${i.id}">${i.nome}${i.kind==='investimento'?' - '+i.tipo:''}</option>`).join('');
+}
+
 function updatePreview(){
   const tipo=document.getElementById('cc-tipo').value;
   const val=parseFloat(document.getElementById('cc-val').value);
@@ -520,6 +571,7 @@ function showPage(id,btn){
   if(id==='extrato'){updateCategories();toggleSaidaCampos();renderExtrato();}
   if(id==='cartao')renderCartao();
   if(id==='invest')renderInvest();
+  if(id==='metas')renderMetas();
   updateResumo();
 }
 
@@ -531,7 +583,20 @@ function addExtrato(){
   const subcategoria=document.getElementById('ext-subcategoria').value;
   const gastoTipo=document.getElementById('ext-gasto-tipo').value;
   const pagamento=document.getElementById('ext-pagamento').value;
+  const investDestId=parseInt(document.getElementById('ext-invest-dest').value);
   const val=parseFloat(document.getElementById('ext-val').value);
+  if(tipo==='investimento'||tipo==='meta'){
+    const dest=S.invest.find(i=>i.id===investDestId);
+    if(!dest||dest.kind!==tipo||isNaN(val)||val<=0){alert('Escolha '+(tipo==='meta'?'a meta':'o investimento')+' e informe o valor.');return;}
+    dest.valorAtual+=val;
+    dest.totalAportado+=val;
+    S.extrato.push({id:Date.now(),data,desc:(tipo==='meta'?'Meta - ':'Investimento - ')+dest.nome,tipo,categoria:tipo==='meta'?'Meta':'Investimento',subcategoria:dest.nome,val,destId:dest.id});
+    document.getElementById('ext-desc').value='';
+    document.getElementById('ext-val').value='';
+    document.getElementById('ext-invest-dest').value='';
+    renderInvest();renderMetas();renderExtrato();updateResumo();
+    return;
+  }
   if(!categoria||!subcategoria||isNaN(val)||val<=0){alert('Preencha categoria, subcategoria e valor.');return;}
   if(tipo==='saida'&&(!gastoTipo||!pagamento)){alert('Para saídas, informe tipo de gasto e forma de pagamento.');return;}
   S.extrato.push({id:Date.now(),data,desc,tipo,val,categoria,subcategoria,gastoTipo:tipo==='saida'?gastoTipo:'',pagamento:tipo==='saida'?pagamento:''});
@@ -545,8 +610,7 @@ function addExtrato(){
 }
 
 function addCartao(){
-  const data=today();
-  document.getElementById('cc-data').value=data;
+  const data=document.getElementById('cc-data').value||today();
   const desc=document.getElementById('cc-desc').value.trim();
   const tipo=document.getElementById('cc-tipo').value;
   const val=parseFloat(document.getElementById('cc-val').value);
@@ -566,21 +630,28 @@ function addCartao(){
 }
 
 function addInvest(){
-  const data=document.getElementById('inv-data').value||today();
   const desc=document.getElementById('inv-desc').value.trim();
   const tipo=document.getElementById('inv-tipo').value;
-  const val=parseFloat(document.getElementById('inv-val').value);
-  if(!desc||isNaN(val)||val<=0){alert('Preencha todos os campos.');return;}
-  S.invest.push({id:Date.now(),data,desc,tipo,val});
+  if(!desc){alert('Informe o nome do investimento.');return;}
+  S.invest.push({id:Date.now(),kind:'investimento',nome:desc,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0});
   document.getElementById('inv-desc').value='';
-  document.getElementById('inv-val').value='';
-  renderInvest();updateResumo();
+  renderInvestDestinationOptions();renderInvest();updateCategories();updateResumo();
+}
+
+function addMeta(){
+  const desc=document.getElementById('meta-desc').value.trim();
+  const meta=parseFloat(document.getElementById('meta-val').value)||0;
+  if(!desc){alert('Informe o nome da meta.');return;}
+  if(meta<=0){alert('Informe o valor da meta.');return;}
+  S.invest.push({id:Date.now(),kind:'meta',nome:desc,tipo:'Meta',meta,valorAtual:0,totalAportado:0,totalResgatado:0});
+  document.getElementById('meta-desc').value='';
+  document.getElementById('meta-val').value='';
+  renderInvestDestinationOptions();renderMetas();updateCategories();updateResumo();
 }
 
 function getMesMap(){
   const map={};
   S.cartao.forEach(c=>{
-    if(c.tipo==='pagamento')return;
     const d=new Date(c.data+'T12:00:00');
     const n=c.parcelas||1;
     const parc=c.val/n;
@@ -597,7 +668,6 @@ function getMesMap(){
 function getParcelasCartao(){
   const parcelas=[];
   S.cartao.forEach(c=>{
-    if(c.tipo==='pagamento')return;
     const d=new Date(c.data+'T12:00:00');
     const n=c.parcelas||1;
     const parc=c.val/n;
@@ -618,7 +688,6 @@ function getParcelasCartao(){
 }
 
 function cartaoTemMes(c,y,m){
-  if(c.tipo==='pagamento')return isSameMonthDate(c.data,y,m);
   const d=new Date(c.data+'T12:00:00');
   const n=c.parcelas||1;
   const vencDia=c.vencDia||10;
@@ -640,9 +709,8 @@ function renderCartao(){
 
   const map=getMesMap();
   const totalAberto=Object.values(map).reduce((s,v)=>s+v,0);
-  const pagoTotal=S.cartao.filter(x=>x.tipo==='pagamento').reduce((s,x)=>s+x.val,0);
 
-  document.getElementById('cc-aberto').textContent=fmt(Math.max(0,totalAberto-pagoTotal));
+  document.getElementById('cc-aberto').textContent=fmt(totalAberto);
   document.getElementById('cc-mes').textContent=fmt(map[nowKey]||0);
   document.getElementById('cc-prox').textContent=fmt(map[nextKey]||0);
 
@@ -671,18 +739,38 @@ function renderCartao(){
   wrap.innerHTML='<table><thead><tr><th style="width:70px">Data</th><th>Descrição</th><th style="width:80px">Tipo</th><th style="width:70px">Vence</th><th style="width:90px">Valor</th><th style="width:24px"></th></tr></thead><tbody>'+
     rows.map(r=>{
       const d=new Date(r.data+'T12:00:00');
-      const label=r.tipo==='parcelado'?`${r.parcelas}x de ${fmt(r.val/r.parcelas)}`:(r.tipo==='pagamento'?'Pagamento':fmt(r.val));
-      const bc=r.tipo==='pagamento'?'b-pagamento':'b-compra';
-      const tipoLabel=r.tipo==='parcelado'?'Parcelado':r.tipo==='pagamento'?'Pagamento':'À vista';
-      const venc=r.tipo==='pagamento'?'-':'dia '+(r.vencDia||10);
+      const label=r.tipo==='parcelado'?`${r.parcelas}x de ${fmt(r.val/r.parcelas)}`:fmt(r.val);
+      const tipoLabel=r.tipo==='parcelado'?'Parcelado':'À vista';
+      const venc='dia '+(r.vencDia||10);
       const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${desc}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="delCC(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
+      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${desc}</td><td><span class="badge b-compra">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="delCC(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
     }).join('')+'</tbody></table>';
 }
 
 function delCC(id){S.cartao=S.cartao.filter(x=>x.id!==id);renderCartao();renderExtrato();updateResumo();}
 function delExt(id){S.extrato=S.extrato.filter(x=>x.id!==id);renderExtrato();updateResumo();}
-function delInv(id){S.invest=S.invest.filter(x=>x.id!==id);renderInvest();updateResumo();}
+function delInv(id){S.invest=S.invest.filter(x=>x.id!==id);renderInvestDestinationOptions();renderInvest();renderMetas();updateResumo();}
+
+function updateInvestValue(id){
+  const item=S.invest.find(x=>x.id===id);
+  if(!item)return;
+  const val=parseFloat(prompt('Qual é o valor atual de '+item.nome+'?', item.valorAtual.toFixed(2).replace('.',',')));
+  if(isNaN(val)||val<0)return;
+  item.valorAtual=val;
+  renderInvest();renderMetas();updateResumo();
+}
+
+function resgatarInvest(id){
+  const item=S.invest.find(x=>x.id===id);
+  if(!item)return;
+  const val=parseFloat(prompt('Quanto você resgatou de '+item.nome+'?'));
+  if(isNaN(val)||val<=0)return;
+  const resgate=Math.min(val,item.valorAtual);
+  item.valorAtual-=resgate;
+  item.totalResgatado+=resgate;
+  S.extrato.push({id:Date.now(),data:today(),desc:'Resgate - '+item.nome,tipo:'entrada',categoria:'Resgate',subcategoria:item.nome,val:resgate});
+  renderInvest();renderMetas();renderExtrato();updateResumo();
+}
 
 function renderExtrato(){
   const wrap=document.getElementById('ext-wrap');
@@ -695,20 +783,22 @@ function renderExtrato(){
   const parcelasMes=parcelas.filter(r=>isSameMonthDate(r.data,viewYear,viewMonth));
   const entradasMes=rows.filter(r=>r.tipo==='entrada').reduce((s,r)=>s+r.val,0);
   const saidasMes=rows.filter(r=>r.tipo==='saida').reduce((s,r)=>s+r.val,0);
+  const investMes=rows.filter(r=>r.tipo==='investimento'||r.tipo==='meta').reduce((s,r)=>s+r.val,0);
   const cartaoMes=rows.filter(r=>r.tipo==='cartao').reduce((s,r)=>s+r.val,0);
   const aviso=parcelasMes.length?'<div class="hint">As parcelas do cartão deste mês aparecem aqui automaticamente na data de vencimento.</div>':'';
   const resumo=`<div class="plain-summary">
     <div class="plain-card"><strong>Entradas: ${fmt(entradasMes)}</strong><span>Dinheiro que entrou em ${monthLabel}.</span></div>
     <div class="plain-card"><strong>Saídas: ${fmt(saidasMes)}</strong><span>Gastos lançados direto no extrato.</span></div>
+    <div class="plain-card"><strong>Investido/metas: ${fmt(investMes)}</strong><span>Dinheiro transferido para metas e investimentos.</span></div>
     <div class="plain-card"><strong>Parcelas cartão: ${fmt(cartaoMes)}</strong><span>Compras do cartão com vencimento em ${monthLabel}.</span></div>
   </div>`;
   if(!rows.length){wrap.innerHTML=resumo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
   wrap.innerHTML=resumo+aviso+'<table><thead><tr><th style="width:70px">Data</th><th>Descrição</th><th style="width:95px">Categoria</th><th style="width:70px">Tipo</th><th style="width:90px">Valor</th><th style="width:24px"></th></tr></thead><tbody>'+
     rows.map(r=>{
       const d=new Date(r.data+'T12:00:00');
-      const bc=r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':'b-compra';
-      const tipoLabel=r.tipo==='cartao'?'parcela':r.tipo;
-      const color=r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#BA7517':'#A32D2D';
+      const bc=r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
+      const tipoLabel=r.tipo==='cartao'?'parcela':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
+      const color=r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#BA7517':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
       const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
       return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">${r.desc||'-'}</td><td style="font-size:11px;color:var(--color-text-secondary)">${categoria}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
@@ -716,17 +806,60 @@ function renderExtrato(){
 }
 
 function renderInvest(){
-  const total=S.invest.reduce((s,x)=>s+x.val,0);
+  const investimentos=S.invest.filter(x=>x.kind==='investimento');
+  const total=investimentos.reduce((s,x)=>s+x.valorAtual,0);
+  const base=investimentos.reduce((s,x)=>s+(x.totalAportado-x.totalResgatado),0);
+  const rendimento=total-base;
   document.getElementById('inv-total').textContent=fmt(total);
-  document.getElementById('inv-qtd').textContent=S.invest.length;
+  document.getElementById('inv-rend').textContent=fmt(rendimento);
+  document.getElementById('inv-qtd').textContent=investimentos.length;
   const wrap=document.getElementById('inv-wrap');
-  const rows=S.invest.slice().sort((a,b)=>b.data.localeCompare(a.data));
-  if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum investimento ainda.</div>';return;}
-  wrap.innerHTML='<table><thead><tr><th style="width:70px">Data</th><th>Descrição</th><th style="width:90px">Tipo</th><th style="width:90px">Valor</th><th style="width:24px"></th></tr></thead><tbody>'+
-    rows.map(r=>{
-      const d=new Date(r.data+'T12:00:00');
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${r.desc}</td><td><span class="badge" style="background:#E6F1FB;color:#0C447C">${r.tipo}</span></td><td style="font-weight:500;color:#185FA5">${fmt(r.val)}</td><td><button class="del" onclick="delInv(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
-    }).join('')+'</tbody></table>';
+  if(!investimentos.length){wrap.innerHTML='<div class="empty">Cadastre um investimento e depois registre o dinheiro pelo Extrato.</div>';return;}
+  wrap.innerHTML='<div class="goal-list">'+investimentos.map(item=>{
+    return renderDestinoCard(item);
+  }).join('')+'</div>';
+}
+
+function renderMetas(){
+  const metas=S.invest.filter(x=>x.kind==='meta');
+  const total=metas.reduce((s,x)=>s+x.valorAtual,0);
+  const metasComAlvo=metas.filter(x=>x.meta>0);
+  const progresso=metasComAlvo.length?metasComAlvo.reduce((s,x)=>s+Math.min(100,x.valorAtual/x.meta*100),0)/metasComAlvo.length:0;
+  document.getElementById('meta-total').textContent=fmt(total);
+  document.getElementById('meta-qtd').textContent=metas.length;
+  document.getElementById('meta-progresso').textContent=progresso.toFixed(0)+'%';
+  const wrap=document.getElementById('meta-wrap');
+  if(!metas.length){wrap.innerHTML='<div class="empty">Cadastre uma meta e depois guarde dinheiro nela pelo Extrato.</div>';return;}
+  wrap.innerHTML='<div class="goal-list">'+metas.map(item=>{
+    return renderDestinoCard(item);
+  }).join('')+'</div>';
+}
+
+function renderDestinoCard(item){
+  const baseItem=item.totalAportado-item.totalResgatado;
+  const rend=item.valorAtual-baseItem;
+  const pctRend=baseItem>0?(rend/baseItem*100):0;
+  const metaPct=item.meta>0?Math.min(100,item.valorAtual/item.meta*100):0;
+  const subtitulo=item.kind==='meta'?'Meta':'Investimento - '+item.tipo;
+  const progresso=item.kind==='meta'&&item.meta>0?`
+    <div class="month-row">
+      <div class="month-label">Progresso</div>
+      <div class="month-track"><div class="month-fill" style="width:${metaPct.toFixed(1)}%;background:#2378D4"></div></div>
+      <div class="month-value">${metaPct.toFixed(0)}%</div>
+    </div>`:'';
+  return `<div class="goal-card">
+    <h3>${item.nome}</h3>
+    <div class="goal-meta">${subtitulo}${item.meta>0?' · alvo '+fmt(item.meta):''}</div>
+    <div class="plain-summary">
+      <div class="plain-card"><strong>Atual: ${fmt(item.valorAtual)}</strong><span>Valor que existe hoje.</span></div>
+      <div class="plain-card"><strong>Rendeu: ${fmt(rend)}</strong><span>${pctRend.toFixed(1).replace('.',',')}% sobre o valor líquido colocado.</span></div>
+    </div>
+    ${progresso}
+    <div class="goal-actions">
+      <button onclick="updateInvestValue(${item.id})">Atualizar valor</button>
+      <button onclick="resgatarInvest(${item.id})">Resgatar</button>
+    </div>
+  </div>`;
 }
 
 function updateResumo(){
@@ -739,8 +872,8 @@ function updateResumo(){
   const map=getMesMap();
   const ccMes=map[nowKey]||0;
   const saidasDiretas=S.extrato.filter(x=>x.tipo==='saida'&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
+  const investido=S.extrato.filter(x=>(x.tipo==='investimento'||x.tipo==='meta')&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
   const saidas=saidasDiretas+ccMes;
-  const investido=S.invest.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
   const saldo=entradas-saidas-investido;
   document.getElementById('res-month-label').textContent=monthLabel;
   document.getElementById('saldo-total').textContent=fmt(saldo);
@@ -759,7 +892,7 @@ function updateResumo(){
     const compra=x.desc.replace(/^Parcela \d+\/\d+ - /,'').replace(/^Cartão - /,'');
     addGroup(cartaoCat,compra,x.val);
   });
-  S.invest.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(investCat,x.tipo||'Investimento',x.val));
+  S.extrato.filter(x=>(x.tipo==='investimento'||x.tipo==='meta')&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(investCat,x.subcategoria||x.categoria||'Investimento / Meta',x.val));
 
   const entradaItems=objToItems(entradaCat,'#1D9E75');
   const saidaItems=objToItems(saidaCat,'#E24B4A');
@@ -824,6 +957,8 @@ updateCategories();
 toggleSaidaCampos();
 setupCollapsibleForms();
 renderRegisteredCards();
+renderInvest();
+renderMetas();
 updateResumo();
 </script>
 </body>
