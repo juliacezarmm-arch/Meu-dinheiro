@@ -20,6 +20,7 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .app{max-width:700px;margin:0 auto;padding:1rem 0}
 .header{display:flex;align-items:center;gap:10px;padding:1rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)}
 .header h1{font-size:20px;font-weight:500}
+.today-label{margin-left:auto;font-size:12px;color:var(--color-text-secondary);background:#171716;border:1px solid #3a3934;border-radius:999px;padding:5px 9px;white-space:nowrap}
 .nav{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);overflow-x:auto}
 .nav button{flex:1;min-width:80px;padding:10px 8px;font-size:13px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--color-text-secondary);white-space:nowrap}
 .nav button.active{color:var(--color-text-primary);border-bottom-color:#1D9E75;font-weight:500}
@@ -132,6 +133,7 @@ td:last-child{white-space:normal}
   <div class="header">
     <i class="ti ti-wallet" style="font-size:22px;color:#1D9E75" aria-hidden="true"></i>
     <h1>Meu dinheiro</h1>
+    <div class="today-label" id="today-label"></div>
   </div>
   <nav class="nav">
     <button onclick="showPage('resumo',this)" class="active"><i class="ti ti-home" aria-hidden="true"></i> Resumo</button>
@@ -323,6 +325,7 @@ let extratoMes=new Date();
 let cartaoMes=new Date();
 function fmt(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function today(){return new Date().toISOString().split('T')[0];}
+function todayText(){return new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}).replace('.', '');}
 function mesStr(y,m){return MESES[m]+'/'+String(y).slice(2);}
 function monthKey(y,m){return y+'-'+String(m).padStart(2,'0');}
 function isoDate(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
@@ -815,6 +818,7 @@ function updateResumo(){
 }
 
 document.querySelectorAll('input[type="date"]').forEach(el=>el.value=today());
+document.getElementById('today-label').textContent=todayText();
 document.getElementById('cc-data').value=today();
 updateCategories();
 toggleSaidaCampos();
