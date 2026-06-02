@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -456,6 +455,36 @@ function renderRegisteredCards(){
     </div>`).join('')+'</div>';
 }
 
+function addGroup(map,label,val){
+  if(!label)label='Sem categoria';
+  map[label]=(map[label]||0)+val;
+}
+
+function topText(items,emptyText,prefix){
+  const top=items.filter(x=>x.val>0).sort((a,b)=>b.val-a.val)[0];
+  return top?`${prefix} ${top.label}.`:emptyText;
+}
+
+function renderBarList(items,color,emptyText){
+  const valid=items.filter(x=>x.val>0).sort((a,b)=>b.val-a.val);
+  if(!valid.length)return `<div class="empty">${emptyText}</div>`;
+  const max=Math.max(...valid.map(x=>x.val),1);
+  return `<div class="month-bars">${valid.map(item=>{
+    const pct=Math.min(100,item.val/max*100);
+    return `<div>
+      <div class="month-row">
+        <div class="month-label"><span class="chart-dot" style="background:${item.color||color}"></span>${item.label}</div>
+        <div class="month-track"><div class="month-fill" style="width:${pct.toFixed(1)}%;background:${item.color||color}"></div></div>
+        <div class="month-value">${fmt(item.val)}</div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function objToItems(obj,color){
+  return Object.keys(obj).map(label=>({label,val:obj[label],color}));
+}
+
 function updatePreview(){
   const tipo=document.getElementById('cc-tipo').value;
   const val=parseFloat(document.getElementById('cc-val').value);
@@ -718,63 +747,69 @@ function updateResumo(){
   document.getElementById('res-inv').textContent=fmt(investido);
 
   const bars=document.getElementById('resumo-bars');
-  if(!S.extrato.length&&!S.cartao.length&&!S.invest.length){
-    bars.innerHTML='<div class="empty">Nenhuma movimentação ainda.</div>';return;
-  }
-  const entradasMes=entradas;
-  const saidasMes=saidas;
-  const investidoMes=investido;
-  const consumoMes=saidasMes+investidoMes;
-  const sobraMes=entradasMes-consumoMes;
-  const usadoPct=entradasMes>0?Math.min(100,(consumoMes/entradasMes*100)):0;
-  const saldoTexto=sobraMes>=0?'sobrou':'faltou';
-  const maiorGasto=[
-    {label:'saídas do dia a dia',val:saidasMes},
-    {label:'cartão',val:ccMes},
-    {label:'investimentos',val:investidoMes},
-  ].sort((a,b)=>b.val-a.val)[0];
-  const msgMaior=maiorGasto.val>0
-    ? `Você gastou mais com ${maiorGasto.label} neste mês.`
-    : 'Ainda não teve consumo neste mês.';
-  const rows=[
-    {label:'Entradas',val:entradasMes,color:'#1D9E75',note:'Dinheiro que entrou neste mês.'},
-    {label:'Saídas',val:saidasMes,color:'#E24B4A',note:'Gastos do extrato e parcelas do cartão neste mês.'},
-    {label:'Cartão',val:ccMes,color:'#BA7517',note:'Fatura do cartão no mês atual.'},
-    {label:'Investimentos',val:investidoMes,color:'#2378D4',note:'Valor investido neste mês.'},
-  ];
-  const baseMes=Math.max(entradasMes,consumoMes,saidasMes,ccMes,investidoMes,1);
-  const comparaTexto=entradasMes>0
-    ? `De cada R$ 100 que entrou em ${monthLabel}, R$ ${Math.min(999,consumoMes/entradasMes*100).toFixed(0).replace('.',',')} foram usados ou separados.`
-    : 'Cadastre uma entrada para comparar o consumo com o dinheiro que entrou.';
+  const entradaCat={}, saidaCat={}, cartaoCat={}, investCat={};
+  S.extrato.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>{
+    if(x.tipo==='entrada')addGroup(entradaCat,x.subcategoria||x.categoria||'Entrada',x.val);
+    if(x.tipo==='saida')addGroup(saidaCat,x.subcategoria||x.categoria||'Saída',x.val);
+  });
+  getParcelasCartao().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>{
+    const compra=x.desc.replace(/^Parcela \d+\/\d+ - /,'').replace(/^Cartão - /,'');
+    addGroup(cartaoCat,compra,x.val);
+  });
+  S.invest.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(investCat,x.tipo||'Investimento',x.val));
+
+  const entradaItems=objToItems(entradaCat,'#1D9E75');
+  const saidaItems=objToItems(saidaCat,'#E24B4A');
+  const cartaoItems=objToItems(cartaoCat,'#BA7517');
+  const investItems=objToItems(investCat,'#2378D4');
+  const resumoGeral=saldo>=0?'sobrou':'faltou';
   bars.innerHTML=`
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <h3>Entradas x consumo - ${monthLabel}</h3>
-          <p>Um resumo menor, mês a mês, para entender rápido para onde o dinheiro foi.</p>
+          <h3>Extrato do mês - ${monthLabel}</h3>
+          <p>Entradas e saídas separadas por categoria para bater o olho e entender.</p>
         </div>
-        <div class="chart-total">${saldoTexto}: ${fmt(Math.abs(sobraMes))}</div>
+        <div class="chart-total">${resumoGeral}: ${fmt(Math.abs(saldo))}</div>
       </div>
       <div class="month-message">
-        <strong>${msgMaior}</strong>
-        <span>${Math.round(usadoPct)}% das entradas do mês foram usadas ou separadas.</span>
-      </div>
-      <div class="month-bars">
-        ${rows.map(item=>{
-          const pct=Math.min(100,(item.val/baseMes*100));
-          return `<div>
-            <div class="month-row">
-              <div class="month-label"><span class="chart-dot" style="background:${item.color}"></span>${item.label}</div>
-              <div class="month-track"><div class="month-fill" style="width:${pct.toFixed(1)}%;background:${item.color}"></div></div>
-              <div class="month-value">${fmt(item.val)}</div>
-            </div>
-            <div class="month-note">${item.note}</div>
-          </div>`;
-        }).join('')}
+        <strong>${topText(saidaItems,'Ainda não teve saída no extrato neste mês.','Você gastou mais com')}</strong>
+        <span>${topText(entradaItems,'Ainda não teve entrada no extrato neste mês.','Você recebeu mais por')}</span>
       </div>
       <div class="plain-summary">
-        <div class="plain-card"><strong>${comparaTexto}</strong><span>Essa frase compara tudo que saiu com tudo que entrou, sem precisar entender porcentagem.</span></div>
-        <div class="plain-card"><strong>Consumo do mês: ${fmt(consumoMes)}</strong><span>Soma de saídas, parcelas do cartão e investimentos do mês.</span></div>
+        <div class="plain-card"><strong>Entradas por categoria</strong>${renderBarList(entradaItems,'#1D9E75','Nenhuma entrada neste mês.')}</div>
+        <div class="plain-card"><strong>Saídas por categoria</strong>${renderBarList(saidaItems,'#E24B4A','Nenhuma saída direta neste mês.')}</div>
+      </div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-head">
+        <div>
+          <h3>Cartão de crédito</h3>
+          <p>Parcelas e compras do cartão que vencem em ${monthLabel}.</p>
+        </div>
+        <div class="chart-total">${fmt(ccMes)}</div>
+      </div>
+      <div class="month-message">
+        <strong>${topText(cartaoItems,'Nenhuma parcela de cartão neste mês.','O cartão pesou mais com')}</strong>
+        <span>Esses valores entram como saída no resumo.</span>
+      </div>
+      ${renderBarList(cartaoItems,'#BA7517','Nenhuma parcela de cartão neste mês.')}
+    </div>
+    <div class="chart-panel">
+      <div class="chart-head">
+        <div>
+          <h3>Investimentos</h3>
+          <p>Onde o dinheiro foi separado para o futuro neste mês.</p>
+        </div>
+        <div class="chart-total">${fmt(investido)}</div>
+      </div>
+      <div class="month-message">
+        <strong>${topText(investItems,'Nenhum investimento neste mês.','Você investiu mais em')}</strong>
+        <span>Separado por tipo de aplicação.</span>
+      </div>
+      ${renderBarList(investItems,'#2378D4','Nenhum investimento neste mês.')}
+      <div class="plain-summary">
+        <div class="plain-card"><strong>Total investido: ${fmt(investido)}</strong><span>Esse valor também reduz o saldo disponível.</span></div>
       </div>
     </div>`;
 }
