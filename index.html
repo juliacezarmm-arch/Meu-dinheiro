@@ -137,7 +137,7 @@ td:last-child{white-space:normal}
 .goal-card h3{font-size:15px;margin-bottom:4px}
 .goal-top{display:grid;grid-template-columns:1fr 150px;gap:10px;align-items:start;margin-bottom:.75rem}
 .goal-meta{font-size:12px;color:var(--color-text-secondary);margin-bottom:.75rem}
-.goal-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:.75rem}
+.goal-actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:.75rem}
 .goal-actions button{background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:7px 5px;font-size:11px;cursor:pointer;white-space:nowrap}
 .goal-actions button:hover{border-color:#9FE1CB}
 .goal-panel{margin-top:.75rem;background:#10100f;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.75rem}
@@ -467,43 +467,32 @@ function downloadDataFile(){
   URL.revokeObjectURL(url);
   setSaveStatus('Arquivo baixado no computador.');
 }
-async function requestWritePermission(handle){
-  if(!handle)return false;
-  if(!handle.queryPermission||!handle.requestPermission)return true;
-  const opts={mode:'readwrite'};
-  if(await handle.queryPermission(opts)==='granted')return true;
-  return await handle.requestPermission(opts)==='granted';
-}
 async function writeDataFile(handle){
-  const allowed=await requestWritePermission(handle);
-  if(!allowed)throw new Error('Permissão para salvar negada.');
   const writable=await handle.createWritable();
   await writable.write(JSON.stringify(dataPayload(),null,2));
   await writable.close();
 }
 async function saveDataFile(){
   try{
-    if(dataFileHandle&&dataFileHandle.createWritable){
+    if(dataFileHandle&&window.showSaveFilePicker){
       await writeDataFile(dataFileHandle);
       setSaveStatus('Arquivo salvo no computador.');
       return;
     }
-    await saveAsDataFile();
+    setSaveStatus('Abra um arquivo ou use Salvar como primeiro.');
   }catch(e){
     if(e&&e.name==='AbortError')return;
-    setSaveStatus('Não deu para salvar no mesmo arquivo. Escolha onde salvar.');
-    await saveAsDataFile();
+    alert('Não consegui salvar no mesmo arquivo. Use "Salvar como" e escolha o arquivo novamente.');
   }
 }
 async function saveAsDataFile(){
   try{
     if(window.showSaveFilePicker){
-      const handle=await window.showSaveFilePicker({
+      dataFileHandle=await window.showSaveFilePicker({
         suggestedName:'meu-dinheiro-dados.json',
         types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]
       });
-      await writeDataFile(handle);
-      dataFileHandle=handle;
+      await writeDataFile(dataFileHandle);
       setSaveStatus('Arquivo salvo no computador.');
     }else{
       downloadDataFile();
@@ -524,8 +513,7 @@ async function openDataFile(){
       const file=await dataFileHandle.getFile();
       const parsed=JSON.parse(await file.text());
       applyDataFile(parsed);
-      const canWrite=await requestWritePermission(dataFileHandle);
-      setSaveStatus(canWrite?'Arquivo aberto. Agora Salvar grava nele.':'Arquivo aberto, mas sem permissão de escrita. Use Salvar como.');
+      setSaveStatus('Arquivo aberto. Agora o botão Salvar grava nele.');
     }else{
       document.getElementById('import-file').click();
     }
@@ -994,7 +982,15 @@ function delExt(id){
   S.extrato=S.extrato.filter(x=>x.id!==id);
   renderInvest();renderMetas();renderExtrato();updateResumo();
 }
-function delInv(id){S.invest=S.invest.filter(x=>x.id!==id);renderInvestDestinationOptions();renderInvest();renderMetas();updateResumo();}
+function delInv(id){
+  S.invest=S.invest.filter(x=>x.id!==id);
+  S.extrato=S.extrato.filter(x=>x.destId!==id);
+  renderInvestDestinationOptions();
+  renderInvest();
+  renderMetas();
+  renderExtrato();
+  updateResumo();
+}
 
 function ensureInvestHistory(item){
   if(!item.historico)item.historico=[];
@@ -1336,6 +1332,7 @@ function renderDestinoCard(item){
       <button onclick="toggleInvestAction(${item.id},'resgatar')">Resgatar</button>
       <button onclick="toggleInvestHistory(${item.id})">${historicoAberto?'Fechar hist.':'Histórico'}</button>
       <button onclick="toggleInvestChart(${item.id})">${graficoAberto?'Fechar gráfico':'Gráfico'}</button>
+      <button onclick="delInv(${item.id})">Excluir</button>
     </div>
     ${painelAcao}
     ${historicoHtml}
