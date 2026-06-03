@@ -21,6 +21,11 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .header{display:flex;align-items:center;gap:10px;padding:1rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)}
 .header h1{font-size:20px;font-weight:500}
 .today-label{margin-left:auto;font-size:12px;color:var(--color-text-secondary);background:#171716;border:1px solid #3a3934;border-radius:999px;padding:5px 9px;white-space:nowrap}
+.data-tools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:.75rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.data-tools button,.data-tools label{background:#171716;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:8px 10px;font-size:12px;font-weight:800;text-align:center;cursor:pointer}
+.data-tools button:hover,.data-tools label:hover{border-color:#9FE1CB}
+.data-tools input{display:none}
+.save-status{grid-column:1/-1;min-height:14px;font-size:11px;color:#9FE1CB;text-align:center}
 .nav{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);overflow-x:auto}
 .nav button{flex:1;min-width:80px;padding:10px 8px;font-size:13px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--color-text-secondary);white-space:nowrap}
 .nav button.active{color:var(--color-text-primary);border-bottom-color:#1D9E75;font-weight:500}
@@ -115,6 +120,8 @@ td:last-child{white-space:normal}
 .compact-summary .plain-card{padding:.6rem .75rem;min-height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left}
 .compact-summary .plain-card strong{font-size:13px;margin-bottom:0;white-space:nowrap}
 .compact-summary .plain-card span{font-size:11px;line-height:1.25;text-align:right;max-width:52%}
+.summary-toggle{width:100%;background:#171716;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:.65rem .75rem;margin:.55rem 0 .6rem;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;cursor:pointer}
+.summary-toggle span:last-child{color:#9FE1CB;font-size:16px}
 .bank-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:1rem}
 .bank-card{border-radius:var(--border-radius-lg);padding:1rem;min-height:104px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 -28px 80px rgba(0,0,0,.2)}
 .bank-card::after{content:"";position:absolute;right:-22px;bottom:-28px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.14)}
@@ -139,14 +146,16 @@ td:last-child{white-space:normal}
 .history-row{display:grid;grid-template-columns:74px 1fr 90px 24px;gap:8px;align-items:center;border-top:1px solid #31302c;padding:.5rem 0;font-size:12px}
 .history-kind{color:var(--color-text-secondary)}
 .history-value{text-align:right;font-weight:800}
-.mini-chart{display:grid;gap:8px}
-.mini-chart-row{display:grid;grid-template-columns:92px 1fr 86px;gap:8px;align-items:center;font-size:12px}
-.mini-chart-track{height:10px;background:#0d0d0c;border-radius:999px;overflow:hidden}
-.mini-chart-fill{height:100%;border-radius:999px;min-width:3px}
-.stock-chart{width:100%;height:170px;background:#0d0d0c;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.5rem}
+.stock-chart{width:100%;background:#0d0d0c;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.5rem}
 .stock-chart svg{width:100%;height:130px;display:block}
 .stock-chart-meta{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--color-text-secondary);margin-top:4px}
-.chart-options{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center;margin-bottom:.6rem}
+.chart-options{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-bottom:.6rem}
+.chart-period{display:flex;gap:6px}
+.chart-period button{width:auto;padding:7px 12px}
+.chart-period button.active{background:#9FE1CB;color:#0b3329;border-color:#9FE1CB}
+.yield-list{display:grid;gap:6px;margin-top:.65rem}
+.yield-row{display:grid;grid-template-columns:70px 1fr 82px;gap:8px;align-items:center;background:#10100f;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.5rem;font-size:12px}
+.yield-row strong{text-align:right}
 @media(max-width:520px){
   .chart-head{flex-direction:column}
   .chart-total{white-space:normal}
@@ -160,8 +169,11 @@ td:last-child{white-space:normal}
   .history-value{text-align:left}
   .goal-top{grid-template-columns:1fr}
   .goal-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .mini-chart-row{grid-template-columns:1fr}
   .chart-options{grid-template-columns:1fr}
+  .chart-period button{flex:1}
+  .yield-row{grid-template-columns:1fr}
+  .yield-row strong{text-align:left}
+  .data-tools{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -172,6 +184,13 @@ td:last-child{white-space:normal}
     <i class="ti ti-wallet" style="font-size:22px;color:#1D9E75" aria-hidden="true"></i>
     <h1>Meu dinheiro</h1>
     <div class="today-label" id="today-label"></div>
+  </div>
+  <div class="data-tools">
+    <button onclick="openDataFile()">Abrir dados</button>
+    <button onclick="manualSave()">Salvar</button>
+    <button onclick="saveAsDataFile()">Salvar como</button>
+    <input type="file" id="import-file" accept="application/json,.json" onchange="importData(event)"/>
+    <div class="save-status" id="save-status"></div>
   </div>
   <nav class="nav">
     <button onclick="showPage('resumo',this)" class="active"><i class="ti ti-home" aria-hidden="true"></i> Resumo</button>
@@ -350,6 +369,7 @@ td:last-child{white-space:normal}
 
 <script>
 const S={extrato:[],cartao:[],invest:[],cartoes:[]};
+let dataFileHandle=null;
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const BANK_COLORS={
   'Nubank':'#7B2CBF','Itaú':'#EC7000','Bradesco':'#C8102E','Santander':'#E1251B',
@@ -382,6 +402,7 @@ const CATEGORIAS={
 let resumoMes=new Date();
 let extratoMes=new Date();
 let cartaoMes=new Date();
+let extratoResumoAberto=false;
 const investUi={acao:{},historico:{},grafico:{},mes:{},periodo:{}};
 function fmt(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function today(){return new Date().toISOString().split('T')[0];}
@@ -390,6 +411,119 @@ function currentMonthInput(){return today().slice(0,7);}
 function mesStr(y,m){return MESES[m]+'/'+String(y).slice(2);}
 function monthKey(y,m){return y+'-'+String(m).padStart(2,'0');}
 function isoDate(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function saveData(){}
+function setSaveStatus(text){
+  const el=document.getElementById('save-status');
+  if(!el)return;
+  el.textContent=text;
+  clearTimeout(setSaveStatus.timer);
+  setSaveStatus.timer=setTimeout(()=>{el.textContent='';},3000);
+}
+function manualSave(){
+  saveDataFile();
+}
+function dataPayload(){
+  return {versao:1,exportadoEm:new Date().toISOString(),dados:S};
+}
+function applyDataFile(data){
+  const dados=data.dados||data;
+  ['extrato','cartao','invest','cartoes'].forEach(key=>{
+    S[key]=Array.isArray(dados[key])?dados[key]:[];
+  });
+  renderInvestDestinationOptions();
+  updateCategories();
+  renderRegisteredCards();
+  renderCartao();
+  renderExtrato();
+  renderInvest();
+  renderMetas();
+  updateResumo();
+}
+function downloadDataFile(){
+  const blob=new Blob([JSON.stringify(dataPayload(),null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='meu-dinheiro-dados.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  setSaveStatus('Arquivo baixado no computador.');
+}
+async function writeDataFile(handle){
+  const writable=await handle.createWritable();
+  await writable.write(JSON.stringify(dataPayload(),null,2));
+  await writable.close();
+}
+async function saveDataFile(){
+  try{
+    if(dataFileHandle&&window.showSaveFilePicker){
+      await writeDataFile(dataFileHandle);
+      setSaveStatus('Arquivo salvo no computador.');
+      return;
+    }
+    await saveAsDataFile();
+  }catch(e){
+    if(e&&e.name==='AbortError')return;
+    downloadDataFile();
+  }
+}
+async function saveAsDataFile(){
+  try{
+    if(window.showSaveFilePicker){
+      dataFileHandle=await window.showSaveFilePicker({
+        suggestedName:'meu-dinheiro-dados.json',
+        types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]
+      });
+      await writeDataFile(dataFileHandle);
+      setSaveStatus('Arquivo salvo no computador.');
+    }else{
+      downloadDataFile();
+    }
+  }catch(e){
+    if(e&&e.name==='AbortError')return;
+    downloadDataFile();
+  }
+}
+async function openDataFile(){
+  try{
+    if(window.showOpenFilePicker){
+      const handles=await window.showOpenFilePicker({
+        multiple:false,
+        types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]
+      });
+      dataFileHandle=handles[0];
+      const file=await dataFileHandle.getFile();
+      const parsed=JSON.parse(await file.text());
+      applyDataFile(parsed);
+      setSaveStatus('Arquivo aberto. Agora o botão Salvar grava nele.');
+    }else{
+      document.getElementById('import-file').click();
+    }
+  }catch(e){
+    if(e&&e.name==='AbortError')return;
+    alert('Não consegui abrir esse arquivo. Veja se ele é um JSON do app.');
+  }
+}
+function importData(event){
+  const file=event.target.files&&event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const parsed=JSON.parse(reader.result);
+      dataFileHandle=null;
+      applyDataFile(parsed);
+      setSaveStatus('Dados abertos. Use Salvar como para gravar no computador.');
+    }catch(e){
+      alert('Não consegui importar esse arquivo. Veja se ele é o JSON exportado pelo app.');
+    }finally{
+      event.target.value='';
+    }
+  };
+  reader.readAsText(file,'utf-8');
+}
 function dueDateFor(baseDate,dueDay,offset){
   const startOffset=baseDate.getDate()>dueDay?1:0;
   const dueBase=new Date(baseDate.getFullYear(),baseDate.getMonth()+startOffset+offset,1);
@@ -414,6 +548,10 @@ function changeExtratoMonth(delta){
 }
 function goExtratoCurrentMonth(){
   extratoMes=new Date();
+  renderExtrato();
+}
+function toggleExtratoResumo(){
+  extratoResumoAberto=!extratoResumoAberto;
   renderExtrato();
 }
 function changeCartaoMonth(delta){
@@ -508,6 +646,7 @@ function addRegisteredCard(){
   S.cartoes.push({id:Date.now(),bank,dueDay,color:BANK_COLORS[bank]||BANK_COLORS.Outro});
   document.getElementById('card-bank').value='';
   document.getElementById('card-due-day').value='';
+  saveData();
   renderRegisteredCards();
   updatePreview();
 }
@@ -515,6 +654,7 @@ function addRegisteredCard(){
 function delRegisteredCard(id){
   if(S.cartao.some(x=>x.cardId===id)){alert('Este cartão já tem lançamentos. Apague os lançamentos antes de remover o cartão.');return;}
   S.cartoes=S.cartoes.filter(c=>c.id!==id);
+  saveData();
   renderRegisteredCards();
   updatePreview();
 }
@@ -925,6 +1065,69 @@ function delInvestHistory(itemId,histId){
   refreshInvestViews();
 }
 
+function renderStockChart(item,mes,periodo){
+  const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
+  const ano=Number(mes.slice(0,4));
+  const mesNum=Number(mes.slice(5,7));
+  const inicio=periodo==='ano'?ano+'-01-01':mes+'-01';
+  const fim=periodo==='ano'?(ano+1)+'-01-01':(mesNum===12?ano+1:ano)+'-'+String(mesNum===12?1:mesNum+1).padStart(2,'0')+'-01';
+  const anterior=hist.filter(h=>(h.data||'')<inicio).slice(-1)[0];
+  const dentro=hist.filter(h=>(h.data||'')>=inicio&&(h.data||'')<fim);
+  const pontos=[{label:'Início',valor:anterior?Number(anterior.saldo||0):0}]
+    .concat(dentro.map(h=>{
+      const d=new Date(h.data+'T12:00:00');
+      const label=periodo==='ano'?MESES[d.getMonth()]:String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+      return {label,valor:Number(h.saldo||0)};
+    }));
+  if(!dentro.length&&(!anterior||Number(anterior.saldo||0)===0)){
+    return '<div class="empty">Sem dados para desenhar o gráfico neste período.</div>';
+  }
+  const mesesResumo=periodo==='ano'
+    ? Array.from({length:12},(_,i)=>{
+        const key=ano+'-'+String(i+1).padStart(2,'0');
+        return {label:MESES[i],...calcInvestMonthResult(item,key)};
+      })
+    : [{label:mesStr(ano,mesNum-1),...calcInvestMonthResult(item,mes)}];
+  const w=320,h=130,pad=16;
+  const valores=pontos.map(p=>p.valor);
+  const min=Math.min(...valores);
+  const max=Math.max(...valores);
+  const range=max-min||1;
+  const coords=pontos.map((p,i)=>{
+    const x=pontos.length===1?w/2:pad+(i*(w-pad*2)/(pontos.length-1));
+    const y=h-pad-((p.valor-min)/range*(h-pad*2));
+    return {x,y,...p};
+  });
+  const line=coords.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+  const ultimo=pontos[pontos.length-1].valor;
+  const primeiro=pontos[0].valor;
+  const variacao=ultimo-primeiro;
+  const cor=variacao>=0?'#1D9E75':'#A32D2D';
+  return `<div class="stock-chart">
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Gráfico de evolução">
+      <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="#31302c" stroke-width="1"/>
+      <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${h-pad}" stroke="#31302c" stroke-width="1"/>
+      <polyline points="${line}" fill="none" stroke="${cor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      ${coords.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${cor}"></circle>`).join('')}
+    </svg>
+    <div class="stock-chart-meta">
+      <span>${pontos[0].label}: ${fmt(primeiro)}</span>
+      <span>Variação: ${variacao>=0?'+':''}${fmt(variacao)}</span>
+      <span>${pontos[pontos.length-1].label}: ${fmt(ultimo)}</span>
+    </div>
+    <div class="yield-list">
+      ${mesesResumo.map(r=>{
+        const cor=r.rendimento>=0?'#1D9E75':'#A32D2D';
+        return `<div class="yield-row">
+          <span>${r.label}</span>
+          <span>Rendeu ${r.rendimento>=0?'+':''}${fmt(r.rendimento)}</span>
+          <strong style="color:${cor}">${r.pct.toFixed(1).replace('.',',')}%</strong>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
 function renderExtrato(){
   const wrap=document.getElementById('ext-wrap');
   const viewYear=extratoMes.getFullYear();
@@ -940,13 +1143,15 @@ function renderExtrato(){
   const metaMes=rows.filter(r=>r.tipo==='meta').reduce((s,r)=>s+r.val,0);
   const cartaoMes=rows.filter(r=>r.tipo==='cartao').reduce((s,r)=>s+r.val,0);
   const aviso=parcelasMes.length?'<div class="hint">As parcelas do cartão deste mês aparecem aqui automaticamente na data de vencimento.</div>':'';
-  const resumo=`<div class="plain-summary compact-summary">
+  const resumoTotal=entradasMes+saidasMes+investimentoMes+metaMes+cartaoMes;
+  const resumoDetalhe=`<div class="plain-summary compact-summary">
     <div class="plain-card"><strong>Entradas: ${fmt(entradasMes)}</strong><span>Dinheiro que entrou em ${monthLabel}.</span></div>
     <div class="plain-card"><strong>Saídas: ${fmt(saidasMes)}</strong><span>Gastos lançados direto no extrato.</span></div>
     <div class="plain-card"><strong>Investimentos: ${fmt(investimentoMes)}</strong><span>Dinheiro separado para investimentos.</span></div>
     <div class="plain-card"><strong>Metas: ${fmt(metaMes)}</strong><span>Dinheiro guardado para metas cadastradas.</span></div>
     <div class="plain-card"><strong>Parcelas cartão: ${fmt(cartaoMes)}</strong><span>Compras do cartão com vencimento em ${monthLabel}.</span></div>
   </div>`;
+  const resumo=`<button class="summary-toggle" onclick="toggleExtratoResumo()"><span>Resumo do mês: ${fmt(resumoTotal)}</span><span>${extratoResumoAberto?'−':'+'}</span></button>${extratoResumoAberto?resumoDetalhe:''}`;
   if(!rows.length){wrap.innerHTML=resumo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
   wrap.innerHTML=resumo+aviso+'<table><thead><tr><th style="width:70px">Data</th><th>Descrição</th><th style="width:95px">Categoria</th><th style="width:70px">Tipo</th><th style="width:90px">Valor</th><th style="width:24px"></th></tr></thead><tbody>'+
     rows.map(r=>{
@@ -1000,16 +1205,9 @@ function renderDestinoCard(item){
   const historicoAberto=!!investUi.historico[item.id];
   const graficoAberto=!!investUi.grafico[item.id];
   const mesHist=investUi.mes[item.id]||currentMonthInput();
+  const periodoGrafico=investUi.periodo[item.id]||'mes';
   const resultadoMes=calcInvestMonthResult(item,mesHist);
   const historicoMes=item.historico.filter(h=>h.data&&h.data.slice(0,7)===mesHist).sort((a,b)=>b.data.localeCompare(a.data));
-  const aportesMes=historicoMes.filter(h=>h.tipo==='aporte').reduce((s,h)=>s+Number(h.valor||0),0);
-  const resgatesMes=historicoMes.filter(h=>h.tipo==='resgate').reduce((s,h)=>s+Number(h.valor||0),0);
-  const chartRows=[
-    {label:'Entrou',val:aportesMes,color:'#1D9E75'},
-    {label:'Resgatou',val:resgatesMes,color:'#A32D2D'},
-    {label:'Rendeu',val:Math.max(0,resultadoMes.rendimento),color:'#2378D4'}
-  ];
-  const chartMax=Math.max(...chartRows.map(x=>x.val),1);
   const painelAcao=acao==='atualizar'?`
     <div class="goal-panel">
       <div class="goal-panel-title">Atualizar valor do mês atual</div>
@@ -1047,16 +1245,14 @@ function renderDestinoCard(item){
     </div>`:'';
   const graficoHtml=graficoAberto?`
     <div class="goal-panel">
-      <div class="goal-panel-title">Gráfico do mês</div>
-      <div class="mini-chart">
-        ${chartRows.map(row=>`
-          <div class="mini-chart-row">
-            <div>${row.label}</div>
-            <div class="mini-chart-track"><div class="mini-chart-fill" style="width:${Math.min(100,row.val/chartMax*100).toFixed(1)}%;background:${row.color}"></div></div>
-            <div class="history-value" style="color:${row.color}">${fmt(row.val)}</div>
-          </div>
-        `).join('')}
+      <div class="chart-options">
+        <div class="goal-panel-title">Gráfico de evolução</div>
+        <div class="chart-period">
+          <button class="${periodoGrafico==='mes'?'active':''}" onclick="changeInvestChartPeriod(${item.id},'mes')">Mês</button>
+          <button class="${periodoGrafico==='ano'?'active':''}" onclick="changeInvestChartPeriod(${item.id},'ano')">Ano</button>
+        </div>
       </div>
+      ${renderStockChart(item,mesHist,periodoGrafico)}
     </div>`:'';
   const progresso=item.kind==='meta'&&item.meta>0?`
     <div class="month-row">
@@ -1196,6 +1392,7 @@ function updateResumo(){
         <div class="plain-card"><strong>Total em metas: ${fmt(metas)}</strong><span>Esse valor também reduz o saldo disponível.</span></div>
       </div>
     </div>`;
+  saveData();
 }
 
 document.querySelectorAll('input[type="date"]').forEach(el=>el.value=today());
