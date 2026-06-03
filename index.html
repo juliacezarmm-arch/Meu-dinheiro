@@ -88,11 +88,11 @@ td:last-child{white-space:normal}
 .hint{font-size:12px;color:var(--color-text-secondary);margin-bottom:.75rem}
 .saldo-bar{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
 .saldo-bar .big{font-size:26px;font-weight:500}
-.month-switch{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:.55rem;margin-bottom:1rem}
-.month-switch button{background:#242423;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);min-width:38px;height:34px;padding:0 10px;font-size:13px;font-weight:700;cursor:pointer}
+.month-switch{display:flex;align-items:center;justify-content:space-between;gap:6px;background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:.38rem;margin-bottom:.8rem}
+.month-switch button{background:#242423;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);min-width:34px;height:30px;padding:0 8px;font-size:12px;font-weight:700;cursor:pointer}
 .month-switch button:hover{border-color:#9FE1CB}
-.month-switch .current-month{flex:1;text-align:center;font-size:14px;font-weight:800}
-.month-switch .today-btn{min-width:86px;color:#0b3329;background:#9FE1CB;border-color:#9FE1CB}
+.month-switch .current-month{flex:1;text-align:center;font-size:13px;font-weight:800}
+.month-switch .today-btn{min-width:76px;color:#0b3329;background:#9FE1CB;border-color:#9FE1CB}
 .progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
 .progress-bar{height:8px;background:var(--color-background-secondary);border-radius:4px;overflow:hidden;margin-bottom:1rem}
 .progress-fill{height:100%;border-radius:4px}
@@ -101,6 +101,9 @@ td:last-child{white-space:normal}
 .chart-head h3{font-size:15px;font-weight:700;margin-bottom:3px}
 .chart-head p{font-size:12px;color:var(--color-text-secondary);line-height:1.3}
 .chart-total{font-size:12px;color:#0b3329;background:#9FE1CB;border-radius:999px;padding:5px 9px;white-space:nowrap;font-weight:700}
+.chart-toggle{background:#242423;color:#9FE1CB;border:1px solid #3a3934;border-radius:var(--border-radius-md);min-width:32px;height:28px;font-size:16px;font-weight:800;cursor:pointer}
+.chart-toggle:hover{border-color:#9FE1CB}
+.chart-title-line{display:flex;align-items:center;gap:8px}
 .month-message{background:#10100f;border:1px solid #31302c;border-left:4px solid #BA7517;border-radius:var(--border-radius-md);padding:.75rem;margin-bottom:.75rem}
 .month-message strong{display:block;font-size:14px;margin-bottom:3px}
 .month-message span{font-size:12px;color:var(--color-text-secondary)}
@@ -161,8 +164,9 @@ td:last-child{white-space:normal}
   .chart-total{white-space:normal}
   .month-row{grid-template-columns:1fr}
   .month-value{text-align:left;margin-left:19px}
-  .month-switch{flex-wrap:wrap}
-  .month-switch .current-month{order:-1;flex-basis:100%}
+  .month-switch{display:grid;grid-template-columns:34px 34px 1fr;gap:8px;padding:.55rem}
+  .month-switch .current-month{grid-column:1/-1;order:-1;text-align:center}
+  .month-switch .today-btn{justify-self:end}
   .compact-summary .plain-card{align-items:flex-start;flex-direction:column;gap:3px}
   .compact-summary .plain-card span{text-align:left;max-width:none}
   .history-head,.history-row{grid-template-columns:1fr}
@@ -296,6 +300,17 @@ td:last-child{white-space:normal}
       <div class="row row1">
         <select id="cc-tipo"><option value="compra">Compra à vista</option><option value="parcelado">Parcelado</option></select>
       </div>
+      <div class="row row2">
+        <select id="cc-categoria" onchange="updateCartaoSubcategorias()"><option value="">Selecione categoria</option></select>
+        <select id="cc-subcategoria"><option value="">Selecione subcategoria</option></select>
+      </div>
+      <div class="row row1">
+        <select id="cc-gasto-tipo">
+          <option value="">Tipo de gasto</option>
+          <option value="fixo">Gasto fixo</option>
+          <option value="variavel">Gasto variável</option>
+        </select>
+      </div>
       <div class="row row1"><input type="text" id="cc-desc" placeholder="Descrição (ex: geladeira, roupa...)"/></div>
       <div class="row row2">
         <input type="number" id="cc-val" placeholder="Valor total (R$)" min="0" step="0.01"/>
@@ -403,6 +418,7 @@ let resumoMes=new Date();
 let extratoMes=new Date();
 let cartaoMes=new Date();
 let extratoResumoAberto=false;
+const resumoCharts={extrato:false,cartao:false,invest:false,metas:false};
 const investUi={acao:{},historico:{},grafico:{},mes:{},periodo:{}};
 function fmt(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function today(){return new Date().toISOString().split('T')[0];}
@@ -451,14 +467,23 @@ function downloadDataFile(){
   URL.revokeObjectURL(url);
   setSaveStatus('Arquivo baixado no computador.');
 }
+async function requestWritePermission(handle){
+  if(!handle)return false;
+  if(!handle.queryPermission||!handle.requestPermission)return true;
+  const opts={mode:'readwrite'};
+  if(await handle.queryPermission(opts)==='granted')return true;
+  return await handle.requestPermission(opts)==='granted';
+}
 async function writeDataFile(handle){
+  const allowed=await requestWritePermission(handle);
+  if(!allowed)throw new Error('Permissão para salvar negada.');
   const writable=await handle.createWritable();
   await writable.write(JSON.stringify(dataPayload(),null,2));
   await writable.close();
 }
 async function saveDataFile(){
   try{
-    if(dataFileHandle&&window.showSaveFilePicker){
+    if(dataFileHandle&&dataFileHandle.createWritable){
       await writeDataFile(dataFileHandle);
       setSaveStatus('Arquivo salvo no computador.');
       return;
@@ -466,17 +491,19 @@ async function saveDataFile(){
     await saveAsDataFile();
   }catch(e){
     if(e&&e.name==='AbortError')return;
-    downloadDataFile();
+    setSaveStatus('Não deu para salvar no mesmo arquivo. Escolha onde salvar.');
+    await saveAsDataFile();
   }
 }
 async function saveAsDataFile(){
   try{
     if(window.showSaveFilePicker){
-      dataFileHandle=await window.showSaveFilePicker({
+      const handle=await window.showSaveFilePicker({
         suggestedName:'meu-dinheiro-dados.json',
         types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]
       });
-      await writeDataFile(dataFileHandle);
+      await writeDataFile(handle);
+      dataFileHandle=handle;
       setSaveStatus('Arquivo salvo no computador.');
     }else{
       downloadDataFile();
@@ -497,7 +524,8 @@ async function openDataFile(){
       const file=await dataFileHandle.getFile();
       const parsed=JSON.parse(await file.text());
       applyDataFile(parsed);
-      setSaveStatus('Arquivo aberto. Agora o botão Salvar grava nele.');
+      const canWrite=await requestWritePermission(dataFileHandle);
+      setSaveStatus(canWrite?'Arquivo aberto. Agora Salvar grava nele.':'Arquivo aberto, mas sem permissão de escrita. Use Salvar como.');
     }else{
       document.getElementById('import-file').click();
     }
@@ -540,6 +568,10 @@ function changeResumoMonth(delta){
 }
 function goResumoCurrentMonth(){
   resumoMes=new Date();
+  updateResumo();
+}
+function toggleResumoChart(nome){
+  resumoCharts[nome]=!resumoCharts[nome];
   updateResumo();
 }
 function changeExtratoMonth(delta){
@@ -602,6 +634,22 @@ function updateSubcategorias(){
   const subcategoriaSelect=document.getElementById('ext-subcategoria');
   if(!categoria){subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>';return;}
   const subcategorias=(CATEGORIAS[tipo]&&CATEGORIAS[tipo][categoria])||[];
+  subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>'+subcategorias.map(sub=>`<option value="${sub}">${sub}</option>`).join('');
+}
+
+function updateCartaoCategories(){
+  const categoriaSelect=document.getElementById('cc-categoria');
+  if(!categoriaSelect)return;
+  const categorias=CATEGORIAS.saida||{};
+  categoriaSelect.innerHTML='<option value="">Selecione categoria</option>'+Object.keys(categorias).map(cat=>`<option value="${cat}">${cat}</option>`).join('');
+  updateCartaoSubcategorias();
+}
+
+function updateCartaoSubcategorias(){
+  const categoria=document.getElementById('cc-categoria').value;
+  const subcategoriaSelect=document.getElementById('cc-subcategoria');
+  if(!categoria){subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>';return;}
+  const subcategorias=(CATEGORIAS.saida&&CATEGORIAS.saida[categoria])||[];
   subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>'+subcategorias.map(sub=>`<option value="${sub}">${sub}</option>`).join('');
 }
 
@@ -789,18 +837,24 @@ function addCartao(){
   const data=document.getElementById('cc-data').value||today();
   const desc=document.getElementById('cc-desc').value.trim();
   const tipo=document.getElementById('cc-tipo').value;
+  const categoria=document.getElementById('cc-categoria').value;
+  const subcategoria=document.getElementById('cc-subcategoria').value;
+  const gastoTipo=document.getElementById('cc-gasto-tipo').value;
   const val=parseFloat(document.getElementById('cc-val').value);
   const card=selectedCard();
   if(!card){alert('Escolha o cartão usado na compra.');return;}
-  if(!desc||isNaN(val)||val<=0){alert('Preencha todos os campos.');return;}
+  if(!desc||isNaN(val)||val<=0||!categoria||!subcategoria||!gastoTipo){alert('Preencha descrição, categoria, subcategoria, tipo de gasto e valor.');return;}
   const vencDia=card.dueDay;
   const n=tipo==='parcelado'?parseInt(document.getElementById('cc-parcelas').value):1;
   const primeiraParcela=dueDateFor(new Date(data+'T12:00:00'),vencDia,0);
-  S.cartao.push({id:Date.now(),data,desc,tipo,val,parcelas:n,vencDia,cardId:card.id,banco:card.bank,cardColor:card.color});
+  S.cartao.push({id:Date.now(),data,desc,tipo,val,parcelas:n,vencDia,cardId:card.id,banco:card.bank,cardColor:card.color,categoria,subcategoria,gastoTipo});
   extratoMes=new Date(primeiraParcela.getFullYear(),primeiraParcela.getMonth(),1);
   cartaoMes=new Date(primeiraParcela.getFullYear(),primeiraParcela.getMonth(),1);
   document.getElementById('cc-desc').value='';
   document.getElementById('cc-val').value='';
+  document.getElementById('cc-categoria').value='';
+  document.getElementById('cc-subcategoria').innerHTML='<option value="">Selecione subcategoria</option>';
+  document.getElementById('cc-gasto-tipo').value='';
   document.getElementById('cc-preview').textContent='';
   renderCartao();renderExtrato();updateResumo();
 }
@@ -855,6 +909,9 @@ function getParcelasCartao(){
         data:isoDate(venc.getFullYear(),venc.getMonth(),venc.getDate()),
         desc:(n>1?`Parcela ${i+1}/${n} - `:'Cartão - ')+c.desc+(c.banco?' ('+c.banco+')':''),
         tipo:'cartao',
+        categoria:c.categoria||'Cartão',
+        subcategoria:c.subcategoria||c.desc,
+        gastoTipo:c.gastoTipo||'',
         val:parc,
         auto:true
       });
@@ -919,7 +976,8 @@ function renderCartao(){
       const tipoLabel=r.tipo==='parcelado'?'Parcelado':'À vista';
       const venc='dia '+(r.vencDia||10);
       const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${desc}</td><td><span class="badge b-compra">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="delCC(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
+      const cat=`${r.subcategoria||'Sem categoria'}${r.gastoTipo?' · '+(r.gastoTipo==='fixo'?'fixo':'variável'):''}`;
+      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${desc}<div style="font-size:11px;color:var(--color-text-secondary)">${cat}</div></td><td><span class="badge b-compra">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="delCC(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
     }).join('')+'</tbody></table>';
 }
 
@@ -1314,8 +1372,7 @@ function updateResumo(){
     if(x.tipo==='saida')addGroup(saidaCat,x.subcategoria||x.categoria||'Saída',x.val);
   });
   getParcelasCartao().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>{
-    const compra=x.desc.replace(/^Parcela \d+\/\d+ - /,'').replace(/^Cartão - /,'');
-    addGroup(cartaoCat,compra,x.val);
+    addGroup(cartaoCat,x.subcategoria||x.categoria||'Cartão',x.val);
   });
   S.extrato.filter(x=>x.tipo==='investimento'&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(investCat,x.subcategoria||x.categoria||'Investimento',x.val));
   S.extrato.filter(x=>x.tipo==='meta'&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(metaCat,x.subcategoria||x.categoria||'Meta',x.val));
@@ -1330,11 +1387,12 @@ function updateResumo(){
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <h3>Extrato do mês - ${monthLabel}</h3>
+          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('extrato')">${resumoCharts.extrato?'−':'+'}</button><h3>Extrato do mês - ${monthLabel}</h3></div>
           <p>Entradas e saídas separadas por categoria para bater o olho e entender.</p>
         </div>
         <div class="chart-total">${resumoGeral}: ${fmt(Math.abs(saldo))}</div>
       </div>
+      ${resumoCharts.extrato?`
       <div class="month-message">
         <strong>${topText(saidaItems,'Ainda não teve saída no extrato neste mês.','Você gastou mais com')}</strong>
         <span>${topText(entradaItems,'Ainda não teve entrada no extrato neste mês.','Você recebeu mais por')}</span>
@@ -1343,29 +1401,33 @@ function updateResumo(){
         <div class="plain-card"><strong>Entradas por categoria</strong>${renderBarList(entradaItems,'#1D9E75','Nenhuma entrada neste mês.')}</div>
         <div class="plain-card"><strong>Saídas por categoria</strong>${renderBarList(saidaItems,'#E24B4A','Nenhuma saída direta neste mês.')}</div>
       </div>
+      `:''}
     </div>
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <h3>Cartão de crédito</h3>
+          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('cartao')">${resumoCharts.cartao?'−':'+'}</button><h3>Cartão de crédito</h3></div>
           <p>Parcelas e compras do cartão que vencem em ${monthLabel}.</p>
         </div>
         <div class="chart-total">${fmt(ccMes)}</div>
       </div>
+      ${resumoCharts.cartao?`
       <div class="month-message">
         <strong>${topText(cartaoItems,'Nenhuma parcela de cartão neste mês.','O cartão pesou mais com')}</strong>
         <span>Esses valores entram como saída no resumo.</span>
       </div>
       ${renderBarList(cartaoItems,'#BA7517','Nenhuma parcela de cartão neste mês.')}
+      `:''}
     </div>
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <h3>Investimentos</h3>
+          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('invest')">${resumoCharts.invest?'−':'+'}</button><h3>Investimentos</h3></div>
           <p>Onde o dinheiro foi separado para o futuro neste mês.</p>
         </div>
         <div class="chart-total">${fmt(investido)}</div>
       </div>
+      ${resumoCharts.invest?`
       <div class="month-message">
         <strong>${topText(investItems,'Nenhum investimento neste mês.','Você investiu mais em')}</strong>
         <span>Separado por tipo de aplicação.</span>
@@ -1374,15 +1436,17 @@ function updateResumo(){
       <div class="plain-summary">
         <div class="plain-card"><strong>Total investido: ${fmt(investido)}</strong><span>Esse valor também reduz o saldo disponível.</span></div>
       </div>
+      `:''}
     </div>
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <h3>Metas</h3>
+          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('metas')">${resumoCharts.metas?'−':'+'}</button><h3>Metas</h3></div>
           <p>Dinheiro guardado para objetivos cadastrados neste mês.</p>
         </div>
         <div class="chart-total">${fmt(metas)}</div>
       </div>
+      ${resumoCharts.metas?`
       <div class="month-message">
         <strong>${topText(metaItems,'Nenhuma meta recebeu dinheiro neste mês.','Você guardou mais para')}</strong>
         <span>Mostra para quais metas o dinheiro foi separado.</span>
@@ -1391,6 +1455,7 @@ function updateResumo(){
       <div class="plain-summary">
         <div class="plain-card"><strong>Total em metas: ${fmt(metas)}</strong><span>Esse valor também reduz o saldo disponível.</span></div>
       </div>
+      `:''}
     </div>`;
   saveData();
 }
@@ -1399,6 +1464,7 @@ document.querySelectorAll('input[type="date"]').forEach(el=>el.value=today());
 document.getElementById('today-label').textContent=todayText();
 document.getElementById('cc-data').value=today();
 updateCategories();
+updateCartaoCategories();
 toggleSaidaCampos();
 setupCollapsibleForms();
 renderRegisteredCards();
