@@ -130,6 +130,10 @@ td:last-child{white-space:normal}
 .compact-summary .plain-card span{font-size:11px;line-height:1.25;text-align:right;max-width:52%}
 .summary-toggle{width:100%;background:#171716;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:.65rem .75rem;margin:.55rem 0 .6rem;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;cursor:pointer}
 .summary-toggle span:last-child{color:#9FE1CB;font-size:16px}
+.extract-section{margin-top:1rem}
+.extract-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:.35rem;font-size:12px;font-weight:800;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em}
+.extract-title span:last-child{font-size:12px;color:var(--color-text-primary);text-transform:none;letter-spacing:0}
+.extract-note{font-size:12px;color:var(--color-text-secondary);margin:-.15rem 0 .45rem}
 .bank-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:1rem}
 .bank-card{border-radius:var(--border-radius-md);padding:.8rem;min-height:88px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 -24px 70px rgba(0,0,0,.2)}
 .bank-card::after{content:"";position:absolute;right:-20px;bottom:-30px;width:94px;height:94px;border-radius:50%;background:rgba(255,255,255,.14)}
@@ -137,7 +141,7 @@ td:last-child{white-space:normal}
 .bank-card .bank-due{font-size:11px;position:relative;z-index:1;opacity:.9}
 .bank-card .bank-chip{width:30px;height:21px;border-radius:6px;background:rgba(255,255,255,.72);margin-bottom:8px;position:relative;z-index:1}
 .bank-card .del{position:absolute;right:8px;top:8px;color:#fff;background:rgba(0,0,0,.18)}
-.goal-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:10px}
+.goal-list{display:grid;grid-template-columns:1fr;gap:10px}
 .goal-card{background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:1rem;min-width:0}
 .goal-card h3{font-size:15px;margin-bottom:4px}
 .goal-top{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px;align-items:start;margin-bottom:.75rem}
@@ -151,7 +155,7 @@ td:last-child{white-space:normal}
 .goal-panel button{width:100%;background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:8px;font-size:12px;cursor:pointer}
 .goal-panel button:hover{border-color:#9FE1CB}
 .history-head{display:grid;grid-template-columns:1fr;gap:8px;align-items:center;margin-bottom:.6rem}
-.history-row{display:grid;grid-template-columns:64px minmax(0,1fr) 96px 24px;gap:8px;align-items:center;border-top:1px solid #31302c;padding:.5rem 0;font-size:12px}
+.history-row{display:grid;grid-template-columns:64px minmax(180px,1fr) 110px 24px;gap:10px;align-items:center;border-top:1px solid #31302c;padding:.65rem 0;font-size:12px}
 .history-row strong,.history-kind{overflow-wrap:anywhere}
 .history-kind{color:var(--color-text-secondary)}
 .history-value{text-align:right;font-weight:800}
@@ -411,7 +415,7 @@ const CATEGORIAS={
   entrada:{
     'Trabalho':['Salário','Freelance','Comissão','Hora extra','Bônus','Décimo terceiro'],
     'Renda extra':['Venda de produtos','Venda online','Artesanato','Delivery','Motorista de aplicativo','Afiliados','Criação de conteúdo','Aulas particulares','Consultoria'],
-    'Benefícios':['Vale alimentação','Vale refeição','Auxílio','Bolsa','Pensão','Aposentadoria'],
+    'Benefícios':['Vale alimentação','Vale refeição','Vale transporte','Auxílio','Bolsa','Pensão','Aposentadoria'],
     'Outras entradas':['Presentes em dinheiro','Reembolso','Pix recebido','Cashback','Restituição']
   },
   saida:{
@@ -1188,21 +1192,27 @@ function changeInvestChartPeriod(id,periodo){
 function saveInvestUpdate(id){
   const item=S.invest.find(x=>x.id===id);
   if(!item)return;
+  if(item.kind==='meta'){
+    alert('A meta atualiza pelo rendimento do investimento onde o dinheiro estÃ¡ guardado.');
+    return;
+  }
   const val=parseFloat(document.getElementById('update-val-'+id).value);
   const data=document.getElementById('update-data-'+id).value||today();
   if(isNaN(val)||val<0){alert('Informe o valor atual.');return;}
   const valorAnterior=Number(item.valorAtual||0);
-  const storage=item.kind==='meta'?getMetaStorage(item):null;
+  const fatorAtualizacao=valorAnterior>0?val/valorAnterior:1;
   item.valorAtual=val;
   const histId=Date.now();
-  ensureInvestHistory(item).push({id:histId+'-hist',tipo:'atualizacao',data,valor:val,saldo:item.valorAtual,storageId:storage?storage.id:null,storageNome:storage?storage.nome:''});
+  ensureInvestHistory(item).push({id:histId+'-hist',tipo:'atualizacao',data,valor:val,saldo:item.valorAtual});
   recalcInvestFromHistory(item);
-  if(storage){
-    const novoValorStorage=Math.max(0,Number(storage.valorAtual||0)+(val-valorAnterior));
-    ensureInvestHistory(storage).push({id:histId+'-storage-hist',tipo:'atualizacao',data,valor:novoValorStorage,saldo:novoValorStorage,metaId:item.id,metaNome:item.nome});
-    recalcInvestFromHistory(storage);
-    investUi.historico[storage.id]=true;
-    investUi.mes[storage.id]=data.slice(0,7);
+  if(valorAnterior>0&&val!==valorAnterior){
+    S.invest.filter(x=>x.kind==='meta'&&x.storageId===item.id&&Number(x.valorAtual||0)>0).forEach(meta=>{
+      const metaNovoValor=Number((Number(meta.valorAtual||0)*fatorAtualizacao).toFixed(2));
+      ensureInvestHistory(meta).push({id:histId+'-meta-'+meta.id,tipo:'atualizacao',data,valor:metaNovoValor,saldo:metaNovoValor,storageId:item.id,storageNome:item.nome});
+      recalcInvestFromHistory(meta);
+      investUi.historico[meta.id]=true;
+      investUi.mes[meta.id]=data.slice(0,7);
+    });
   }
   investUi.acao[id]='';
   investUi.historico[id]=true;
@@ -1341,17 +1351,37 @@ function renderExtrato(){
   </div>`;
   const resumo=`<button class="summary-toggle" onclick="toggleExtratoResumo()"><span>Resumo do mês</span><span>${extratoResumoAberto?'−':'+'}</span></button>${extratoResumoAberto?resumoDetalhe:''}`;
   if(!rows.length){wrap.innerHTML=resumo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
-  wrap.innerHTML=resumo+aviso+'<table><thead><tr><th style="width:64px">Data</th><th>Descrição</th><th style="width:130px">Categoria</th><th style="width:62px">Tipo</th><th style="width:86px">Valor</th><th style="width:22px"></th></tr></thead><tbody>'+
-    rows.map(r=>{
+  const hoje=new Date(today()+'T12:00:00');
+  function renderGrupo(titulo,lista,emptyText,nota){
+    const total=lista.reduce((s,r)=>s+r.val,0);
+    if(!lista.length)return `<div class="extract-section"><div class="extract-title"><span>${titulo}</span><span>${fmt(0)}</span></div><div class="empty">${emptyText}</div></div>`;
+    return `<div class="extract-section">
+      <div class="extract-title"><span>${titulo}</span><span>${fmt(total)}</span></div>
+      ${nota?`<div class="extract-note">${nota}</div>`:''}
+      <table><thead><tr><th style="width:64px">Data</th><th>Descrição</th><th style="width:130px">Categoria</th><th style="width:70px">Status</th><th style="width:86px">Valor</th><th style="width:22px"></th></tr></thead><tbody>`+
+      lista.map(r=>{
       const d=new Date(r.data+'T12:00:00');
       const bc=r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
-      const tipoLabel=r.tipo==='cartao'?'parcela':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
+      const futuro=d>hoje;
+      const tipoLabel=r.tipo==='cartao'?(futuro?'futuro':'parcela'):r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
       const color=r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#BA7517':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
       const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
-      const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${r.storageNome}</div>`:'';
+      const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${r.storageNome}</div>`:r.tipo==='cartao'&&futuro?`<div style="font-size:11px;color:var(--color-text-secondary)">Ainda vai vencer neste mês.</div>`:'';
       return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.desc||'-'}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${categoria}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
-    }).join('')+'</tbody></table>';
+    }).join('')+'</tbody></table></div>';
+  }
+  const entradasRows=rows.filter(r=>r.tipo==='entrada');
+  const saidasRows=rows.filter(r=>r.tipo==='saida');
+  const cartaoRows=rows.filter(r=>r.tipo==='cartao');
+  const investRows=rows.filter(r=>r.tipo==='investimento');
+  const metaRows=rows.filter(r=>r.tipo==='meta');
+  wrap.innerHTML=resumo+aviso+
+    renderGrupo('Entradas',entradasRows,'Nenhuma entrada neste mês.','Dinheiro que entrou.')+
+    renderGrupo('Saídas',saidasRows,'Nenhuma saída direta neste mês.','Gastos pagos direto, sem cartão.')+
+    renderGrupo('Cartão de crédito',cartaoRows,'Nenhuma parcela de cartão neste mês.','Parcelas aparecem pela data de vencimento. Se ainda não venceu, aparece como futuro.')+
+    renderGrupo('Investimentos',investRows,'Nenhum dinheiro enviado para investimento neste mês.','Dinheiro separado para investimentos.')+
+    renderGrupo('Metas',metaRows,'Nenhum dinheiro guardado em metas neste mês.','Dinheiro separado para objetivos cadastrados.');
 }
 
 function renderInvest(){
@@ -1408,7 +1438,7 @@ function renderDestinoCard(item){
           <div class="history-value" style="color:#2378D4">${fmt(saldoAnterior)}</div>
           <span></span>
         </div>`:'';
-  const painelAcao=acao==='atualizar'?`
+  const painelAcao=acao==='atualizar'&&item.kind==='investimento'?`
     <div class="goal-panel">
       <div class="goal-panel-title">Atualizar valor do mês atual</div>
       <div class="row row2">
@@ -1472,11 +1502,11 @@ function renderDestinoCard(item){
     </div>
     <div class="plain-summary">
       <div class="plain-card"><strong>Atual: ${fmt(item.valorAtual)}</strong><span>Valor que existe hoje.</span></div>
-      <div class="plain-card"><strong>Rendeu no mês: ${fmt(resultadoMes.rendimento)}</strong><span>${resultadoMes.pct.toFixed(1).replace('.',',')}% comparando com o mês anterior.</span></div>
+      <div class="plain-card"><strong>Rendeu no mês: ${fmt(resultadoMes.rendimento)}</strong><span>${item.kind==='meta'?'Calculado pelo rendimento do investimento onde a meta estÃ¡ guardada.':resultadoMes.pct.toFixed(1).replace('.',',')+'% comparando com o mês anterior.'}</span></div>
     </div>
     ${progresso}
     <div class="goal-actions">
-      <button onclick="toggleInvestAction(${item.id},'atualizar')">Atualizar valor</button>
+      ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'atualizar')">Atualizar valor</button>`:''}
       <button onclick="toggleInvestAction(${item.id},'resgatar')">Resgatar</button>
       <button onclick="toggleInvestHistory(${item.id})">${historicoAberto?'Fechar hist.':'Histórico'}</button>
       <button onclick="toggleInvestChart(${item.id})">${graficoAberto?'Fechar gráfico':'Gráfico'}</button>
