@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -372,6 +371,9 @@ td:last-child{white-space:normal}
     <div class="add-form">
       <div class="row row1"><input type="text" id="meta-desc" placeholder="Nome da meta (ex: computador, viagem, reserva)" maxlength="40"/></div>
       <div class="row row1"><input type="number" id="meta-val" placeholder="Valor da meta (R$)" min="0" step="0.01"/></div>
+      <div class="row row1">
+        <select id="meta-invest-dest"><option value="">Onde esse dinheiro vai ficar?</option></select>
+      </div>
       <button class="btn-green" onclick="addMeta()"><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar meta</button>
     </div>
     <div class="cards">
@@ -448,6 +450,7 @@ function applyDataFile(data){
     S[key]=Array.isArray(dados[key])?dados[key]:[];
   });
   renderInvestDestinationOptions();
+  renderMetaInvestOptions();
   updateCategories();
   renderRegisteredCards();
   renderCartao();
@@ -746,7 +749,22 @@ function renderInvestDestinationOptions(){
   const tipo=document.getElementById('ext-tipo')?document.getElementById('ext-tipo').value:'';
   const lista=(tipo==='investimento'||tipo==='meta')?S.invest.filter(i=>i.kind===tipo):S.invest;
   const label=tipo==='meta'?'Escolha a meta':tipo==='investimento'?'Escolha o investimento':'Escolha o destino';
-  select.innerHTML='<option value="">'+label+'</option>'+lista.map(i=>`<option value="${i.id}">${i.nome}${i.kind==='investimento'?' - '+i.tipo:''}</option>`).join('');
+  select.innerHTML='<option value="">'+label+'</option>'+lista.map(i=>{
+    const storage=getMetaStorage(i);
+    const extra=i.kind==='investimento'?' - '+i.tipo:(storage?' - guardado em '+storage.nome:'');
+    return `<option value="${i.id}">${i.nome}${extra}</option>`;
+  }).join('');
+}
+
+function renderMetaInvestOptions(){
+  const select=document.getElementById('meta-invest-dest');
+  if(!select)return;
+  const investimentos=S.invest.filter(i=>i.kind==='investimento');
+  select.innerHTML='<option value="">Onde esse dinheiro vai ficar?</option>'+investimentos.map(i=>`<option value="${i.id}">${i.nome} - ${i.tipo}</option>`).join('');
+}
+
+function getMetaStorage(item){
+  return item&&item.storageId?S.invest.find(i=>i.id===item.storageId&&i.kind==='investimento'):null;
 }
 
 function updatePreview(){
@@ -799,11 +817,18 @@ function addExtrato(){
     const dest=S.invest.find(i=>i.id===investDestId);
     if(!dest||dest.kind!==tipo||isNaN(val)||val<=0){alert('Escolha '+(tipo==='meta'?'a meta':'o investimento')+' e informe o valor.');return;}
     const extId=Date.now();
+    const storage=tipo==='meta'?getMetaStorage(dest):null;
     dest.valorAtual+=val;
     dest.totalAportado+=val;
-    ensureInvestHistory(dest).push({id:extId+'-hist',tipo:'aporte',data,valor:val,saldo:dest.valorAtual,extId});
+    ensureInvestHistory(dest).push({id:extId+'-hist',tipo:'aporte',data,valor:val,saldo:dest.valorAtual,extId,storageId:storage?storage.id:null,storageNome:storage?storage.nome:''});
     recalcInvestFromHistory(dest);
-    S.extrato.push({id:extId,data,desc:(tipo==='meta'?'Meta - ':'Investimento - ')+dest.nome,tipo,categoria:tipo==='meta'?'Meta':'Investimento',subcategoria:dest.nome,val,destId:dest.id});
+    if(storage){
+      storage.valorAtual+=val;
+      storage.totalAportado+=val;
+      ensureInvestHistory(storage).push({id:extId+'-storage-hist',tipo:'aporte',data,valor:val,saldo:storage.valorAtual,extId,metaId:dest.id,metaNome:dest.nome});
+      recalcInvestFromHistory(storage);
+    }
+    S.extrato.push({id:extId,data,desc:(tipo==='meta'?'Meta - ':'Investimento - ')+dest.nome,tipo,categoria:tipo==='meta'?'Meta':'Investimento',subcategoria:dest.nome,val,destId:dest.id,storageId:storage?storage.id:null,storageNome:storage?storage.nome:''});
     document.getElementById('ext-desc').value='';
     document.getElementById('ext-val').value='';
     document.getElementById('ext-invest-dest').value='';
@@ -854,18 +879,22 @@ function addInvest(){
   const nome=desc||tipo;
   S.invest.push({id:Date.now(),kind:'investimento',nome,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[]});
   document.getElementById('inv-desc').value='';
-  renderInvestDestinationOptions();renderInvest();updateCategories();updateResumo();
+  renderInvestDestinationOptions();renderMetaInvestOptions();renderInvest();updateCategories();updateResumo();
 }
 
 function addMeta(){
   const desc=document.getElementById('meta-desc').value.trim();
   const meta=parseFloat(document.getElementById('meta-val').value)||0;
+  const storageId=parseInt(document.getElementById('meta-invest-dest').value);
+  const storage=S.invest.find(i=>i.id===storageId&&i.kind==='investimento');
   if(!desc){alert('Informe o nome da meta.');return;}
   if(meta<=0){alert('Informe o valor da meta.');return;}
-  S.invest.push({id:Date.now(),kind:'meta',nome:desc,tipo:'Meta',meta,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[]});
+  if(!storage){alert('Escolha onde o dinheiro dessa meta vai ficar. Se ainda nÃ£o tiver, cadastre um investimento primeiro.');return;}
+  S.invest.push({id:Date.now(),kind:'meta',nome:desc,tipo:'Meta',meta,storageId:storage.id,storageNome:storage.nome,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[]});
   document.getElementById('meta-desc').value='';
   document.getElementById('meta-val').value='';
-  renderInvestDestinationOptions();renderMetas();updateCategories();updateResumo();
+  document.getElementById('meta-invest-dest').value='';
+  renderInvestDestinationOptions();renderMetaInvestOptions();renderMetas();updateCategories();updateResumo();
 }
 
 function getMesMap(){
@@ -974,11 +1003,10 @@ function delCC(id){S.cartao=S.cartao.filter(x=>x.id!==id);renderCartao();renderE
 function delExt(id){
   const row=S.extrato.find(x=>x.id===id);
   if(row&&row.destId){
-    const item=S.invest.find(i=>i.id===row.destId);
-    if(item){
+    S.invest.forEach(item=>{
       item.historico=ensureInvestHistory(item).filter(h=>h.extId!==id);
       recalcInvestFromHistory(item);
-    }
+    });
   }
   S.extrato=S.extrato.filter(x=>x.id!==id);
   renderInvest();renderMetas();renderExtrato();updateResumo();
@@ -998,6 +1026,17 @@ function delInv(id){
       : `${tipo.charAt(0).toUpperCase()+tipo.slice(1)} já tem dinheiro, histórico ou lançamentos ligados.\n\nSe excluir, a pessoa pode perder o progresso desse ${alvo}.\n\nTem certeza que deseja excluir?`;
     if(!confirm(msg))return;
   }
+  const linkedExtIds=S.extrato.filter(x=>x.destId===id).map(x=>x.id);
+  S.invest.forEach(x=>{
+    if(x.id!==id&&linkedExtIds.length){
+      x.historico=ensureInvestHistory(x).filter(h=>!linkedExtIds.includes(h.extId));
+      recalcInvestFromHistory(x);
+    }
+    if(x.kind==='meta'&&x.storageId===id){
+      x.storageId=null;
+      x.storageNome='';
+    }
+  });
   S.invest=S.invest.filter(x=>x.id!==id);
   S.extrato=S.extrato.filter(x=>x.destId!==id);
   delete investUi.acao[id];
@@ -1006,6 +1045,7 @@ function delInv(id){
   delete investUi.mes[id];
   delete investUi.periodo[id];
   renderInvestDestinationOptions();
+  renderMetaInvestOptions();
   renderInvest();
   renderMetas();
   renderExtrato();
@@ -1063,6 +1103,7 @@ function calcInvestMonthResult(item,mes){
 
 function refreshInvestViews(){
   S.invest.forEach(recalcInvestFromHistory);
+  renderMetaInvestOptions();
   renderInvest();
   renderMetas();
   renderExtrato();
@@ -1117,11 +1158,18 @@ function saveInvestResgate(id){
   if(isNaN(val)||val<=0){alert('Informe o valor do resgate.');return;}
   const resgate=Math.min(val,item.valorAtual);
   const extId=Date.now();
+  const storage=item.kind==='meta'?getMetaStorage(item):null;
   item.valorAtual-=resgate;
   item.totalResgatado+=resgate;
-  ensureInvestHistory(item).push({id:extId+'-hist',tipo:'resgate',data,valor:resgate,saldo:item.valorAtual,extId});
+  ensureInvestHistory(item).push({id:extId+'-hist',tipo:'resgate',data,valor:resgate,saldo:item.valorAtual,extId,storageId:storage?storage.id:null,storageNome:storage?storage.nome:''});
   recalcInvestFromHistory(item);
-  S.extrato.push({id:extId,data,desc:'Resgate - '+item.nome,tipo:'entrada',categoria:'Resgate',subcategoria:item.nome,val:resgate,destId:item.id});
+  if(storage){
+    storage.valorAtual-=resgate;
+    storage.totalResgatado+=resgate;
+    ensureInvestHistory(storage).push({id:extId+'-storage-hist',tipo:'resgate',data,valor:resgate,saldo:storage.valorAtual,extId,metaId:item.id,metaNome:item.nome});
+    recalcInvestFromHistory(storage);
+  }
+  S.extrato.push({id:extId,data,desc:'Resgate - '+item.nome,tipo:'entrada',categoria:'Resgate',subcategoria:item.nome,val:resgate,destId:item.id,storageId:storage?storage.id:null,storageNome:storage?storage.nome:''});
   investUi.acao[id]='';
   investUi.historico[id]=true;
   investUi.mes[id]=data.slice(0,7);
@@ -1133,9 +1181,16 @@ function delInvestHistory(itemId,histId){
   if(!item)return;
   const hist=ensureInvestHistory(item);
   const mov=hist.find(h=>String(h.id)===String(histId));
-  item.historico=hist.filter(h=>String(h.id)!==String(histId));
-  if(mov&&mov.extId)S.extrato=S.extrato.filter(x=>x.id!==mov.extId);
-  recalcInvestFromHistory(item);
+  if(mov&&mov.extId){
+    S.invest.forEach(dest=>{
+      dest.historico=ensureInvestHistory(dest).filter(h=>h.extId!==mov.extId);
+      recalcInvestFromHistory(dest);
+    });
+    S.extrato=S.extrato.filter(x=>x.id!==mov.extId);
+  }else{
+    item.historico=hist.filter(h=>String(h.id)!==String(histId));
+    recalcInvestFromHistory(item);
+  }
   refreshInvestViews();
 }
 
@@ -1235,7 +1290,8 @@ function renderExtrato(){
       const color=r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#BA7517':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
       const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">${r.desc||'-'}</td><td style="font-size:11px;color:var(--color-text-secondary)">${categoria}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
+      const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${r.storageNome}</div>`:'';
+      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">${r.desc||'-'}${detalhe}</td><td style="font-size:11px;color:var(--color-text-secondary)">${categoria}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
     }).join('')+'</tbody></table>';
 }
 
@@ -1274,7 +1330,8 @@ function renderMetas(){
 function renderDestinoCard(item){
   recalcInvestFromHistory(item);
   const metaPct=item.meta>0?Math.min(100,item.valorAtual/item.meta*100):0;
-  const subtitulo=item.kind==='meta'?'Meta':'Investimento - '+item.tipo;
+  const storage=getMetaStorage(item);
+  const subtitulo=item.kind==='meta'?'Meta'+(storage?' - guardado em '+storage.nome:(item.storageNome?' - guardado em '+item.storageNome:'')):'Investimento - '+item.tipo;
   const acao=investUi.acao[item.id]||'';
   const historicoAberto=!!investUi.historico[item.id];
   const graficoAberto=!!investUi.grafico[item.id];
@@ -1306,12 +1363,13 @@ function renderDestinoCard(item){
       </div>
       ${historicoMes.length?historicoMes.map(h=>{
         const d=new Date(h.data+'T12:00:00');
-        const nome=h.tipo==='aporte'?'Entrada investida':h.tipo==='resgate'?'Resgate':'Valor atualizado';
+        const nome=h.metaNome?'Meta - '+h.metaNome:(h.tipo==='aporte'?'Entrada investida':h.tipo==='resgate'?'Resgate':'Valor atualizado');
         const sinal=h.tipo==='resgate'?'-':h.tipo==='aporte'?'+':'';
         const cor=h.tipo==='resgate'?'#A32D2D':h.tipo==='aporte'?'#1D9E75':'#2378D4';
+        const extra=h.storageNome?'Guardado em '+h.storageNome:'Saldo: '+fmt(h.saldo||0);
         return `<div class="history-row">
           <div>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</div>
-          <div><strong>${nome}</strong><div class="history-kind">Saldo: ${fmt(h.saldo||0)}</div></div>
+          <div><strong>${nome}</strong><div class="history-kind">${extra}</div></div>
           <div class="history-value" style="color:${cor}">${sinal}${fmt(h.valor||0)}</div>
           <button class="del" onclick="delInvestHistory(${item.id},'${h.id}')" aria-label="Remover movimento"><i class="ti ti-x" aria-hidden="true"></i></button>
         </div>`;
@@ -1485,6 +1543,7 @@ updateCartaoCategories();
 toggleSaidaCampos();
 setupCollapsibleForms();
 renderRegisteredCards();
+renderMetaInvestOptions();
 renderInvest();
 renderMetas();
 updateResumo();
