@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -983,8 +984,27 @@ function delExt(id){
   renderInvest();renderMetas();renderExtrato();updateResumo();
 }
 function delInv(id){
+  const item=S.invest.find(x=>x.id===id);
+  if(!item)return;
+  const hist=ensureInvestHistory(item);
+  const temLancamentos=S.extrato.some(x=>x.destId===id);
+  const temProgresso=Number(item.valorAtual||0)>0||Number(item.totalAportado||0)>0||Number(item.totalResgatado||0)>0||hist.length>0||temLancamentos;
+  if(temProgresso){
+    const tipo=item.kind==='meta'?'esta meta':'este investimento';
+    const alvo=item.kind==='meta'?'meta':'investimento';
+    const concluida=item.kind==='meta'&&Number(item.meta||0)>0&&Number(item.valorAtual||0)>=Number(item.meta||0);
+    const msg=concluida
+      ? `Esta meta já tem progresso e parece estar concluída.\n\nSe excluir, o histórico e os lançamentos ligados a ela serão apagados.\n\nTem certeza que deseja excluir esta meta?`
+      : `${tipo.charAt(0).toUpperCase()+tipo.slice(1)} já tem dinheiro, histórico ou lançamentos ligados.\n\nSe excluir, a pessoa pode perder o progresso desse ${alvo}.\n\nTem certeza que deseja excluir?`;
+    if(!confirm(msg))return;
+  }
   S.invest=S.invest.filter(x=>x.id!==id);
   S.extrato=S.extrato.filter(x=>x.destId!==id);
+  delete investUi.acao[id];
+  delete investUi.historico[id];
+  delete investUi.grafico[id];
+  delete investUi.mes[id];
+  delete investUi.periodo[id];
   renderInvestDestinationOptions();
   renderInvest();
   renderMetas();
