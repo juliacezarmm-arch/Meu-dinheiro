@@ -129,12 +129,12 @@ td:last-child{white-space:normal}
 .compact-summary .plain-card span{font-size:11px;line-height:1.25;text-align:right;max-width:52%}
 .summary-toggle{width:100%;background:#171716;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:.65rem .75rem;margin:.55rem 0 .6rem;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;cursor:pointer}
 .summary-toggle span:last-child{color:#9FE1CB;font-size:16px}
-.bank-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:1rem}
-.bank-card{border-radius:var(--border-radius-lg);padding:1rem;min-height:104px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 -28px 80px rgba(0,0,0,.2)}
-.bank-card::after{content:"";position:absolute;right:-22px;bottom:-28px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.14)}
-.bank-card .bank-name{font-size:17px;font-weight:800;margin-bottom:20px;position:relative;z-index:1}
-.bank-card .bank-due{font-size:12px;position:relative;z-index:1;opacity:.9}
-.bank-card .bank-chip{width:34px;height:24px;border-radius:6px;background:rgba(255,255,255,.72);margin-bottom:10px;position:relative;z-index:1}
+.bank-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:1rem}
+.bank-card{border-radius:var(--border-radius-md);padding:.8rem;min-height:88px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 -24px 70px rgba(0,0,0,.2)}
+.bank-card::after{content:"";position:absolute;right:-20px;bottom:-30px;width:94px;height:94px;border-radius:50%;background:rgba(255,255,255,.14)}
+.bank-card .bank-name{font-size:15px;font-weight:800;margin-bottom:15px;position:relative;z-index:1}
+.bank-card .bank-due{font-size:11px;position:relative;z-index:1;opacity:.9}
+.bank-card .bank-chip{width:30px;height:21px;border-radius:6px;background:rgba(255,255,255,.72);margin-bottom:8px;position:relative;z-index:1}
 .bank-card .del{position:absolute;right:8px;top:8px;color:#fff;background:rgba(0,0,0,.18)}
 .goal-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 .goal-card{background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:1rem}
@@ -1320,7 +1320,7 @@ function renderExtrato(){
   </div>`;
   const resumo=`<button class="summary-toggle" onclick="toggleExtratoResumo()"><span>Resumo do mês: ${fmt(resumoTotal)}</span><span>${extratoResumoAberto?'−':'+'}</span></button>${extratoResumoAberto?resumoDetalhe:''}`;
   if(!rows.length){wrap.innerHTML=resumo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
-  wrap.innerHTML=resumo+aviso+'<table><thead><tr><th style="width:70px">Data</th><th>Descrição</th><th style="width:95px">Categoria</th><th style="width:70px">Tipo</th><th style="width:90px">Valor</th><th style="width:24px"></th></tr></thead><tbody>'+
+  wrap.innerHTML=resumo+aviso+'<table><thead><tr><th style="width:64px">Data</th><th>Descrição</th><th style="width:130px">Categoria</th><th style="width:62px">Tipo</th><th style="width:86px">Valor</th><th style="width:22px"></th></tr></thead><tbody>'+
     rows.map(r=>{
       const d=new Date(r.data+'T12:00:00');
       const bc=r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
@@ -1329,7 +1329,7 @@ function renderExtrato(){
       const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
       const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${r.storageNome}</div>`:'';
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">${r.desc||'-'}${detalhe}</td><td style="font-size:11px;color:var(--color-text-secondary)">${categoria}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
+      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.desc||'-'}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${categoria}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
     }).join('')+'</tbody></table>';
 }
 
@@ -1496,6 +1496,11 @@ function updateResumo(){
   const investItems=objToItems(investCat,'#2378D4');
   const metaItems=objToItems(metaCat,'#1D9E75');
   const resumoGeral=saldo>=0?'sobrou':'faltou';
+  const extratoAviso=saidaItems.length
+    ? topText(saidaItems,'Ainda não teve saída no extrato neste mês.','Você gastou mais com')
+    : cartaoItems.length
+      ? topText(cartaoItems,'Ainda não teve cartão de crédito neste mês.','No cartão, pesou mais com')
+      : 'Ainda não teve saída no extrato nem parcela de cartão neste mês.';
   bars.innerHTML=`
     <div class="chart-panel">
       <div class="chart-head">
@@ -1507,12 +1512,13 @@ function updateResumo(){
       </div>
       ${resumoCharts.extrato?`
       <div class="month-message">
-        <strong>${topText(saidaItems,'Ainda não teve saída no extrato neste mês.','Você gastou mais com')}</strong>
+        <strong>${extratoAviso}</strong>
         <span>${topText(entradaItems,'Ainda não teve entrada no extrato neste mês.','Você recebeu mais por')}</span>
       </div>
       <div class="plain-summary">
         <div class="plain-card"><strong>Entradas por categoria</strong>${renderBarList(entradaItems,'#1D9E75','Nenhuma entrada neste mês.')}</div>
         <div class="plain-card"><strong>Saídas por categoria</strong>${renderBarList(saidaItems,'#E24B4A','Nenhuma saída direta neste mês.')}</div>
+        <div class="plain-card"><strong>Cartão de crédito por categoria</strong>${renderBarList(cartaoItems,'#BA7517','Nenhuma parcela de cartão neste mês.')}</div>
       </div>
       `:''}
     </div>
