@@ -289,7 +289,7 @@ td:last-child{white-space:normal}
           <option>Banco do Brasil</option><option>Caixa</option><option>Inter</option><option>C6 Bank</option>
           <option>BTG</option><option>PicPay</option><option>Mercado Pago</option><option>Outro</option>
         </select>
-        <input type="number" id="card-due-day" placeholder="O cartão vence dia" min="1" max="31"/>
+        <input type="text" id="card-due-day" placeholder="O cartão vence dia" inputmode="numeric" maxlength="2" pattern="[0-9]*"/>
       </div>
       <button class="btn-green" onclick="addRegisteredCard()"><i class="ti ti-plus" aria-hidden="true"></i> Registrar cartão</button>
     </div>
@@ -677,6 +677,11 @@ document.getElementById('cc-val').addEventListener('input',updatePreview);
 document.getElementById('cc-parcelas').addEventListener('change',updatePreview);
 document.getElementById('cc-data').addEventListener('change',updatePreview);
 document.getElementById('cc-card').addEventListener('change',updatePreview);
+document.getElementById('card-due-day').addEventListener('input',function(){
+  let value=this.value.replace(/\D/g,'').slice(0,2);
+  if(Number(value)>31)value='31';
+  this.value=value;
+});
 
 function selectedCard(){
   const id=parseInt(document.getElementById('cc-card').value);
@@ -685,8 +690,9 @@ function selectedCard(){
 
 function addRegisteredCard(){
   const bank=document.getElementById('card-bank').value;
-  const dueDay=Math.min(31,Math.max(1,parseInt(document.getElementById('card-due-day').value)||0));
-  if(!bank||!dueDay){alert('Escolha o banco e o dia de vencimento.');return;}
+  const rawDay=document.getElementById('card-due-day').value.replace(/\D/g,'');
+  const dueDay=parseInt(rawDay);
+  if(!bank||isNaN(dueDay)||dueDay<1||dueDay>31){alert('Escolha o banco e informe um dia de vencimento de 1 a 31.');return;}
   S.cartoes.push({id:Date.now(),bank,dueDay,color:BANK_COLORS[bank]||BANK_COLORS.Outro});
   document.getElementById('card-bank').value='';
   document.getElementById('card-due-day').value='';
