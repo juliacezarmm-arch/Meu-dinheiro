@@ -26,8 +26,8 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .nav button.active{color:var(--color-text-primary);border-bottom-color:#1D9E75;font-weight:500}
 .page{display:none;padding:1rem 1.25rem}
 .page.active{display:block}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem}
-.card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.875rem;text-align:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:1.25rem}
+.card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.75rem;text-align:center}
 .card .label{font-size:12px;color:var(--color-text-secondary);margin-bottom:5px}
 .card .value{font-size:18px;font-weight:500}
 .green{color:#0F6E56}.red{color:#A32D2D}.blue{color:#185FA5}.amber{color:#633806}
@@ -111,6 +111,10 @@ td:last-child{white-space:normal}
 .plain-card{background:#10100f;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.7rem}
 .plain-card strong{display:block;font-size:13px;margin-bottom:3px}
 .plain-card span{font-size:11px;color:var(--color-text-secondary);line-height:1.35}
+.compact-summary{grid-template-columns:1fr;gap:6px;margin-top:.55rem;margin-bottom:.75rem}
+.compact-summary .plain-card{padding:.6rem .75rem;min-height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left}
+.compact-summary .plain-card strong{font-size:13px;margin-bottom:0;white-space:nowrap}
+.compact-summary .plain-card span{font-size:11px;line-height:1.25;text-align:right;max-width:52%}
 .bank-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:1rem}
 .bank-card{border-radius:var(--border-radius-lg);padding:1rem;min-height:104px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 -28px 80px rgba(0,0,0,.2)}
 .bank-card::after{content:"";position:absolute;right:-22px;bottom:-28px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.14)}
@@ -121,10 +125,28 @@ td:last-child{white-space:normal}
 .goal-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 .goal-card{background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:1rem}
 .goal-card h3{font-size:15px;margin-bottom:4px}
+.goal-top{display:grid;grid-template-columns:1fr 150px;gap:10px;align-items:start;margin-bottom:.75rem}
 .goal-meta{font-size:12px;color:var(--color-text-secondary);margin-bottom:.75rem}
-.goal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.75rem}
-.goal-actions button{background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:8px;font-size:12px;cursor:pointer}
+.goal-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:.75rem}
+.goal-actions button{background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:7px 5px;font-size:11px;cursor:pointer;white-space:nowrap}
 .goal-actions button:hover{border-color:#9FE1CB}
+.goal-panel{margin-top:.75rem;background:#10100f;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.75rem}
+.goal-panel-title{font-size:12px;font-weight:800;margin-bottom:.55rem}
+.goal-panel .row{margin-bottom:8px}
+.goal-panel button{width:100%;background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:8px;font-size:12px;cursor:pointer}
+.goal-panel button:hover{border-color:#9FE1CB}
+.history-head{display:grid;grid-template-columns:1fr;gap:8px;align-items:center;margin-bottom:.6rem}
+.history-row{display:grid;grid-template-columns:74px 1fr 90px 24px;gap:8px;align-items:center;border-top:1px solid #31302c;padding:.5rem 0;font-size:12px}
+.history-kind{color:var(--color-text-secondary)}
+.history-value{text-align:right;font-weight:800}
+.mini-chart{display:grid;gap:8px}
+.mini-chart-row{display:grid;grid-template-columns:92px 1fr 86px;gap:8px;align-items:center;font-size:12px}
+.mini-chart-track{height:10px;background:#0d0d0c;border-radius:999px;overflow:hidden}
+.mini-chart-fill{height:100%;border-radius:999px;min-width:3px}
+.stock-chart{width:100%;height:170px;background:#0d0d0c;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.5rem}
+.stock-chart svg{width:100%;height:130px;display:block}
+.stock-chart-meta{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--color-text-secondary);margin-top:4px}
+.chart-options{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center;margin-bottom:.6rem}
 @media(max-width:520px){
   .chart-head{flex-direction:column}
   .chart-total{white-space:normal}
@@ -132,6 +154,14 @@ td:last-child{white-space:normal}
   .month-value{text-align:left;margin-left:19px}
   .month-switch{flex-wrap:wrap}
   .month-switch .current-month{order:-1;flex-basis:100%}
+  .compact-summary .plain-card{align-items:flex-start;flex-direction:column;gap:3px}
+  .compact-summary .plain-card span{text-align:left;max-width:none}
+  .history-head,.history-row{grid-template-columns:1fr}
+  .history-value{text-align:left}
+  .goal-top{grid-template-columns:1fr}
+  .goal-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mini-chart-row{grid-template-columns:1fr}
+  .chart-options{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -165,6 +195,7 @@ td:last-child{white-space:normal}
       <div class="card"><div class="label">Saídas</div><div class="value red" id="res-sai">R$ 0</div></div>
       <div class="card"><div class="label">Cartão (mês atual)</div><div class="value amber" id="res-cc">R$ 0</div></div>
       <div class="card"><div class="label">Investido</div><div class="value blue" id="res-inv">R$ 0</div></div>
+      <div class="card"><div class="label">Metas</div><div class="value green" id="res-meta">R$ 0</div></div>
     </div>
     <div class="month-switch" aria-label="Escolher mês do resumo">
       <button onclick="changeResumoMonth(-1)" aria-label="Mês anterior">‹</button>
@@ -290,7 +321,7 @@ td:last-child{white-space:normal}
       <div class="row row1">
         <select id="inv-tipo"><option>Poupança</option><option>CDB</option><option>CDI</option><option>Tesouro Direto</option><option>Ações</option><option>Fundos de investimento</option><option>Fundos imobiliários</option><option>ETF</option><option>Previdência privada</option><option>LCI/LCA</option><option>Debêntures</option><option>Cripto</option><option>Conta remunerada</option><option>Outro</option></select>
       </div>
-      <div class="row row1"><input type="text" id="inv-desc" placeholder="Nome do investimento (ex: CDB Banco X, Poupança)" maxlength="40"/></div>
+      <div class="row row1"><input type="text" id="inv-desc" placeholder="Nome do investimento (opcional)" maxlength="40"/></div>
       <button class="btn-green" onclick="addInvest()"><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar investimento</button>
     </div>
     <div class="cards">
@@ -351,9 +382,11 @@ const CATEGORIAS={
 let resumoMes=new Date();
 let extratoMes=new Date();
 let cartaoMes=new Date();
+const investUi={acao:{},historico:{},grafico:{},mes:{},periodo:{}};
 function fmt(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function today(){return new Date().toISOString().split('T')[0];}
 function todayText(){return new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}).replace('.', '');}
+function currentMonthInput(){return today().slice(0,7);}
 function mesStr(y,m){return MESES[m]+'/'+String(y).slice(2);}
 function monthKey(y,m){return y+'-'+String(m).padStart(2,'0');}
 function isoDate(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
@@ -588,9 +621,12 @@ function addExtrato(){
   if(tipo==='investimento'||tipo==='meta'){
     const dest=S.invest.find(i=>i.id===investDestId);
     if(!dest||dest.kind!==tipo||isNaN(val)||val<=0){alert('Escolha '+(tipo==='meta'?'a meta':'o investimento')+' e informe o valor.');return;}
+    const extId=Date.now();
     dest.valorAtual+=val;
     dest.totalAportado+=val;
-    S.extrato.push({id:Date.now(),data,desc:(tipo==='meta'?'Meta - ':'Investimento - ')+dest.nome,tipo,categoria:tipo==='meta'?'Meta':'Investimento',subcategoria:dest.nome,val,destId:dest.id});
+    ensureInvestHistory(dest).push({id:extId+'-hist',tipo:'aporte',data,valor:val,saldo:dest.valorAtual,extId});
+    recalcInvestFromHistory(dest);
+    S.extrato.push({id:extId,data,desc:(tipo==='meta'?'Meta - ':'Investimento - ')+dest.nome,tipo,categoria:tipo==='meta'?'Meta':'Investimento',subcategoria:dest.nome,val,destId:dest.id});
     document.getElementById('ext-desc').value='';
     document.getElementById('ext-val').value='';
     document.getElementById('ext-invest-dest').value='';
@@ -632,8 +668,8 @@ function addCartao(){
 function addInvest(){
   const desc=document.getElementById('inv-desc').value.trim();
   const tipo=document.getElementById('inv-tipo').value;
-  if(!desc){alert('Informe o nome do investimento.');return;}
-  S.invest.push({id:Date.now(),kind:'investimento',nome:desc,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0});
+  const nome=desc||tipo;
+  S.invest.push({id:Date.now(),kind:'investimento',nome,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[]});
   document.getElementById('inv-desc').value='';
   renderInvestDestinationOptions();renderInvest();updateCategories();updateResumo();
 }
@@ -643,7 +679,7 @@ function addMeta(){
   const meta=parseFloat(document.getElementById('meta-val').value)||0;
   if(!desc){alert('Informe o nome da meta.');return;}
   if(meta<=0){alert('Informe o valor da meta.');return;}
-  S.invest.push({id:Date.now(),kind:'meta',nome:desc,tipo:'Meta',meta,valorAtual:0,totalAportado:0,totalResgatado:0});
+  S.invest.push({id:Date.now(),kind:'meta',nome:desc,tipo:'Meta',meta,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[]});
   document.getElementById('meta-desc').value='';
   document.getElementById('meta-val').value='';
   renderInvestDestinationOptions();renderMetas();updateCategories();updateResumo();
@@ -748,28 +784,145 @@ function renderCartao(){
 }
 
 function delCC(id){S.cartao=S.cartao.filter(x=>x.id!==id);renderCartao();renderExtrato();updateResumo();}
-function delExt(id){S.extrato=S.extrato.filter(x=>x.id!==id);renderExtrato();updateResumo();}
+function delExt(id){
+  const row=S.extrato.find(x=>x.id===id);
+  if(row&&row.destId){
+    const item=S.invest.find(i=>i.id===row.destId);
+    if(item){
+      item.historico=ensureInvestHistory(item).filter(h=>h.extId!==id);
+      recalcInvestFromHistory(item);
+    }
+  }
+  S.extrato=S.extrato.filter(x=>x.id!==id);
+  renderInvest();renderMetas();renderExtrato();updateResumo();
+}
 function delInv(id){S.invest=S.invest.filter(x=>x.id!==id);renderInvestDestinationOptions();renderInvest();renderMetas();updateResumo();}
 
-function updateInvestValue(id){
-  const item=S.invest.find(x=>x.id===id);
-  if(!item)return;
-  const val=parseFloat(prompt('Qual é o valor atual de '+item.nome+'?', item.valorAtual.toFixed(2).replace('.',',')));
-  if(isNaN(val)||val<0)return;
-  item.valorAtual=val;
-  renderInvest();renderMetas();updateResumo();
+function ensureInvestHistory(item){
+  if(!item.historico)item.historico=[];
+  item.historico.forEach((h,i)=>{
+    if(!h.id)h.id=item.id+'-'+(h.data||today())+'-'+i;
+    h.valor=Number(h.valor||0);
+  });
+  return item.historico;
 }
 
-function resgatarInvest(id){
+function recalcInvestFromHistory(item){
+  const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
+  let saldo=0,totalAportado=0,totalResgatado=0;
+  hist.forEach(h=>{
+    const valor=Number(h.valor||0);
+    if(h.tipo==='aporte'){
+      saldo+=valor;
+      totalAportado+=valor;
+    }else if(h.tipo==='resgate'){
+      const resgate=Math.min(valor,saldo);
+      saldo-=resgate;
+      totalResgatado+=resgate;
+    }else if(h.tipo==='atualizacao'){
+      saldo=valor;
+    }
+    h.saldo=saldo;
+  });
+  item.valorAtual=saldo;
+  item.totalAportado=totalAportado;
+  item.totalResgatado=totalResgatado;
+}
+
+function calcInvestMonthResult(item,mes){
+  const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
+  const inicio=mes+'-01';
+  const y=Number(mes.slice(0,4));
+  const m=Number(mes.slice(5,7));
+  const fim=(m===12?y+1:y)+'-'+String(m===12?1:m+1).padStart(2,'0')+'-01';
+  const antes=hist.filter(h=>(h.data||'')<inicio).slice(-1)[0];
+  const doMes=hist.filter(h=>(h.data||'')>=inicio&&(h.data||'')<fim);
+  const ultimoMes=doMes.slice(-1)[0];
+  const saldoAnterior=antes?Number(antes.saldo||0):0;
+  const saldoFinal=ultimoMes?Number(ultimoMes.saldo||0):saldoAnterior;
+  const aportes=doMes.filter(h=>h.tipo==='aporte').reduce((s,h)=>s+Number(h.valor||0),0);
+  const resgates=doMes.filter(h=>h.tipo==='resgate').reduce((s,h)=>s+Number(h.valor||0),0);
+  const rendimento=saldoFinal-saldoAnterior-aportes+resgates;
+  const base=saldoAnterior+aportes;
+  return {rendimento,pct:base>0?rendimento/base*100:0};
+}
+
+function refreshInvestViews(){
+  S.invest.forEach(recalcInvestFromHistory);
+  renderInvest();
+  renderMetas();
+  renderExtrato();
+  updateResumo();
+}
+
+function toggleInvestAction(id,acao){
+  investUi.acao[id]=investUi.acao[id]===acao?'':acao;
+  refreshInvestViews();
+}
+
+function toggleInvestHistory(id){
+  investUi.historico[id]=!investUi.historico[id];
+  refreshInvestViews();
+}
+
+function toggleInvestChart(id){
+  investUi.grafico[id]=!investUi.grafico[id];
+  refreshInvestViews();
+}
+
+function changeInvestHistoryMonth(id,mes){
+  investUi.mes[id]=mes;
+  refreshInvestViews();
+}
+
+function changeInvestChartPeriod(id,periodo){
+  investUi.periodo[id]=periodo;
+  refreshInvestViews();
+}
+
+function saveInvestUpdate(id){
   const item=S.invest.find(x=>x.id===id);
   if(!item)return;
-  const val=parseFloat(prompt('Quanto você resgatou de '+item.nome+'?'));
-  if(isNaN(val)||val<=0)return;
+  const val=parseFloat(document.getElementById('update-val-'+id).value);
+  const data=document.getElementById('update-data-'+id).value||today();
+  if(isNaN(val)||val<0){alert('Informe o valor atual.');return;}
+  item.valorAtual=val;
+  ensureInvestHistory(item).push({id:Date.now()+'-hist',tipo:'atualizacao',data,valor:val,saldo:item.valorAtual});
+  recalcInvestFromHistory(item);
+  investUi.acao[id]='';
+  investUi.historico[id]=true;
+  investUi.mes[id]=data.slice(0,7);
+  refreshInvestViews();
+}
+
+function saveInvestResgate(id){
+  const item=S.invest.find(x=>x.id===id);
+  if(!item)return;
+  const val=parseFloat(document.getElementById('resgate-val-'+id).value);
+  const data=document.getElementById('resgate-data-'+id).value||today();
+  if(isNaN(val)||val<=0){alert('Informe o valor do resgate.');return;}
   const resgate=Math.min(val,item.valorAtual);
+  const extId=Date.now();
   item.valorAtual-=resgate;
   item.totalResgatado+=resgate;
-  S.extrato.push({id:Date.now(),data:today(),desc:'Resgate - '+item.nome,tipo:'entrada',categoria:'Resgate',subcategoria:item.nome,val:resgate});
-  renderInvest();renderMetas();renderExtrato();updateResumo();
+  ensureInvestHistory(item).push({id:extId+'-hist',tipo:'resgate',data,valor:resgate,saldo:item.valorAtual,extId});
+  recalcInvestFromHistory(item);
+  S.extrato.push({id:extId,data,desc:'Resgate - '+item.nome,tipo:'entrada',categoria:'Resgate',subcategoria:item.nome,val:resgate,destId:item.id});
+  investUi.acao[id]='';
+  investUi.historico[id]=true;
+  investUi.mes[id]=data.slice(0,7);
+  refreshInvestViews();
+}
+
+function delInvestHistory(itemId,histId){
+  const item=S.invest.find(x=>x.id===itemId);
+  if(!item)return;
+  const hist=ensureInvestHistory(item);
+  const mov=hist.find(h=>String(h.id)===String(histId));
+  item.historico=hist.filter(h=>String(h.id)!==String(histId));
+  if(mov&&mov.extId)S.extrato=S.extrato.filter(x=>x.id!==mov.extId);
+  recalcInvestFromHistory(item);
+  refreshInvestViews();
 }
 
 function renderExtrato(){
@@ -783,13 +936,15 @@ function renderExtrato(){
   const parcelasMes=parcelas.filter(r=>isSameMonthDate(r.data,viewYear,viewMonth));
   const entradasMes=rows.filter(r=>r.tipo==='entrada').reduce((s,r)=>s+r.val,0);
   const saidasMes=rows.filter(r=>r.tipo==='saida').reduce((s,r)=>s+r.val,0);
-  const investMes=rows.filter(r=>r.tipo==='investimento'||r.tipo==='meta').reduce((s,r)=>s+r.val,0);
+  const investimentoMes=rows.filter(r=>r.tipo==='investimento').reduce((s,r)=>s+r.val,0);
+  const metaMes=rows.filter(r=>r.tipo==='meta').reduce((s,r)=>s+r.val,0);
   const cartaoMes=rows.filter(r=>r.tipo==='cartao').reduce((s,r)=>s+r.val,0);
   const aviso=parcelasMes.length?'<div class="hint">As parcelas do cartão deste mês aparecem aqui automaticamente na data de vencimento.</div>':'';
-  const resumo=`<div class="plain-summary">
+  const resumo=`<div class="plain-summary compact-summary">
     <div class="plain-card"><strong>Entradas: ${fmt(entradasMes)}</strong><span>Dinheiro que entrou em ${monthLabel}.</span></div>
     <div class="plain-card"><strong>Saídas: ${fmt(saidasMes)}</strong><span>Gastos lançados direto no extrato.</span></div>
-    <div class="plain-card"><strong>Investido/metas: ${fmt(investMes)}</strong><span>Dinheiro transferido para metas e investimentos.</span></div>
+    <div class="plain-card"><strong>Investimentos: ${fmt(investimentoMes)}</strong><span>Dinheiro separado para investimentos.</span></div>
+    <div class="plain-card"><strong>Metas: ${fmt(metaMes)}</strong><span>Dinheiro guardado para metas cadastradas.</span></div>
     <div class="plain-card"><strong>Parcelas cartão: ${fmt(cartaoMes)}</strong><span>Compras do cartão com vencimento em ${monthLabel}.</span></div>
   </div>`;
   if(!rows.length){wrap.innerHTML=resumo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
@@ -806,6 +961,7 @@ function renderExtrato(){
 }
 
 function renderInvest(){
+  S.invest.forEach(recalcInvestFromHistory);
   const investimentos=S.invest.filter(x=>x.kind==='investimento');
   const total=investimentos.reduce((s,x)=>s+x.valorAtual,0);
   const base=investimentos.reduce((s,x)=>s+(x.totalAportado-x.totalResgatado),0);
@@ -821,6 +977,7 @@ function renderInvest(){
 }
 
 function renderMetas(){
+  S.invest.forEach(recalcInvestFromHistory);
   const metas=S.invest.filter(x=>x.kind==='meta');
   const total=metas.reduce((s,x)=>s+x.valorAtual,0);
   const metasComAlvo=metas.filter(x=>x.meta>0);
@@ -836,11 +993,71 @@ function renderMetas(){
 }
 
 function renderDestinoCard(item){
-  const baseItem=item.totalAportado-item.totalResgatado;
-  const rend=item.valorAtual-baseItem;
-  const pctRend=baseItem>0?(rend/baseItem*100):0;
+  recalcInvestFromHistory(item);
   const metaPct=item.meta>0?Math.min(100,item.valorAtual/item.meta*100):0;
   const subtitulo=item.kind==='meta'?'Meta':'Investimento - '+item.tipo;
+  const acao=investUi.acao[item.id]||'';
+  const historicoAberto=!!investUi.historico[item.id];
+  const graficoAberto=!!investUi.grafico[item.id];
+  const mesHist=investUi.mes[item.id]||currentMonthInput();
+  const resultadoMes=calcInvestMonthResult(item,mesHist);
+  const historicoMes=item.historico.filter(h=>h.data&&h.data.slice(0,7)===mesHist).sort((a,b)=>b.data.localeCompare(a.data));
+  const aportesMes=historicoMes.filter(h=>h.tipo==='aporte').reduce((s,h)=>s+Number(h.valor||0),0);
+  const resgatesMes=historicoMes.filter(h=>h.tipo==='resgate').reduce((s,h)=>s+Number(h.valor||0),0);
+  const chartRows=[
+    {label:'Entrou',val:aportesMes,color:'#1D9E75'},
+    {label:'Resgatou',val:resgatesMes,color:'#A32D2D'},
+    {label:'Rendeu',val:Math.max(0,resultadoMes.rendimento),color:'#2378D4'}
+  ];
+  const chartMax=Math.max(...chartRows.map(x=>x.val),1);
+  const painelAcao=acao==='atualizar'?`
+    <div class="goal-panel">
+      <div class="goal-panel-title">Atualizar valor do mês atual</div>
+      <div class="row row2">
+        <input type="date" id="update-data-${item.id}" value="${today()}"/>
+        <input type="number" id="update-val-${item.id}" placeholder="Valor atual (R$)" min="0" step="0.01"/>
+      </div>
+      <button onclick="saveInvestUpdate(${item.id})">Salvar valor atualizado</button>
+    </div>`:acao==='resgatar'?`
+    <div class="goal-panel">
+      <div class="goal-panel-title">Registrar resgate</div>
+      <div class="row row2">
+        <input type="date" id="resgate-data-${item.id}" value="${today()}"/>
+        <input type="number" id="resgate-val-${item.id}" placeholder="Valor resgatado (R$)" min="0" step="0.01"/>
+      </div>
+      <button onclick="saveInvestResgate(${item.id})">Salvar resgate</button>
+    </div>`:'';
+  const historicoHtml=historicoAberto?`
+    <div class="goal-panel">
+      <div class="history-head">
+        <div class="goal-panel-title">Histórico</div>
+      </div>
+      ${historicoMes.length?historicoMes.map(h=>{
+        const d=new Date(h.data+'T12:00:00');
+        const nome=h.tipo==='aporte'?'Entrada investida':h.tipo==='resgate'?'Resgate':'Valor atualizado';
+        const sinal=h.tipo==='resgate'?'-':h.tipo==='aporte'?'+':'';
+        const cor=h.tipo==='resgate'?'#A32D2D':h.tipo==='aporte'?'#1D9E75':'#2378D4';
+        return `<div class="history-row">
+          <div>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</div>
+          <div><strong>${nome}</strong><div class="history-kind">Saldo: ${fmt(h.saldo||0)}</div></div>
+          <div class="history-value" style="color:${cor}">${sinal}${fmt(h.valor||0)}</div>
+          <button class="del" onclick="delInvestHistory(${item.id},'${h.id}')" aria-label="Remover movimento"><i class="ti ti-x" aria-hidden="true"></i></button>
+        </div>`;
+      }).join(''):'<div class="empty">Nenhum movimento neste mês.</div>'}
+    </div>`:'';
+  const graficoHtml=graficoAberto?`
+    <div class="goal-panel">
+      <div class="goal-panel-title">Gráfico do mês</div>
+      <div class="mini-chart">
+        ${chartRows.map(row=>`
+          <div class="mini-chart-row">
+            <div>${row.label}</div>
+            <div class="mini-chart-track"><div class="mini-chart-fill" style="width:${Math.min(100,row.val/chartMax*100).toFixed(1)}%;background:${row.color}"></div></div>
+            <div class="history-value" style="color:${row.color}">${fmt(row.val)}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`:'';
   const progresso=item.kind==='meta'&&item.meta>0?`
     <div class="month-row">
       <div class="month-label">Progresso</div>
@@ -848,17 +1065,27 @@ function renderDestinoCard(item){
       <div class="month-value">${metaPct.toFixed(0)}%</div>
     </div>`:'';
   return `<div class="goal-card">
-    <h3>${item.nome}</h3>
-    <div class="goal-meta">${subtitulo}${item.meta>0?' · alvo '+fmt(item.meta):''}</div>
+    <div class="goal-top">
+      <div>
+        <h3>${item.nome}</h3>
+        <div class="goal-meta">${subtitulo}${item.meta>0?' · alvo '+fmt(item.meta):''}</div>
+      </div>
+      <input type="month" value="${mesHist}" onchange="changeInvestHistoryMonth(${item.id},this.value)"/>
+    </div>
     <div class="plain-summary">
       <div class="plain-card"><strong>Atual: ${fmt(item.valorAtual)}</strong><span>Valor que existe hoje.</span></div>
-      <div class="plain-card"><strong>Rendeu: ${fmt(rend)}</strong><span>${pctRend.toFixed(1).replace('.',',')}% sobre o valor líquido colocado.</span></div>
+      <div class="plain-card"><strong>Rendeu no mês: ${fmt(resultadoMes.rendimento)}</strong><span>${resultadoMes.pct.toFixed(1).replace('.',',')}% comparando com o mês anterior.</span></div>
     </div>
     ${progresso}
     <div class="goal-actions">
-      <button onclick="updateInvestValue(${item.id})">Atualizar valor</button>
-      <button onclick="resgatarInvest(${item.id})">Resgatar</button>
+      <button onclick="toggleInvestAction(${item.id},'atualizar')">Atualizar valor</button>
+      <button onclick="toggleInvestAction(${item.id},'resgatar')">Resgatar</button>
+      <button onclick="toggleInvestHistory(${item.id})">${historicoAberto?'Fechar hist.':'Histórico'}</button>
+      <button onclick="toggleInvestChart(${item.id})">${graficoAberto?'Fechar gráfico':'Gráfico'}</button>
     </div>
+    ${painelAcao}
+    ${historicoHtml}
+    ${graficoHtml}
   </div>`;
 }
 
@@ -872,18 +1099,20 @@ function updateResumo(){
   const map=getMesMap();
   const ccMes=map[nowKey]||0;
   const saidasDiretas=S.extrato.filter(x=>x.tipo==='saida'&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
-  const investido=S.extrato.filter(x=>(x.tipo==='investimento'||x.tipo==='meta')&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
+  const investido=S.extrato.filter(x=>x.tipo==='investimento'&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
+  const metas=S.extrato.filter(x=>x.tipo==='meta'&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
   const saidas=saidasDiretas+ccMes;
-  const saldo=entradas-saidas-investido;
+  const saldo=entradas-saidas-investido-metas;
   document.getElementById('res-month-label').textContent=monthLabel;
   document.getElementById('saldo-total').textContent=fmt(saldo);
   document.getElementById('res-ent').textContent=fmt(entradas);
   document.getElementById('res-sai').textContent=fmt(saidas);
   document.getElementById('res-cc').textContent=fmt(ccMes);
   document.getElementById('res-inv').textContent=fmt(investido);
+  document.getElementById('res-meta').textContent=fmt(metas);
 
   const bars=document.getElementById('resumo-bars');
-  const entradaCat={}, saidaCat={}, cartaoCat={}, investCat={};
+  const entradaCat={}, saidaCat={}, cartaoCat={}, investCat={}, metaCat={};
   S.extrato.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>{
     if(x.tipo==='entrada')addGroup(entradaCat,x.subcategoria||x.categoria||'Entrada',x.val);
     if(x.tipo==='saida')addGroup(saidaCat,x.subcategoria||x.categoria||'Saída',x.val);
@@ -892,12 +1121,14 @@ function updateResumo(){
     const compra=x.desc.replace(/^Parcela \d+\/\d+ - /,'').replace(/^Cartão - /,'');
     addGroup(cartaoCat,compra,x.val);
   });
-  S.extrato.filter(x=>(x.tipo==='investimento'||x.tipo==='meta')&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(investCat,x.subcategoria||x.categoria||'Investimento / Meta',x.val));
+  S.extrato.filter(x=>x.tipo==='investimento'&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(investCat,x.subcategoria||x.categoria||'Investimento',x.val));
+  S.extrato.filter(x=>x.tipo==='meta'&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(metaCat,x.subcategoria||x.categoria||'Meta',x.val));
 
   const entradaItems=objToItems(entradaCat,'#1D9E75');
   const saidaItems=objToItems(saidaCat,'#E24B4A');
   const cartaoItems=objToItems(cartaoCat,'#BA7517');
   const investItems=objToItems(investCat,'#2378D4');
+  const metaItems=objToItems(metaCat,'#1D9E75');
   const resumoGeral=saldo>=0?'sobrou':'faltou';
   bars.innerHTML=`
     <div class="chart-panel">
@@ -946,6 +1177,23 @@ function updateResumo(){
       ${renderBarList(investItems,'#2378D4','Nenhum investimento neste mês.')}
       <div class="plain-summary">
         <div class="plain-card"><strong>Total investido: ${fmt(investido)}</strong><span>Esse valor também reduz o saldo disponível.</span></div>
+      </div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-head">
+        <div>
+          <h3>Metas</h3>
+          <p>Dinheiro guardado para objetivos cadastrados neste mês.</p>
+        </div>
+        <div class="chart-total">${fmt(metas)}</div>
+      </div>
+      <div class="month-message">
+        <strong>${topText(metaItems,'Nenhuma meta recebeu dinheiro neste mês.','Você guardou mais para')}</strong>
+        <span>Mostra para quais metas o dinheiro foi separado.</span>
+      </div>
+      ${renderBarList(metaItems,'#1D9E75','Nenhuma meta recebeu dinheiro neste mês.')}
+      <div class="plain-summary">
+        <div class="plain-card"><strong>Total em metas: ${fmt(metas)}</strong><span>Esse valor também reduz o saldo disponível.</span></div>
       </div>
     </div>`;
 }
