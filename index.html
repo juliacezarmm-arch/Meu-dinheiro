@@ -392,6 +392,9 @@ td:last-child{white-space:normal}
 <script>
 const S={extrato:[],cartao:[],invest:[],cartoes:[]};
 let dataFileHandle=null;
+let hasUnsavedChanges=false;
+let appReady=false;
+let isApplyingData=false;
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const BANK_COLORS={
   'Nubank':'#7B2CBF','Itaú':'#EC7000','Bradesco':'#C8102E','Santander':'#E1251B',
@@ -434,7 +437,11 @@ function currentMonthInput(){return today().slice(0,7);}
 function mesStr(y,m){return MESES[m]+'/'+String(y).slice(2);}
 function monthKey(y,m){return y+'-'+String(m).padStart(2,'0');}
 function isoDate(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
-function saveData(){}
+function saveData(){
+  if(!appReady||isApplyingData)return;
+  hasUnsavedChanges=true;
+  setSaveStatus('AlteraÃ§Ãµes ainda nÃ£o salvas.');
+}
 function setSaveStatus(text){
   const el=document.getElementById('save-status');
   if(!el)return;
@@ -449,6 +456,7 @@ function dataPayload(){
   return {versao:1,exportadoEm:new Date().toISOString(),dados:S};
 }
 function applyDataFile(data){
+  isApplyingData=true;
   const dados=data.dados||data;
   ['extrato','cartao','invest','cartoes'].forEach(key=>{
     S[key]=Array.isArray(dados[key])?dados[key]:[];
@@ -462,6 +470,8 @@ function applyDataFile(data){
   renderInvest();
   renderMetas();
   updateResumo();
+  hasUnsavedChanges=false;
+  isApplyingData=false;
 }
 function downloadDataFile(){
   const blob=new Blob([JSON.stringify(dataPayload(),null,2)],{type:'application/json'});
@@ -473,6 +483,7 @@ function downloadDataFile(){
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  hasUnsavedChanges=false;
   setSaveStatus('Arquivo baixado no computador.');
 }
 async function writeDataFile(handle){
@@ -484,6 +495,7 @@ async function saveDataFile(){
   try{
     if(dataFileHandle&&window.showSaveFilePicker){
       await writeDataFile(dataFileHandle);
+      hasUnsavedChanges=false;
       setSaveStatus('Arquivo salvo no computador.');
       return;
     }
@@ -501,6 +513,7 @@ async function saveAsDataFile(){
         types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]
       });
       await writeDataFile(dataFileHandle);
+      hasUnsavedChanges=false;
       setSaveStatus('Arquivo salvo no computador.');
     }else{
       downloadDataFile();
@@ -508,6 +521,21 @@ async function saveAsDataFile(){
   }catch(e){
     if(e&&e.name==='AbortError')return;
     downloadDataFile();
+  }
+}
+async function autoSaveDataFile(){
+  if(!hasUnsavedChanges)return;
+  try{
+    if(dataFileHandle&&window.showSaveFilePicker){
+      await writeDataFile(dataFileHandle);
+      hasUnsavedChanges=false;
+      const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      setSaveStatus('Salvo automaticamente Ã s '+hora+'.');
+    }else{
+      setSaveStatus('Para salvar automÃ¡tico, abra um arquivo ou use Salvar como.');
+    }
+  }catch(e){
+    setSaveStatus('NÃ£o consegui salvar automÃ¡tico. Use Salvar.');
   }
 }
 async function openDataFile(){
@@ -1557,6 +1585,13 @@ renderMetaInvestOptions();
 renderInvest();
 renderMetas();
 updateResumo();
+appReady=true;
+setInterval(autoSaveDataFile,3*60*1000);
+window.addEventListener('beforeunload',function(e){
+  if(!hasUnsavedChanges)return;
+  e.preventDefault();
+  e.returnValue='VocÃª tem alteraÃ§Ãµes sem salvar.';
+});
 </script>
 </body>
 </html>
