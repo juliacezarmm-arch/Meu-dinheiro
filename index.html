@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -54,15 +54,15 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
 .ti::before{font-family:var(--font-sans) !important}
 .header .ti,.saldo-bar .ti,.del .ti{margin-right:0}
 .ti-wallet::before{content:"$"}
-.ti-home::before{content:"⌂"}
-.ti-receipt::before{content:"≡"}
-.ti-credit-card::before{content:"▭"}
-.ti-trending-up::before{content:"↗"}
-.ti-flag::before{content:"⚑"}
+.ti-home::before{content:"âŒ‚"}
+.ti-receipt::before{content:"â‰¡"}
+.ti-credit-card::before{content:"â–­"}
+.ti-trending-up::before{content:"â†—"}
+.ti-flag::before{content:"âš‘"}
 .ti-pig-money::before{content:"$"}
 .ti-plus::before{content:"+"}
-.ti-x::before{content:"×"}
-.ti-arrow-right::before{content:"→"}
+.ti-x::before{content:"Ã—"}
+.ti-arrow-right::before{content:"â†’"}
 .btn-green{width:100%;margin-top:4px;background:#1D9E75;color:#fff;border:none;padding:9px;border-radius:var(--border-radius-md);font-size:14px;cursor:pointer;font-weight:500}
 .btn-green:hover{background:#0F6E56}
 .section-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:1.25rem 0 .75rem}
@@ -161,7 +161,10 @@ td:last-child{white-space:normal}
 .history-value{text-align:right;font-weight:800}
 .stock-chart{width:100%;background:#0d0d0c;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.5rem}
 .stock-chart svg{width:100%;height:130px;display:block}
+.annual-chart{position:relative}
 .annual-chart svg{height:260px}
+.annual-tooltip{position:absolute;z-index:5;display:none;pointer-events:none;background:#f5f5f2;color:#050505;border-radius:var(--border-radius-md);padding:.45rem .55rem;font-size:12px;font-weight:800;box-shadow:0 10px 28px rgba(0,0,0,.35);white-space:nowrap}
+.annual-tooltip span{display:block;font-size:11px;font-weight:600;color:#3a3934;margin-top:2px}
 .stock-chart-meta{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--color-text-secondary);margin-top:4px}
 .annual-legend{display:flex;flex-wrap:wrap;gap:8px;margin:.65rem 0;font-size:11px;color:var(--color-text-secondary)}
 .annual-legend span{display:inline-flex;align-items:center;gap:5px}
@@ -221,7 +224,7 @@ td:last-child{white-space:normal}
   <nav class="nav">
     <button onclick="showPage('resumo',this)" class="active"><i class="ti ti-home" aria-hidden="true"></i> Resumo</button>
     <button onclick="showPage('extrato',this)"><i class="ti ti-receipt" aria-hidden="true"></i> Extrato</button>
-    <button onclick="showPage('cartao',this)"><i class="ti ti-credit-card" aria-hidden="true"></i> Cartão</button>
+    <button onclick="showPage('cartao',this)"><i class="ti ti-credit-card" aria-hidden="true"></i> CartÃ£o</button>
     <button onclick="showPage('invest',this)"><i class="ti ti-trending-up" aria-hidden="true"></i> Investimentos</button>
     <button onclick="showPage('metas',this)"><i class="ti ti-flag" aria-hidden="true"></i> Metas</button>
   </nav>
@@ -230,23 +233,23 @@ td:last-child{white-space:normal}
   <div id="page-resumo" class="page active">
     <div class="saldo-bar">
       <div>
-        <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px">Saldo disponível</div>
+        <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px">Saldo disponÃ­vel</div>
         <div class="big" id="saldo-total">R$ 0,00</div>
       </div>
       <i class="ti ti-pig-money" style="font-size:34px;color:#9FE1CB" aria-hidden="true"></i>
     </div>
     <div class="cards">
       <div class="card"><div class="label">Entradas</div><div class="value green" id="res-ent">R$ 0</div></div>
-      <div class="card"><div class="label">Saídas</div><div class="value red" id="res-sai">R$ 0</div></div>
-      <div class="card"><div class="label">Cartão (mês atual)</div><div class="value amber" id="res-cc">R$ 0</div></div>
+      <div class="card"><div class="label">SaÃ­das</div><div class="value red" id="res-sai">R$ 0</div></div>
+      <div class="card"><div class="label">CartÃ£o (mÃªs atual)</div><div class="value amber" id="res-cc">R$ 0</div></div>
       <div class="card"><div class="label">Investido</div><div class="value blue" id="res-inv">R$ 0</div></div>
       <div class="card"><div class="label">Metas</div><div class="value green" id="res-meta">R$ 0</div></div>
     </div>
-    <div class="month-switch" aria-label="Escolher mês do resumo">
-      <button onclick="changeResumoMonth(-1)" aria-label="Mês anterior">‹</button>
-      <div class="current-month" id="res-month-label">Mês atual</div>
-      <button onclick="changeResumoMonth(1)" aria-label="Próximo mês">›</button>
-      <button class="today-btn" onclick="goResumoCurrentMonth()">Mês atual</button>
+    <div class="month-switch" aria-label="Escolher mÃªs do resumo">
+      <button onclick="changeResumoMonth(-1)" aria-label="MÃªs anterior">â€¹</button>
+      <div class="current-month" id="res-month-label">MÃªs atual</div>
+      <button onclick="changeResumoMonth(1)" aria-label="PrÃ³ximo mÃªs">â€º</button>
+      <button class="today-btn" onclick="goResumoCurrentMonth()">MÃªs atual</button>
     </div>
     <div class="section-title">Resumo anual</div>
     <div id="annual-summary"><div class="empty">Nenhuma movimenta&ccedil;&atilde;o ainda.</div></div>
@@ -259,7 +262,7 @@ td:last-child{white-space:normal}
     <div class="add-form">
       <div class="row row2">
         <input type="date" id="ext-data"/>
-        <select id="ext-tipo" onchange="updateCategories();toggleSaidaCampos();"><option value="entrada">Entrada</option><option value="saida">Saída</option><option value="investimento">Investimento</option><option value="meta">Meta</option></select>
+        <select id="ext-tipo" onchange="updateCategories();toggleSaidaCampos();"><option value="entrada">Entrada</option><option value="saida">SaÃ­da</option><option value="investimento">Investimento</option><option value="meta">Meta</option></select>
       </div>
       <div class="row row2" id="ext-cat-row">
         <select id="ext-categoria" onchange="updateSubcategorias()"><option value="">Selecione categoria</option></select>
@@ -272,57 +275,57 @@ td:last-child{white-space:normal}
         <select id="ext-gasto-tipo">
           <option value="">Tipo de gasto</option>
           <option value="fixo">Gasto fixo</option>
-          <option value="variavel">Gasto variável</option>
+          <option value="variavel">Gasto variÃ¡vel</option>
         </select>
         <select id="ext-pagamento">
           <option value="">Forma de pagamento</option>
           <option value="dinheiro">Dinheiro</option>
           <option value="pix">Pix</option>
-          <option value="debito">Débito</option>
+          <option value="debito">DÃ©bito</option>
           <option value="boleto">Boleto</option>
-          <option value="transferencia">Transferência</option>
-          <option value="debito_automatico">Débito automático</option>
+          <option value="transferencia">TransferÃªncia</option>
+          <option value="debito_automatico">DÃ©bito automÃ¡tico</option>
           <option value="outro">Outro</option>
         </select>
       </div>
-      <div class="row row1" id="ext-desc-row"><input type="text" id="ext-desc" placeholder="Descrição (opcional)" maxlength="40"/></div>
+      <div class="row row1" id="ext-desc-row"><input type="text" id="ext-desc" placeholder="DescriÃ§Ã£o (opcional)" maxlength="40"/></div>
       <div class="row row1"><input type="number" id="ext-val" placeholder="Valor (R$)" min="0" step="0.01"/></div>
-      <button class="btn-green" onclick="addExtrato()"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar lançamento</button>
+      <button class="btn-green" onclick="addExtrato()"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar lanÃ§amento</button>
     </div>
-    <div class="month-switch" aria-label="Escolher mês do extrato">
-      <button onclick="changeExtratoMonth(-1)" aria-label="Mês anterior">‹</button>
-      <div class="current-month" id="ext-month-label">Mês atual</div>
-      <button onclick="changeExtratoMonth(1)" aria-label="Próximo mês">›</button>
-      <button class="today-btn" onclick="goExtratoCurrentMonth()">Mês atual</button>
+    <div class="month-switch" aria-label="Escolher mÃªs do extrato">
+      <button onclick="changeExtratoMonth(-1)" aria-label="MÃªs anterior">â€¹</button>
+      <div class="current-month" id="ext-month-label">MÃªs atual</div>
+      <button onclick="changeExtratoMonth(1)" aria-label="PrÃ³ximo mÃªs">â€º</button>
+      <button class="today-btn" onclick="goExtratoCurrentMonth()">MÃªs atual</button>
     </div>
-    <div id="ext-wrap"><div class="empty">Nenhum lançamento ainda.</div></div>
+    <div id="ext-wrap"><div class="empty">Nenhum lanÃ§amento ainda.</div></div>
   </div>
 
-  <!-- CARTÃO -->
+  <!-- CARTÃƒO -->
   <div id="page-cartao" class="page">
-    <div class="section-title">Meus cartões</div>
+    <div class="section-title">Meus cartÃµes</div>
     <div class="add-form">
       <div class="row row2">
         <select id="card-bank">
           <option value="">Escolha o banco</option>
-          <option>Nubank</option><option>Itaú</option><option>Bradesco</option><option>Santander</option>
+          <option>Nubank</option><option>ItaÃº</option><option>Bradesco</option><option>Santander</option>
           <option>Banco do Brasil</option><option>Caixa</option><option>Inter</option><option>C6 Bank</option>
           <option>BTG</option><option>PicPay</option><option>Mercado Pago</option><option>Outro</option>
         </select>
-        <input type="text" id="card-due-day" placeholder="O cartão vence dia" inputmode="numeric" maxlength="2" pattern="[0-9]*"/>
+        <input type="text" id="card-due-day" placeholder="O cartÃ£o vence dia" inputmode="numeric" maxlength="2" pattern="[0-9]*"/>
       </div>
-      <button class="btn-green" onclick="addRegisteredCard()"><i class="ti ti-plus" aria-hidden="true"></i> Registrar cartão</button>
+      <button class="btn-green" onclick="addRegisteredCard()"><i class="ti ti-plus" aria-hidden="true"></i> Registrar cartÃ£o</button>
     </div>
-    <div id="bank-cards-wrap"><div class="empty">Nenhum cartão cadastrado ainda.</div></div>
+    <div id="bank-cards-wrap"><div class="empty">Nenhum cartÃ£o cadastrado ainda.</div></div>
 
-    <div class="section-title">Novo lançamento no cartão</div>
+    <div class="section-title">Novo lanÃ§amento no cartÃ£o</div>
     <div class="add-form">
       <div class="row row2">
         <input type="date" id="cc-data"/>
-        <select id="cc-card"><option value="">Escolha o cartão</option></select>
+        <select id="cc-card"><option value="">Escolha o cartÃ£o</option></select>
       </div>
       <div class="row row1">
-        <select id="cc-tipo"><option value="compra">Compra à vista</option><option value="parcelado">Parcelado</option></select>
+        <select id="cc-tipo"><option value="compra">Compra Ã  vista</option><option value="parcelado">Parcelado</option></select>
       </div>
       <div class="row row2">
         <select id="cc-categoria" onchange="updateCartaoSubcategorias()"><option value="">Selecione categoria</option></select>
@@ -332,10 +335,10 @@ td:last-child{white-space:normal}
         <select id="cc-gasto-tipo">
           <option value="">Tipo de gasto</option>
           <option value="fixo">Gasto fixo</option>
-          <option value="variavel">Gasto variável</option>
+          <option value="variavel">Gasto variÃ¡vel</option>
         </select>
       </div>
-      <div class="row row1"><input type="text" id="cc-desc" placeholder="Descrição (ex: geladeira, roupa...)"/></div>
+      <div class="row row1"><input type="text" id="cc-desc" placeholder="DescriÃ§Ã£o (ex: geladeira, roupa...)"/></div>
       <div class="row row2">
         <input type="number" id="cc-val" placeholder="Valor total (R$)" min="0" step="0.01"/>
         <div id="cc-parcelas-wrap" style="display:none">
@@ -354,22 +357,22 @@ td:last-child{white-space:normal}
 
     <div class="cards">
       <div class="card"><div class="label">Total em aberto</div><div class="value red" id="cc-aberto">R$ 0</div></div>
-      <div class="card"><div class="label">Fatura do mês</div><div class="value amber" id="cc-mes">R$ 0</div></div>
-      <div class="card"><div class="label">Próximo mês</div><div class="value" id="cc-prox" style="color:var(--color-text-primary)">R$ 0</div></div>
+      <div class="card"><div class="label">Fatura do mÃªs</div><div class="value amber" id="cc-mes">R$ 0</div></div>
+      <div class="card"><div class="label">PrÃ³ximo mÃªs</div><div class="value" id="cc-prox" style="color:var(--color-text-primary)">R$ 0</div></div>
     </div>
 
-    <div class="month-switch" aria-label="Escolher mês do cartão">
-      <button onclick="changeCartaoMonth(-1)" aria-label="Mês anterior">‹</button>
-      <div class="current-month" id="cc-month-label">Mês atual</div>
-      <button onclick="changeCartaoMonth(1)" aria-label="Próximo mês">›</button>
-      <button class="today-btn" onclick="goCartaoCurrentMonth()">Mês atual</button>
+    <div class="month-switch" aria-label="Escolher mÃªs do cartÃ£o">
+      <button onclick="changeCartaoMonth(-1)" aria-label="MÃªs anterior">â€¹</button>
+      <div class="current-month" id="cc-month-label">MÃªs atual</div>
+      <button onclick="changeCartaoMonth(1)" aria-label="PrÃ³ximo mÃªs">â€º</button>
+      <button class="today-btn" onclick="goCartaoCurrentMonth()">MÃªs atual</button>
     </div>
 
-    <div class="section-title">Lançamentos</div>
+    <div class="section-title">LanÃ§amentos</div>
     <div id="cc-wrap"><div class="empty">Nenhuma compra ainda.</div></div>
 
-    <div class="section-title">Comprometimento por mês</div>
-    <div class="hint">Mostra quanto você deve no cartão em cada mês futuro</div>
+    <div class="section-title">Comprometimento por mÃªs</div>
+    <div class="hint">Mostra quanto vocÃª deve no cartÃ£o em cada mÃªs futuro</div>
     <div id="cc-timeline"><div class="empty">Nenhuma compra ainda.</div></div>
   </div>
 
@@ -377,7 +380,7 @@ td:last-child{white-space:normal}
   <div id="page-invest" class="page">
     <div class="add-form">
       <div class="row row1">
-        <select id="inv-tipo"><option>Poupança</option><option>CDB</option><option>CDI</option><option>Tesouro Direto</option><option>Ações</option><option>Fundos de investimento</option><option>Fundos imobiliários</option><option>ETF</option><option>Previdência privada</option><option>LCI/LCA</option><option>Debêntures</option><option>Cripto</option><option>Conta remunerada</option><option>Outro</option></select>
+        <select id="inv-tipo"><option>PoupanÃ§a</option><option>CDB</option><option>CDI</option><option>Tesouro Direto</option><option>AÃ§Ãµes</option><option>Fundos de investimento</option><option>Fundos imobiliÃ¡rios</option><option>ETF</option><option>PrevidÃªncia privada</option><option>LCI/LCA</option><option>DebÃªntures</option><option>Cripto</option><option>Conta remunerada</option><option>Outro</option></select>
       </div>
       <div class="row row1"><input type="text" id="inv-desc" placeholder="Nome do investimento (opcional)" maxlength="40"/></div>
       <button class="btn-green" onclick="addInvest()"><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar investimento</button>
@@ -403,7 +406,7 @@ td:last-child{white-space:normal}
     <div class="cards">
       <div class="card"><div class="label">Guardado em metas</div><div class="value blue" id="meta-total">R$ 0</div></div>
       <div class="card"><div class="label">Metas cadastradas</div><div class="value" id="meta-qtd">0</div></div>
-      <div class="card"><div class="label">Progresso médio</div><div class="value green" id="meta-progresso">0%</div></div>
+      <div class="card"><div class="label">Progresso mÃ©dio</div><div class="value green" id="meta-progresso">0%</div></div>
     </div>
     <div id="meta-wrap"><div class="empty">Nenhuma meta ainda.</div></div>
   </div>
@@ -417,31 +420,31 @@ let appReady=false;
 let isApplyingData=false;
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const BANK_COLORS={
-  'Nubank':'#7B2CBF','Itaú':'#EC7000','Bradesco':'#C8102E','Santander':'#E1251B',
+  'Nubank':'#7B2CBF','ItaÃº':'#EC7000','Bradesco':'#C8102E','Santander':'#E1251B',
   'Banco do Brasil':'#F4D03F','Caixa':'#0066B3','Inter':'#FF7A00','C6 Bank':'#1F1F1F',
   'BTG':'#0B2D4D','PicPay':'#21C25E','Mercado Pago':'#00A9E0','Outro':'#3A6EA5'
 };
 const CATEGORIAS={
   entrada:{
-    'Trabalho':['Salário','Freelance','Comissão','Hora extra','Bônus','Décimo terceiro'],
-    'Renda extra':['Venda de produtos','Venda online','Artesanato','Delivery','Motorista de aplicativo','Afiliados','Criação de conteúdo','Aulas particulares','Consultoria'],
-    'Benefícios':['Vale alimentação','Vale refeição','Vale transporte','Auxílio','Bolsa','Pensão','Aposentadoria'],
-    'Outras entradas':['Dinheiro do mês passado','Presentes em dinheiro','Reembolso','Pix recebido','Cashback','Restituição']
+    'Trabalho':['SalÃ¡rio','Freelance','ComissÃ£o','Hora extra','BÃ´nus','DÃ©cimo terceiro'],
+    'Renda extra':['Venda de produtos','Venda online','Artesanato','Delivery','Motorista de aplicativo','Afiliados','CriaÃ§Ã£o de conteÃºdo','Aulas particulares','Consultoria'],
+    'BenefÃ­cios':['Vale alimentaÃ§Ã£o','Vale refeiÃ§Ã£o','Vale transporte','AuxÃ­lio','Bolsa','PensÃ£o','Aposentadoria'],
+    'Outras entradas':['Dinheiro do mÃªs passado','Presentes em dinheiro','Reembolso','Pix recebido','Cashback','RestituiÃ§Ã£o']
   },
   saida:{
-    'Casa':['Aluguel','Financiamento','Condomínio','Conta de água','Conta de luz','Conta de gás','Internet','Telefone','IPTU','Manutenção da casa','Faxina','Móveis','Decoração','Eletrodomésticos','Eletrônicos','Segurança residencial'],
-    'Alimentação':['Supermercado','Feira','Padaria','Açougue','Delivery','Restaurante','Lanche','Café','Marmita','Bebidas'],
-    'Transporte':['Combustível','Uber / 99','Ônibus','Metrô','Pedágio','Estacionamento','Manutenção do carro','Seguro do carro','IPVA','Parcelas do veículo','Bicicleta','Táxi'],
-    'Saúde':['Plano de saúde','Consulta médica','Dentista','Medicamentos','Academia','Terapia','Exames','Óculos','Suplementos'],
-    'Educação':['Faculdade','Curso online','Curso técnico','Idiomas','Livros','Material escolar','Assinaturas educacionais'],
+    'Casa':['Aluguel','Financiamento','CondomÃ­nio','Conta de Ã¡gua','Conta de luz','Conta de gÃ¡s','Internet','Telefone','IPTU','ManutenÃ§Ã£o da casa','Faxina','MÃ³veis','DecoraÃ§Ã£o','EletrodomÃ©sticos','EletrÃ´nicos','SeguranÃ§a residencial'],
+    'AlimentaÃ§Ã£o':['Supermercado','Feira','Padaria','AÃ§ougue','Delivery','Restaurante','Lanche','CafÃ©','Marmita','Bebidas'],
+    'Transporte':['CombustÃ­vel','Uber / 99','Ã”nibus','MetrÃ´','PedÃ¡gio','Estacionamento','ManutenÃ§Ã£o do carro','Seguro do carro','IPVA','Parcelas do veÃ­culo','Bicicleta','TÃ¡xi'],
+    'SaÃºde':['Plano de saÃºde','Consulta mÃ©dica','Dentista','Medicamentos','Academia','Terapia','Exames','Ã“culos','Suplementos'],
+    'EducaÃ§Ã£o':['Faculdade','Curso online','Curso tÃ©cnico','Idiomas','Livros','Material escolar','Assinaturas educacionais'],
     'Lazer e entretenimento':['Cinema','Shows','Viagens','Passeios','Streaming','Jogos','Eventos','Festas','Bar','Hobbies'],
-    'Compras pessoais':['Roupas','Sapatos','Acessórios','Perfumes','Cosméticos','Joias'],
-    'Família e filhos':['Escola','Creche','Fraldas','Brinquedos','Pensão','Material infantil','Roupas infantis'],
-    'Pets':['Ração','Veterinário','Banho e tosa','Medicamentos','Acessórios pet'],
+    'Compras pessoais':['Roupas','Sapatos','AcessÃ³rios','Perfumes','CosmÃ©ticos','Joias'],
+    'FamÃ­lia e filhos':['Escola','Creche','Fraldas','Brinquedos','PensÃ£o','Material infantil','Roupas infantis'],
+    'Pets':['RaÃ§Ã£o','VeterinÃ¡rio','Banho e tosa','Medicamentos','AcessÃ³rios pet'],
     'Tecnologia':['Celular','Notebook','Softwares','Computador','Assinaturas digitais','Games','Equipamentos'],
     'Impostos e taxas':['Multas','Imposto de renda'],
-    'Doações e apoio':['Doações','Ajuda familiar','Apoio a amigos'],
-    'Outros':['Presentes','Emergências','Compras diversas','Serviços gerais']
+    'DoaÃ§Ãµes e apoio':['DoaÃ§Ãµes','Ajuda familiar','Apoio a amigos'],
+    'Outros':['Presentes','EmergÃªncias','Compras diversas','ServiÃ§os gerais']
   }
 };
 let resumoMes=new Date();
@@ -460,7 +463,7 @@ function isoDate(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).p
 function saveData(){
   if(!appReady||isApplyingData)return;
   hasUnsavedChanges=true;
-  setSaveStatus('AlteraÃ§Ãµes ainda nÃ£o salvas.');
+  setSaveStatus('AlteraÃƒÂ§ÃƒÂµes ainda nÃƒÂ£o salvas.');
 }
 function setSaveStatus(text){
   const el=document.getElementById('save-status');
@@ -522,7 +525,7 @@ async function saveDataFile(){
     setSaveStatus('Abra um arquivo ou use Salvar como primeiro.');
   }catch(e){
     if(e&&e.name==='AbortError')return;
-    alert('Não consegui salvar no mesmo arquivo. Use "Salvar como" e escolha o arquivo novamente.');
+    alert('NÃ£o consegui salvar no mesmo arquivo. Use "Salvar como" e escolha o arquivo novamente.');
   }
 }
 async function saveAsDataFile(){
@@ -550,12 +553,12 @@ async function autoSaveDataFile(){
       await writeDataFile(dataFileHandle);
       hasUnsavedChanges=false;
       const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-      setSaveStatus('Salvo automaticamente Ã s '+hora+'.');
+      setSaveStatus('Salvo automaticamente ÃƒÂ s '+hora+'.');
     }else{
-      setSaveStatus('Para salvar automÃ¡tico, abra um arquivo ou use Salvar como.');
+      setSaveStatus('Para salvar automÃƒÂ¡tico, abra um arquivo ou use Salvar como.');
     }
   }catch(e){
-    setSaveStatus('NÃ£o consegui salvar automÃ¡tico. Use Salvar.');
+    setSaveStatus('NÃƒÂ£o consegui salvar automÃƒÂ¡tico. Use Salvar.');
   }
 }
 async function openDataFile(){
@@ -569,13 +572,13 @@ async function openDataFile(){
       const file=await dataFileHandle.getFile();
       const parsed=JSON.parse(await file.text());
       applyDataFile(parsed);
-      setSaveStatus('Arquivo aberto. Agora o botão Salvar grava nele.');
+      setSaveStatus('Arquivo aberto. Agora o botÃ£o Salvar grava nele.');
     }else{
       document.getElementById('import-file').click();
     }
   }catch(e){
     if(e&&e.name==='AbortError')return;
-    alert('Não consegui abrir esse arquivo. Veja se ele é um JSON do app.');
+    alert('NÃ£o consegui abrir esse arquivo. Veja se ele Ã© um JSON do app.');
   }
 }
 function importData(event){
@@ -589,7 +592,7 @@ function importData(event){
       applyDataFile(parsed);
       setSaveStatus('Dados abertos. Use Salvar como para gravar no computador.');
     }catch(e){
-      alert('Não consegui importar esse arquivo. Veja se ele é o JSON exportado pelo app.');
+      alert('NÃ£o consegui importar esse arquivo. Veja se ele Ã© o JSON exportado pelo app.');
     }finally{
       event.target.value='';
     }
@@ -640,7 +643,7 @@ function goCartaoCurrentMonth(){
 }
 
 function setupCollapsibleForms(){
-  const labels=['Adicionar no extrato','Registrar cartão','Adicionar compra no cartão','Cadastrar investimento','Cadastrar meta'];
+  const labels=['Adicionar no extrato','Registrar cartÃ£o','Adicionar compra no cartÃ£o','Cadastrar investimento','Cadastrar meta'];
   document.querySelectorAll('.add-form').forEach((form,i)=>{
     if(form.dataset.ready)return;
     form.dataset.ready='1';
@@ -651,7 +654,7 @@ function setupCollapsibleForms(){
     btn.innerHTML='<span>'+labels[i]+'</span><span>+</span>';
     btn.addEventListener('click',()=>{
       const closed=form.classList.toggle('collapsed');
-      btn.querySelector('span:last-child').textContent=closed?'+':'−';
+      btn.querySelector('span:last-child').textContent=closed?'+':'âˆ’';
     });
     form.parentNode.insertBefore(btn,form);
   });
@@ -750,7 +753,7 @@ function addRegisteredCard(){
 }
 
 function delRegisteredCard(id){
-  if(S.cartao.some(x=>x.cardId===id)){alert('Este cartão já tem lançamentos. Apague os lançamentos antes de remover o cartão.');return;}
+  if(S.cartao.some(x=>x.cardId===id)){alert('Este cartÃ£o jÃ¡ tem lanÃ§amentos. Apague os lanÃ§amentos antes de remover o cartÃ£o.');return;}
   S.cartoes=S.cartoes.filter(c=>c.id!==id);
   saveData();
   renderRegisteredCards();
@@ -760,11 +763,11 @@ function delRegisteredCard(id){
 function renderRegisteredCards(){
   const wrap=document.getElementById('bank-cards-wrap');
   const select=document.getElementById('cc-card');
-  select.innerHTML='<option value="">Escolha o cartão</option>'+S.cartoes.map(c=>`<option value="${c.id}">${c.bank} - vence dia ${c.dueDay}</option>`).join('');
-  if(!S.cartoes.length){wrap.innerHTML='<div class="empty">Nenhum cartão cadastrado ainda.</div>';return;}
+  select.innerHTML='<option value="">Escolha o cartÃ£o</option>'+S.cartoes.map(c=>`<option value="${c.id}">${c.bank} - vence dia ${c.dueDay}</option>`).join('');
+  if(!S.cartoes.length){wrap.innerHTML='<div class="empty">Nenhum cartÃ£o cadastrado ainda.</div>';return;}
   wrap.innerHTML='<div class="bank-cards">'+S.cartoes.map(c=>`
     <div class="bank-card" style="background:${c.color};color:#fff">
-      <button class="del" onclick="delRegisteredCard(${c.id})" aria-label="Remover cartão"><i class="ti ti-x" aria-hidden="true"></i></button>
+      <button class="del" onclick="delRegisteredCard(${c.id})" aria-label="Remover cartÃ£o"><i class="ti ti-x" aria-hidden="true"></i></button>
       <div class="bank-chip"></div>
       <div class="bank-name">${c.bank}</div>
       <div class="bank-due">Vence todo dia ${c.dueDay}</div>
@@ -801,6 +804,22 @@ function objToItems(obj,color){
   return Object.keys(obj).map(label=>({label,val:obj[label],color}));
 }
 
+function showAnnualTooltip(evt,label,mes,valor){
+  const tip=document.getElementById('annual-tooltip');
+  const box=document.querySelector('.annual-chart');
+  if(!tip||!box)return;
+  const rect=box.getBoundingClientRect();
+  tip.innerHTML=label+'<span>'+mes+' - '+valor+'</span>';
+  tip.style.display='block';
+  tip.style.left=Math.min(rect.width-150,Math.max(8,evt.clientX-rect.left+12))+'px';
+  tip.style.top=Math.max(8,evt.clientY-rect.top-38)+'px';
+}
+
+function hideAnnualTooltip(){
+  const tip=document.getElementById('annual-tooltip');
+  if(tip)tip.style.display='none';
+}
+
 function renderAnnualSummary(viewYear){
   const wrap=document.getElementById('annual-summary');
   if(!wrap)return;
@@ -814,7 +833,7 @@ function renderAnnualSummary(viewYear){
   ];
   const parcelas=getParcelasCartao();
   const meses=Array.from({length:12},(_,m)=>{
-    const entradas=S.extrato.filter(x=>x.tipo==='entrada'&&x.subcategoria!=='Dinheiro do mês passado'&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
+    const entradas=S.extrato.filter(x=>x.tipo==='entrada'&&x.subcategoria!=='Dinheiro do mÃªs passado'&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
     const saidas=S.extrato.filter(x=>x.tipo==='saida'&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
     const cartao=parcelas.filter(x=>isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
     const invest=S.extrato.filter(x=>x.tipo==='investimento'&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
@@ -857,6 +876,7 @@ function renderAnnualSummary(viewYear){
     ${resumoCharts.annual?`
       <div class="annual-legend">${series.map(s=>`<span><i class="annual-dot" style="background:${s.color}"></i>${s.label}</span>`).join('')}</div>
       <div class="stock-chart annual-chart">
+        <div class="annual-tooltip" id="annual-tooltip"></div>
         <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" aria-label="Resumo anual">
           <rect x="${left}" y="${top}" width="${chartW}" height="${chartH}" fill="#0d0d0c"/>
           ${yTicks.map(v=>`<g>
@@ -872,7 +892,7 @@ function renderAnnualSummary(viewYear){
           <text x="${left+chartW/2}" y="${h-4}" text-anchor="middle" fill="#c5c3ba" font-size="11">Meses</text>
           <text x="14" y="${top+chartH/2}" text-anchor="middle" fill="#c5c3ba" font-size="11" transform="rotate(-90 14 ${top+chartH/2})">Valores</text>
           ${series.map(s=>`<polyline points="${linePoints(s.key)}" fill="none" stroke="${s.color}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}
-          ${series.map(s=>pointObjs(s.key).map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${s.color}" stroke="#0d0d0c" stroke-width="1.5">
+          ${series.map(s=>pointObjs(s.key).map(p=>`<circle tabindex="0" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="${s.color}" stroke="#0d0d0c" stroke-width="1.5" onmousemove="showAnnualTooltip(event,'${s.label}','${p.mes}','${fmt(p.valor)}')" onfocus="showAnnualTooltip(event,'${s.label}','${p.mes}','${fmt(p.valor)}')" onmouseleave="hideAnnualTooltip()" onblur="hideAnnualTooltip()">
             <title>${p.mes} - ${s.label.replace(/<[^>]+>/g,'')}: ${fmt(p.valor)}</title>
           </circle>`).join('')).join('')}
         </svg>
@@ -913,17 +933,17 @@ function updatePreview(){
   const card=selectedCard();
   const vencDia=card?card.dueDay:10;
   const prev=document.getElementById('cc-preview');
-  if(!card&&val>0){prev.textContent='Escolha um cartão para calcular o vencimento.';return;}
+  if(!card&&val>0){prev.textContent='Escolha um cartÃ£o para calcular o vencimento.';return;}
   if(tipo==='parcelado'&&val>0&&n>1){
     const parc=(val/n);
     const d=new Date(dataStr+'T12:00:00');
     const primeira=dueDateFor(d,vencDia,0);
     const ultima=dueDateFor(d,vencDia,n-1);
-    prev.textContent=card.bank+': '+n+'x de '+fmt(parc)+' — vence todo dia '+vencDia+' de '+mesStr(primeira.getFullYear(),primeira.getMonth())+' até '+mesStr(ultima.getFullYear(),ultima.getMonth());
+    prev.textContent=card.bank+': '+n+'x de '+fmt(parc)+' â€” vence todo dia '+vencDia+' de '+mesStr(primeira.getFullYear(),primeira.getMonth())+' atÃ© '+mesStr(ultima.getFullYear(),ultima.getMonth());
   } else if(tipo==='compra'&&val>0){
     const d=new Date(dataStr+'T12:00:00');
     const venc=dueDateFor(d,vencDia,0);
-    prev.textContent=card.bank+': à vista no vencimento de '+String(venc.getDate()).padStart(2,'0')+'/'+String(venc.getMonth()+1).padStart(2,'0');
+    prev.textContent=card.bank+': Ã  vista no vencimento de '+String(venc.getDate()).padStart(2,'0')+'/'+String(venc.getMonth()+1).padStart(2,'0');
   } else {
     prev.textContent='';
   }
@@ -980,7 +1000,7 @@ function addExtrato(){
     return;
   }
   if(!categoria||!subcategoria||isNaN(val)||val<=0){alert('Preencha categoria, subcategoria e valor.');return;}
-  if(tipo==='saida'&&(!gastoTipo||!pagamento)){alert('Para saídas, informe tipo de gasto e forma de pagamento.');return;}
+  if(tipo==='saida'&&(!gastoTipo||!pagamento)){alert('Para saÃ­das, informe tipo de gasto e forma de pagamento.');return;}
   S.extrato.push({id:Date.now(),data,desc,tipo,val,categoria,subcategoria,gastoTipo:tipo==='saida'?gastoTipo:'',pagamento:tipo==='saida'?pagamento:''});
   document.getElementById('ext-desc').value='';
   document.getElementById('ext-val').value='';
@@ -1000,8 +1020,8 @@ function addCartao(){
   const gastoTipo=document.getElementById('cc-gasto-tipo').value;
   const val=parseFloat(document.getElementById('cc-val').value);
   const card=selectedCard();
-  if(!card){alert('Escolha o cartão usado na compra.');return;}
-  if(!desc||isNaN(val)||val<=0||!categoria||!subcategoria||!gastoTipo){alert('Preencha descrição, categoria, subcategoria, tipo de gasto e valor.');return;}
+  if(!card){alert('Escolha o cartÃ£o usado na compra.');return;}
+  if(!desc||isNaN(val)||val<=0||!categoria||!subcategoria||!gastoTipo){alert('Preencha descriÃ§Ã£o, categoria, subcategoria, tipo de gasto e valor.');return;}
   const vencDia=card.dueDay;
   const n=tipo==='parcelado'?parseInt(document.getElementById('cc-parcelas').value):1;
   const primeiraParcela=dueDateFor(new Date(data+'T12:00:00'),vencDia,0);
@@ -1033,7 +1053,7 @@ function addMeta(){
   const storage=S.invest.find(i=>i.id===storageId&&i.kind==='investimento');
   if(!desc){alert('Informe o nome da meta.');return;}
   if(meta<=0){alert('Informe o valor da meta.');return;}
-  if(!storage){alert('Escolha onde o dinheiro dessa meta vai ficar. Se ainda nÃ£o tiver, cadastre um investimento primeiro.');return;}
+  if(!storage){alert('Escolha onde o dinheiro dessa meta vai ficar. Se ainda nÃƒÂ£o tiver, cadastre um investimento primeiro.');return;}
   S.invest.push({id:Date.now(),kind:'meta',nome:desc,tipo:'Meta',meta,storageId:storage.id,storageNome:storage.nome,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[]});
   document.getElementById('meta-desc').value='';
   document.getElementById('meta-val').value='';
@@ -1069,9 +1089,9 @@ function getParcelasCartao(){
       parcelas.push({
         id:c.id+'-'+i,
         data:isoDate(venc.getFullYear(),venc.getMonth(),venc.getDate()),
-        desc:(n>1?`Parcela ${i+1}/${n} - `:'Cartão - ')+c.desc+(c.banco?' ('+c.banco+')':''),
+        desc:(n>1?`Parcela ${i+1}/${n} - `:'CartÃ£o - ')+c.desc+(c.banco?' ('+c.banco+')':''),
         tipo:'cartao',
-        categoria:c.categoria||'Cartão',
+        categoria:c.categoria||'CartÃ£o',
         subcategoria:c.subcategoria||c.desc,
         gastoTipo:c.gastoTipo||'',
         val:parc,
@@ -1130,15 +1150,15 @@ function renderCartao(){
 
   const wrap=document.getElementById('cc-wrap');
   const rows=S.cartao.filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
-  if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
-  wrap.innerHTML='<table><thead><tr><th style="width:62px">Data</th><th>Descrição</th><th style="width:74px">Tipo</th><th style="width:58px">Vence</th><th style="width:118px">Valor</th><th style="width:22px"></th></tr></thead><tbody>'+
+  if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lanÃ§amento no cartÃ£o em '+monthLabel+'.</div>';return;}
+  wrap.innerHTML='<table><thead><tr><th style="width:62px">Data</th><th>DescriÃ§Ã£o</th><th style="width:74px">Tipo</th><th style="width:58px">Vence</th><th style="width:118px">Valor</th><th style="width:22px"></th></tr></thead><tbody>'+
     rows.map(r=>{
       const d=new Date(r.data+'T12:00:00');
       const label=r.tipo==='parcelado'?`${r.parcelas}x de ${fmt(r.val/r.parcelas)}`:fmt(r.val);
-      const tipoLabel=r.tipo==='parcelado'?'Parcelado':'À vista';
+      const tipoLabel=r.tipo==='parcelado'?'Parcelado':'Ã€ vista';
       const venc='dia '+(r.vencDia||10);
       const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
-      const cat=`${r.subcategoria||'Sem categoria'}${r.gastoTipo?' · '+(r.gastoTipo==='fixo'?'fixo':'variável'):''}`;
+      const cat=`${r.subcategoria||'Sem categoria'}${r.gastoTipo?' Â· '+(r.gastoTipo==='fixo'?'fixo':'variÃ¡vel'):''}`;
       return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${desc}<div style="font-size:11px;color:var(--color-text-secondary)">${cat}</div></td><td><span class="badge b-compra">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="delCC(${r.id})" aria-label="Remover"><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
     }).join('')+'</tbody></table>';
 }
@@ -1166,8 +1186,8 @@ function delInv(id){
     const alvo=item.kind==='meta'?'meta':'investimento';
     const concluida=item.kind==='meta'&&Number(item.meta||0)>0&&Number(item.valorAtual||0)>=Number(item.meta||0);
     const msg=concluida
-      ? `Esta meta já tem progresso e parece estar concluída.\n\nSe excluir, o histórico e os lançamentos ligados a ela serão apagados.\n\nTem certeza que deseja excluir esta meta?`
-      : `${tipo.charAt(0).toUpperCase()+tipo.slice(1)} já tem dinheiro, histórico ou lançamentos ligados.\n\nSe excluir, a pessoa pode perder o progresso desse ${alvo}.\n\nTem certeza que deseja excluir?`;
+      ? `Esta meta jÃ¡ tem progresso e parece estar concluÃ­da.\n\nSe excluir, o histÃ³rico e os lanÃ§amentos ligados a ela serÃ£o apagados.\n\nTem certeza que deseja excluir esta meta?`
+      : `${tipo.charAt(0).toUpperCase()+tipo.slice(1)} jÃ¡ tem dinheiro, histÃ³rico ou lanÃ§amentos ligados.\n\nSe excluir, a pessoa pode perder o progresso desse ${alvo}.\n\nTem certeza que deseja excluir?`;
     if(!confirm(msg))return;
   }
   const linkedExtIds=S.extrato.filter(x=>x.destId===id).map(x=>x.id);
@@ -1283,7 +1303,7 @@ function saveInvestUpdate(id){
   const item=S.invest.find(x=>x.id===id);
   if(!item)return;
   if(item.kind==='meta'){
-    alert('A meta atualiza pelo rendimento do investimento onde o dinheiro estÃ¡ guardado.');
+    alert('A meta atualiza pelo rendimento do investimento onde o dinheiro estÃƒÂ¡ guardado.');
     return;
   }
   const val=parseFloat(document.getElementById('update-val-'+id).value);
@@ -1362,14 +1382,14 @@ function renderStockChart(item,mes,periodo){
   const fim=periodo==='ano'?(ano+1)+'-01-01':(mesNum===12?ano+1:ano)+'-'+String(mesNum===12?1:mesNum+1).padStart(2,'0')+'-01';
   const anterior=hist.filter(h=>(h.data||'')<inicio).slice(-1)[0];
   const dentro=hist.filter(h=>(h.data||'')>=inicio&&(h.data||'')<fim);
-  const pontos=[{label:'Início',valor:anterior?Number(anterior.saldo||0):0}]
+  const pontos=[{label:'InÃ­cio',valor:anterior?Number(anterior.saldo||0):0}]
     .concat(dentro.map(h=>{
       const d=new Date(h.data+'T12:00:00');
       const label=periodo==='ano'?MESES[d.getMonth()]:String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
       return {label,valor:Number(h.saldo||0)};
     }));
   if(!dentro.length&&(!anterior||Number(anterior.saldo||0)===0)){
-    return '<div class="empty">Sem dados para desenhar o gráfico neste período.</div>';
+    return '<div class="empty">Sem dados para desenhar o grÃ¡fico neste perÃ­odo.</div>';
   }
   const mesesResumo=periodo==='ano'
     ? Array.from({length:12},(_,i)=>{
@@ -1393,7 +1413,7 @@ function renderStockChart(item,mes,periodo){
   const variacao=ultimo-primeiro;
   const cor=variacao>=0?'#1D9E75':'#A32D2D';
   return `<div class="stock-chart">
-    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Gráfico de evolução">
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="GrÃ¡fico de evoluÃ§Ã£o">
       <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="#31302c" stroke-width="1"/>
       <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${h-pad}" stroke="#31302c" stroke-width="1"/>
       <polyline points="${line}" fill="none" stroke="${cor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1401,7 +1421,7 @@ function renderStockChart(item,mes,periodo){
     </svg>
     <div class="stock-chart-meta">
       <span>${pontos[0].label}: ${fmt(primeiro)}</span>
-      <span>Variação: ${variacao>=0?'+':''}${fmt(variacao)}</span>
+      <span>VariaÃ§Ã£o: ${variacao>=0?'+':''}${fmt(variacao)}</span>
       <span>${pontos[pontos.length-1].label}: ${fmt(ultimo)}</span>
     </div>
     <div class="yield-list">
@@ -1431,25 +1451,19 @@ function renderExtrato(){
   const investimentoMes=rows.filter(r=>r.tipo==='investimento').reduce((s,r)=>s+r.val,0);
   const metaMes=rows.filter(r=>r.tipo==='meta').reduce((s,r)=>s+r.val,0);
   const cartaoMes=rows.filter(r=>r.tipo==='cartao').reduce((s,r)=>s+r.val,0);
-  const aviso=parcelasMes.length?'<div class="hint">As parcelas do cartão deste mês aparecem aqui automaticamente na data de vencimento.</div>':'';
+  const aviso=parcelasMes.length?'<div class="hint">As parcelas do cartÃ£o deste mÃªs aparecem aqui automaticamente na data de vencimento.</div>':'';
   const resumoDetalhe=`<div class="plain-summary compact-summary">
     <div class="plain-card"><strong>Entradas: ${fmt(entradasMes)}</strong><span>Dinheiro que entrou em ${monthLabel}.</span></div>
-    <div class="plain-card"><strong>Saídas: ${fmt(saidasMes)}</strong><span>Gastos lançados direto no extrato.</span></div>
+    <div class="plain-card"><strong>SaÃ­das: ${fmt(saidasMes)}</strong><span>Gastos lanÃ§ados direto no extrato.</span></div>
     <div class="plain-card"><strong>Investimentos: ${fmt(investimentoMes)}</strong><span>Dinheiro separado para investimentos.</span></div>
     <div class="plain-card"><strong>Metas: ${fmt(metaMes)}</strong><span>Dinheiro guardado para metas cadastradas.</span></div>
-    <div class="plain-card"><strong>Parcelas cartão: ${fmt(cartaoMes)}</strong><span>Compras do cartão com vencimento em ${monthLabel}.</span></div>
+    <div class="plain-card"><strong>Parcelas cartÃ£o: ${fmt(cartaoMes)}</strong><span>Compras do cartÃ£o com vencimento em ${monthLabel}.</span></div>
   </div>`;
-  const resumo=`<button class="summary-toggle" onclick="toggleExtratoResumo()"><span>Resumo do mês</span><span>${extratoResumoAberto?'−':'+'}</span></button>${extratoResumoAberto?resumoDetalhe:''}`;
-  if(!rows.length){wrap.innerHTML=resumo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
+  const resumo=`<button class="summary-toggle" onclick="toggleExtratoResumo()"><span>Resumo do mÃªs</span><span>${extratoResumoAberto?'âˆ’':'+'}</span></button>${extratoResumoAberto?resumoDetalhe:''}`;
+  if(!rows.length){wrap.innerHTML=resumo+'<div class="empty">Nenhum lanÃ§amento em '+monthLabel+'.</div>';return;}
   const hoje=new Date(today()+'T12:00:00');
-  function renderGrupo(titulo,lista,emptyText,nota){
-    const total=lista.reduce((s,r)=>s+r.val,0);
-    if(!lista.length)return `<div class="extract-section"><div class="extract-title"><span>${titulo}</span><span>${fmt(0)}</span></div><div class="empty">${emptyText}</div></div>`;
-    return `<div class="extract-section">
-      <div class="extract-title"><span>${titulo}</span><span>${fmt(total)}</span></div>
-      ${nota?`<div class="extract-note">${nota}</div>`:''}
-      <table><thead><tr><th style="width:64px">Data</th><th>Descrição</th><th style="width:130px">Categoria</th><th style="width:70px">Status</th><th style="width:86px">Valor</th><th style="width:22px"></th></tr></thead><tbody>`+
-      lista.map(r=>{
+  wrap.innerHTML=resumo+aviso+'<table><thead><tr><th style="width:64px">Data</th><th>Descrição</th><th style="width:130px">Categoria</th><th style="width:70px">Status</th><th style="width:86px">Valor</th><th style="width:22px"></th></tr></thead><tbody>'+ 
+    rows.map(r=>{
       const d=new Date(r.data+'T12:00:00');
       const bc=r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
       const futuro=d>hoje;
@@ -1459,19 +1473,7 @@ function renderExtrato(){
       const categoria=r.subcategoria||r.categoria||'-';
       const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${r.storageNome}</div>`:r.tipo==='cartao'&&futuro?`<div style="font-size:11px;color:var(--color-text-secondary)">Ainda vai vencer neste mês.</div>`:'';
       return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.desc||'-'}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${categoria}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
-    }).join('')+'</tbody></table></div>';
-  }
-  const entradasRows=rows.filter(r=>r.tipo==='entrada');
-  const saidasRows=rows.filter(r=>r.tipo==='saida');
-  const cartaoRows=rows.filter(r=>r.tipo==='cartao');
-  const investRows=rows.filter(r=>r.tipo==='investimento');
-  const metaRows=rows.filter(r=>r.tipo==='meta');
-  wrap.innerHTML=resumo+aviso+
-    renderGrupo('Entradas',entradasRows,'Nenhuma entrada neste mês.','Dinheiro que entrou.')+
-    renderGrupo('Saídas',saidasRows,'Nenhuma saída direta neste mês.','Gastos pagos direto, sem cartão.')+
-    renderGrupo('Cartão de crédito',cartaoRows,'Nenhuma parcela de cartão neste mês.','Parcelas aparecem pela data de vencimento. Se ainda não venceu, aparece como futuro.')+
-    renderGrupo('Investimentos',investRows,'Nenhum dinheiro enviado para investimento neste mês.','Dinheiro separado para investimentos.')+
-    renderGrupo('Metas',metaRows,'Nenhum dinheiro guardado em metas neste mês.','Dinheiro separado para objetivos cadastrados.');
+    }).join('')+'</tbody></table>';
 }
 
 function renderInvest(){
@@ -1524,13 +1526,13 @@ function renderDestinoCard(item){
   const historicoMes=histOrdenado.filter(h=>h.data&&h.data.slice(0,7)===mesHist).sort((a,b)=>b.data.localeCompare(a.data));
   const saldoAnteriorHtml=saldoAnterior>0?`<div class="history-row">
           <div>--</div>
-          <div><strong>Saldo vindo do mês anterior</strong><div class="history-kind">Valor que já estava guardado antes deste mês.</div></div>
+          <div><strong>Saldo vindo do mÃªs anterior</strong><div class="history-kind">Valor que jÃ¡ estava guardado antes deste mÃªs.</div></div>
           <div class="history-value" style="color:#2378D4">${fmt(saldoAnterior)}</div>
           <span></span>
         </div>`:'';
   const painelAcao=acao==='atualizar'&&item.kind==='investimento'?`
     <div class="goal-panel">
-      <div class="goal-panel-title">Atualizar valor do mês atual</div>
+      <div class="goal-panel-title">Atualizar valor do mÃªs atual</div>
       <div class="row row2">
         <input type="date" id="update-data-${item.id}" value="${today()}"/>
         <input type="number" id="update-val-${item.id}" placeholder="Valor atual (R$)" min="0" step="0.01"/>
@@ -1548,7 +1550,7 @@ function renderDestinoCard(item){
   const historicoHtml=historicoAberto?`
     <div class="goal-panel">
       <div class="history-head">
-        <div class="goal-panel-title">Histórico</div>
+        <div class="goal-panel-title">HistÃ³rico</div>
       </div>
       ${saldoAnteriorHtml}
       ${historicoMes.length?historicoMes.map(h=>{
@@ -1563,14 +1565,14 @@ function renderDestinoCard(item){
           <div class="history-value" style="color:${cor}">${sinal}${fmt(h.valor||0)}</div>
           <button class="del" onclick="delInvestHistory(${item.id},'${h.id}')" aria-label="Remover movimento"><i class="ti ti-x" aria-hidden="true"></i></button>
         </div>`;
-      }).join(''):saldoAnterior>0?'':'<div class="empty">Nenhum movimento neste mês.</div>'}
+      }).join(''):saldoAnterior>0?'':'<div class="empty">Nenhum movimento neste mÃªs.</div>'}
     </div>`:'';
   const graficoHtml=graficoAberto?`
     <div class="goal-panel">
       <div class="chart-options">
-        <div class="goal-panel-title">Gráfico de evolução</div>
+        <div class="goal-panel-title">GrÃ¡fico de evoluÃ§Ã£o</div>
         <div class="chart-period">
-          <button class="${periodoGrafico==='mes'?'active':''}" onclick="changeInvestChartPeriod(${item.id},'mes')">Mês</button>
+          <button class="${periodoGrafico==='mes'?'active':''}" onclick="changeInvestChartPeriod(${item.id},'mes')">MÃªs</button>
           <button class="${periodoGrafico==='ano'?'active':''}" onclick="changeInvestChartPeriod(${item.id},'ano')">Ano</button>
         </div>
       </div>
@@ -1586,20 +1588,20 @@ function renderDestinoCard(item){
     <div class="goal-top">
       <div>
         <h3>${item.nome}</h3>
-        <div class="goal-meta">${subtitulo}${item.meta>0?' · alvo '+fmt(item.meta):''}</div>
+        <div class="goal-meta">${subtitulo}${item.meta>0?' Â· alvo '+fmt(item.meta):''}</div>
       </div>
       <input type="month" value="${mesHist}" onchange="changeInvestHistoryMonth(${item.id},this.value)"/>
     </div>
     <div class="plain-summary">
       <div class="plain-card"><strong>Atual: ${fmt(item.valorAtual)}</strong><span>Valor que existe hoje.</span></div>
-      <div class="plain-card"><strong>Rendeu no mês: ${fmt(resultadoMes.rendimento)}</strong><span>${item.kind==='meta'?'Calculado pelo rendimento do investimento onde a meta estÃ¡ guardada.':resultadoMes.pct.toFixed(1).replace('.',',')+'% comparando com o mês anterior.'}</span></div>
+      <div class="plain-card"><strong>Rendeu no mÃªs: ${fmt(resultadoMes.rendimento)}</strong><span>${item.kind==='meta'?'Calculado pelo rendimento do investimento onde a meta estÃƒÂ¡ guardada.':resultadoMes.pct.toFixed(1).replace('.',',')+'% comparando com o mÃªs anterior.'}</span></div>
     </div>
     ${progresso}
     <div class="goal-actions">
       ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'atualizar')">Atualizar valor</button>`:''}
       <button onclick="toggleInvestAction(${item.id},'resgatar')">Resgatar</button>
-      <button onclick="toggleInvestHistory(${item.id})">${historicoAberto?'Fechar hist.':'Histórico'}</button>
-      <button onclick="toggleInvestChart(${item.id})">${graficoAberto?'Fechar gráfico':'Gráfico'}</button>
+      <button onclick="toggleInvestHistory(${item.id})">${historicoAberto?'Fechar hist.':'HistÃ³rico'}</button>
+      <button onclick="toggleInvestChart(${item.id})">${graficoAberto?'Fechar grÃ¡fico':'GrÃ¡fico'}</button>
       <button onclick="delInv(${item.id})">Excluir</button>
     </div>
     ${painelAcao}
@@ -1635,10 +1637,10 @@ function updateResumo(){
   const entradaCat={}, saidaCat={}, cartaoCat={}, investCat={}, metaCat={};
   S.extrato.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>{
     if(x.tipo==='entrada')addGroup(entradaCat,x.subcategoria||x.categoria||'Entrada',x.val);
-    if(x.tipo==='saida')addGroup(saidaCat,x.subcategoria||x.categoria||'Saída',x.val);
+    if(x.tipo==='saida')addGroup(saidaCat,x.subcategoria||x.categoria||'SaÃ­da',x.val);
   });
   getParcelasCartao().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>{
-    addGroup(cartaoCat,x.subcategoria||x.categoria||'Cartão',x.val);
+    addGroup(cartaoCat,x.subcategoria||x.categoria||'CartÃ£o',x.val);
   });
   S.extrato.filter(x=>x.tipo==='investimento'&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(investCat,x.subcategoria||x.categoria||'Investimento',x.val));
   S.extrato.filter(x=>x.tipo==='meta'&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(metaCat,x.subcategoria||x.categoria||'Meta',x.val));
@@ -1650,82 +1652,82 @@ function updateResumo(){
   const metaItems=objToItems(metaCat,'#1D9E75');
   const resumoGeral=saldo>=0?'sobrou':'faltou';
   const extratoAviso=saidaItems.length
-    ? topText(saidaItems,'Ainda não teve saída no extrato neste mês.','Você gastou mais com')
+    ? topText(saidaItems,'Ainda nÃ£o teve saÃ­da no extrato neste mÃªs.','VocÃª gastou mais com')
     : cartaoItems.length
-      ? topText(cartaoItems,'Ainda não teve cartão de crédito neste mês.','No cartão, pesou mais com')
-      : 'Ainda não teve saída no extrato nem parcela de cartão neste mês.';
+      ? topText(cartaoItems,'Ainda nÃ£o teve cartÃ£o de crÃ©dito neste mÃªs.','No cartÃ£o, pesou mais com')
+      : 'Ainda nÃ£o teve saÃ­da no extrato nem parcela de cartÃ£o neste mÃªs.';
   bars.innerHTML=`
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('extrato')">${resumoCharts.extrato?'−':'+'}</button><h3>Extrato do mês - ${monthLabel}</h3></div>
-          <p>Entradas e saídas separadas por categoria para bater o olho e entender.</p>
+          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('extrato')">${resumoCharts.extrato?'âˆ’':'+'}</button><h3>Extrato do mÃªs - ${monthLabel}</h3></div>
+          <p>Entradas e saÃ­das separadas por categoria para bater o olho e entender.</p>
         </div>
         <div class="chart-total">${resumoGeral}: ${fmt(Math.abs(saldo))}</div>
       </div>
       ${resumoCharts.extrato?`
       <div class="month-message">
         <strong>${extratoAviso}</strong>
-        <span>${topText(entradaItems,'Ainda não teve entrada no extrato neste mês.','Você recebeu mais por')}</span>
+        <span>${topText(entradaItems,'Ainda nÃ£o teve entrada no extrato neste mÃªs.','VocÃª recebeu mais por')}</span>
       </div>
       <div class="plain-summary">
-        <div class="plain-card"><strong>Entradas por categoria</strong>${renderBarList(entradaItems,'#1D9E75','Nenhuma entrada neste mês.')}</div>
-        <div class="plain-card"><strong>Saídas por categoria</strong>${renderBarList(saidaItems,'#E24B4A','Nenhuma saída direta neste mês.')}</div>
-        <div class="plain-card"><strong>Cartão de crédito por categoria</strong>${renderBarList(cartaoItems,'#BA7517','Nenhuma parcela de cartão neste mês.')}</div>
+        <div class="plain-card"><strong>Entradas por categoria</strong>${renderBarList(entradaItems,'#1D9E75','Nenhuma entrada neste mÃªs.')}</div>
+        <div class="plain-card"><strong>SaÃ­das por categoria</strong>${renderBarList(saidaItems,'#E24B4A','Nenhuma saÃ­da direta neste mÃªs.')}</div>
+        <div class="plain-card"><strong>CartÃ£o de crÃ©dito por categoria</strong>${renderBarList(cartaoItems,'#BA7517','Nenhuma parcela de cartÃ£o neste mÃªs.')}</div>
       </div>
       `:''}
     </div>
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('cartao')">${resumoCharts.cartao?'−':'+'}</button><h3>Cartão de crédito</h3></div>
-          <p>Parcelas e compras do cartão que vencem em ${monthLabel}.</p>
+          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('cartao')">${resumoCharts.cartao?'âˆ’':'+'}</button><h3>CartÃ£o de crÃ©dito</h3></div>
+          <p>Parcelas e compras do cartÃ£o que vencem em ${monthLabel}.</p>
         </div>
         <div class="chart-total">${fmt(ccMes)}</div>
       </div>
       ${resumoCharts.cartao?`
       <div class="month-message">
-        <strong>${topText(cartaoItems,'Nenhuma parcela de cartão neste mês.','O cartão pesou mais com')}</strong>
-        <span>Esses valores entram como saída no resumo.</span>
+        <strong>${topText(cartaoItems,'Nenhuma parcela de cartÃ£o neste mÃªs.','O cartÃ£o pesou mais com')}</strong>
+        <span>Esses valores entram como saÃ­da no resumo.</span>
       </div>
-      ${renderBarList(cartaoItems,'#BA7517','Nenhuma parcela de cartão neste mês.')}
+      ${renderBarList(cartaoItems,'#BA7517','Nenhuma parcela de cartÃ£o neste mÃªs.')}
       `:''}
     </div>
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('invest')">${resumoCharts.invest?'−':'+'}</button><h3>Investimentos</h3></div>
-          <p>Onde o dinheiro foi separado para o futuro neste mês.</p>
+          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('invest')">${resumoCharts.invest?'âˆ’':'+'}</button><h3>Investimentos</h3></div>
+          <p>Onde o dinheiro foi separado para o futuro neste mÃªs.</p>
         </div>
         <div class="chart-total">${fmt(investido)}</div>
       </div>
       ${resumoCharts.invest?`
       <div class="month-message">
-        <strong>${topText(investItems,'Nenhum investimento neste mês.','Você investiu mais em')}</strong>
-        <span>Separado por tipo de aplicação.</span>
+        <strong>${topText(investItems,'Nenhum investimento neste mÃªs.','VocÃª investiu mais em')}</strong>
+        <span>Separado por tipo de aplicaÃ§Ã£o.</span>
       </div>
-      ${renderBarList(investItems,'#2378D4','Nenhum investimento neste mês.')}
+      ${renderBarList(investItems,'#2378D4','Nenhum investimento neste mÃªs.')}
       <div class="plain-summary">
-        <div class="plain-card"><strong>Total investido: ${fmt(investido)}</strong><span>Esse valor também reduz o saldo disponível.</span></div>
+        <div class="plain-card"><strong>Total investido: ${fmt(investido)}</strong><span>Esse valor tambÃ©m reduz o saldo disponÃ­vel.</span></div>
       </div>
       `:''}
     </div>
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('metas')">${resumoCharts.metas?'−':'+'}</button><h3>Metas</h3></div>
-          <p>Dinheiro guardado para objetivos cadastrados neste mês.</p>
+          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('metas')">${resumoCharts.metas?'âˆ’':'+'}</button><h3>Metas</h3></div>
+          <p>Dinheiro guardado para objetivos cadastrados neste mÃªs.</p>
         </div>
         <div class="chart-total">${fmt(metas)}</div>
       </div>
       ${resumoCharts.metas?`
       <div class="month-message">
-        <strong>${topText(metaItems,'Nenhuma meta recebeu dinheiro neste mês.','Você guardou mais para')}</strong>
+        <strong>${topText(metaItems,'Nenhuma meta recebeu dinheiro neste mÃªs.','VocÃª guardou mais para')}</strong>
         <span>Mostra para quais metas o dinheiro foi separado.</span>
       </div>
-      ${renderBarList(metaItems,'#1D9E75','Nenhuma meta recebeu dinheiro neste mês.')}
+      ${renderBarList(metaItems,'#1D9E75','Nenhuma meta recebeu dinheiro neste mÃªs.')}
       <div class="plain-summary">
-        <div class="plain-card"><strong>Total em metas: ${fmt(metas)}</strong><span>Esse valor também reduz o saldo disponível.</span></div>
+        <div class="plain-card"><strong>Total em metas: ${fmt(metas)}</strong><span>Esse valor tambÃ©m reduz o saldo disponÃ­vel.</span></div>
       </div>
       `:''}
     </div>`;
@@ -1749,8 +1751,9 @@ setInterval(autoSaveDataFile,3*60*1000);
 window.addEventListener('beforeunload',function(e){
   if(!hasUnsavedChanges)return;
   e.preventDefault();
-  e.returnValue='VocÃª tem alteraÃ§Ãµes sem salvar.';
+  e.returnValue='VocÃƒÂª tem alteraÃƒÂ§ÃƒÂµes sem salvar.';
 });
 </script>
 </body>
 </html>
+
