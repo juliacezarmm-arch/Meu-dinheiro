@@ -162,11 +162,11 @@ td:last-child{white-space:normal}
 .stock-chart{width:100%;background:#0d0d0c;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.5rem}
 .stock-chart svg{width:100%;height:130px;display:block}
 .annual-chart{position:relative}
-.annual-chart svg{height:260px}
-.annual-tooltip{position:absolute;z-index:5;display:none;pointer-events:none;background:#f5f5f2;color:#050505;border-radius:var(--border-radius-md);padding:.45rem .55rem;font-size:12px;font-weight:800;box-shadow:0 10px 28px rgba(0,0,0,.35);white-space:nowrap}
-.annual-tooltip span{display:block;font-size:11px;font-weight:600;color:#3a3934;margin-top:2px}
+.annual-chart svg{height:285px}
+.annual-tooltip{position:absolute;z-index:5;display:none;pointer-events:none;background:#f5f5f2;color:#050505;border-radius:var(--border-radius-md);padding:.5rem .65rem;font-size:13px;font-weight:800;box-shadow:0 10px 28px rgba(0,0,0,.35);white-space:nowrap}
+.annual-tooltip span{display:block;font-size:12px;font-weight:600;color:#3a3934;margin-top:2px}
 .stock-chart-meta{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--color-text-secondary);margin-top:4px}
-.annual-legend{display:flex;flex-wrap:wrap;gap:8px;margin:.65rem 0;font-size:11px;color:var(--color-text-secondary)}
+.annual-legend{display:flex;flex-wrap:wrap;gap:9px;margin:.65rem 0;font-size:12px;color:var(--color-text-secondary)}
 .annual-legend span{display:inline-flex;align-items:center;gap:5px}
 .annual-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
 .annual-table{display:grid;gap:5px;margin-top:.65rem}
@@ -848,7 +848,7 @@ function renderAnnualSummary(viewYear){
   const minVal=Math.min(0,...valores);
   const maxVal=Math.max(0,...valores);
   const range=maxVal-minVal||1;
-  const w=720,h=300,left=70,right=18,top=18,bottom=48;
+  const w=720,h=300,left=84,right=24,top=24,bottom=66;
   const chartW=w-left-right;
   const chartH=h-top-bottom;
   const yFor=v=>top+((maxVal-v)/range*chartH);
@@ -881,18 +881,18 @@ function renderAnnualSummary(viewYear){
           <rect x="${left}" y="${top}" width="${chartW}" height="${chartH}" fill="#0d0d0c"/>
           ${yTicks.map(v=>`<g>
             <line x1="${left}" y1="${yFor(v).toFixed(1)}" x2="${w-right}" y2="${yFor(v).toFixed(1)}" stroke="#31302c" stroke-width="1"/>
-            <text x="${left-8}" y="${(yFor(v)+4).toFixed(1)}" text-anchor="end" fill="#c5c3ba" font-size="10">${shortMoney(v)}</text>
+            <text x="${left-8}" y="${(yFor(v)+4).toFixed(1)}" text-anchor="end" fill="#c5c3ba" font-size="13" font-weight="700">${shortMoney(v)}</text>
           </g>`).join('')}
           ${meses.map((m,i)=>`<g>
             <line x1="${xFor(i).toFixed(1)}" y1="${top}" x2="${xFor(i).toFixed(1)}" y2="${h-bottom}" stroke="#22221f" stroke-width="1"/>
-            <text x="${xFor(i).toFixed(1)}" y="${h-18}" text-anchor="middle" fill="#c5c3ba" font-size="10">${MESES[m.m]}</text>
+            <text x="${xFor(i).toFixed(1)}" y="${h-18}" text-anchor="middle" fill="#c5c3ba" font-size="14" font-weight="800">${MESES[m.m]}</text>
           </g>`).join('')}
           <line x1="${left}" y1="${h-bottom}" x2="${w-right}" y2="${h-bottom}" stroke="#5b5952" stroke-width="1.2"/>
           <line x1="${left}" y1="${top}" x2="${left}" y2="${h-bottom}" stroke="#5b5952" stroke-width="1.2"/>
-          <text x="${left+chartW/2}" y="${h-4}" text-anchor="middle" fill="#c5c3ba" font-size="11">Meses</text>
-          <text x="14" y="${top+chartH/2}" text-anchor="middle" fill="#c5c3ba" font-size="11" transform="rotate(-90 14 ${top+chartH/2})">Valores</text>
-          ${series.map(s=>`<polyline points="${linePoints(s.key)}" fill="none" stroke="${s.color}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}
-          ${series.map(s=>pointObjs(s.key).map(p=>`<circle tabindex="0" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="${s.color}" stroke="#0d0d0c" stroke-width="1.5" onmousemove="showAnnualTooltip(event,'${s.label}','${p.mes}','${fmt(p.valor)}')" onfocus="showAnnualTooltip(event,'${s.label}','${p.mes}','${fmt(p.valor)}')" onmouseleave="hideAnnualTooltip()" onblur="hideAnnualTooltip()">
+          <text x="${left+chartW/2}" y="${h-4}" text-anchor="middle" fill="#c5c3ba" font-size="13" font-weight="800">Meses</text>
+          <text x="14" y="${top+chartH/2}" text-anchor="middle" fill="#c5c3ba" font-size="13" font-weight="800" transform="rotate(-90 14 ${top+chartH/2})">Valores</text>
+          ${series.map(s=>`<polyline points="${linePoints(s.key)}" fill="none" stroke="${s.color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}
+          ${series.map(s=>pointObjs(s.key).map(p=>`<circle tabindex="0" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5.7" fill="${s.color}" stroke="#0d0d0c" stroke-width="1.5" onmousemove="showAnnualTooltip(event,'${s.label}','${p.mes}','${fmt(p.valor)}')" onfocus="showAnnualTooltip(event,'${s.label}','${p.mes}','${fmt(p.valor)}')" onmouseleave="hideAnnualTooltip()" onblur="hideAnnualTooltip()">
             <title>${p.mes} - ${s.label.replace(/<[^>]+>/g,'')}: ${fmt(p.valor)}</title>
           </circle>`).join('')).join('')}
         </svg>
@@ -1756,6 +1756,7 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
 
 
 
