@@ -54,15 +54,15 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
 .ti::before{font-family:var(--font-sans) !important}
 .header .ti,.saldo-bar .ti,.del .ti{margin-right:0}
 .ti-wallet::before{content:"$"}
-.ti-home::before{content:"âŒ‚"}
-.ti-receipt::before{content:"â‰¡"}
-.ti-credit-card::before{content:"â–­"}
-.ti-trending-up::before{content:"â†—"}
-.ti-flag::before{content:"âš‘"}
+.ti-home::before{content:""}
+.ti-receipt::before{content:""}
+.ti-credit-card::before{content:""}
+.ti-trending-up::before{content:""}
+.ti-flag::before{content:""}
 .ti-pig-money::before{content:"$"}
 .ti-plus::before{content:"+"}
-.ti-x::before{content:"Ã—"}
-.ti-arrow-right::before{content:"â†’"}
+.ti-x::before{content:"x"}
+.ti-arrow-right::before{content:"->"}
 .btn-green{width:100%;margin-top:4px;background:#1D9E75;color:#fff;border:none;padding:9px;border-radius:var(--border-radius-md);font-size:14px;cursor:pointer;font-weight:500}
 .btn-green:hover{background:#0F6E56}
 .section-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:1.25rem 0 .75rem}
@@ -224,7 +224,7 @@ td:last-child{white-space:normal}
   <nav class="nav">
     <button onclick="showPage('resumo',this)" class="active"><i class="ti ti-home" aria-hidden="true"></i> Resumo</button>
     <button onclick="showPage('extrato',this)"><i class="ti ti-receipt" aria-hidden="true"></i> Extrato</button>
-    <button onclick="showPage('cartao',this)"><i class="ti ti-credit-card" aria-hidden="true"></i> CartÃ£o</button>
+    <button onclick="showPage('cartao',this)"><i class="ti ti-credit-card" aria-hidden="true"></i> Cartão</button>
     <button onclick="showPage('invest',this)"><i class="ti ti-trending-up" aria-hidden="true"></i> Investimentos</button>
     <button onclick="showPage('metas',this)"><i class="ti ti-flag" aria-hidden="true"></i> Metas</button>
   </nav>
