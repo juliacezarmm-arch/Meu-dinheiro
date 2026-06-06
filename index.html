@@ -90,8 +90,8 @@ td:last-child{white-space:normal}
 .tl-row.mes-atual{border-color:#BA7517;border-width:1.5px}
 .tl-row.mes-atual .tl-mes{color:#633806}
 .hint{font-size:12px;color:var(--color-text-secondary);margin-bottom:.75rem}
-.saldo-bar{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
-.saldo-bar .big{font-size:26px;font-weight:500}
+.saldo-bar{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:14px;overflow:hidden}
+.saldo-bar .big{font-size:26px;font-weight:500}.mascot-status{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:92px}.mascot-status img{width:82px;height:82px;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(0,0,0,.35))}.mascot-status span{font-size:11px;font-weight:800;color:#9FE1CB;text-align:center;line-height:1.15;max-width:116px}
 .month-switch{display:flex;align-items:center;justify-content:space-between;gap:6px;background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:.38rem;margin-bottom:.8rem}
 .month-switch button{background:#242423;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);min-width:34px;height:30px;padding:0 8px;font-size:12px;font-weight:700;cursor:pointer}
 .month-switch button:hover{border-color:#9FE1CB}
@@ -202,6 +202,9 @@ td:last-child{white-space:normal}
   .yield-row{grid-template-columns:1fr}
   .yield-row strong{text-align:left}
   .annual-row{grid-template-columns:1fr 1fr;gap:5px}
+  .mascot-status{min-width:70px}
+  .mascot-status img{width:64px;height:64px}
+  .mascot-status span{font-size:10px;max-width:82px}
   .data-tools{grid-template-columns:1fr}
 }
 </style>
@@ -236,7 +239,10 @@ td:last-child{white-space:normal}
         <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px">Saldo disponível</div>
         <div class="big" id="saldo-total">R$ 0,00</div>
       </div>
-      <i class="ti ti-pig-money" style="font-size:34px;color:#9FE1CB" aria-hidden="true"></i>
+      <div class="mascot-status" aria-live="polite">
+        <img id="res-mascot-img" src="assets/mascote-feliz.png" alt="Mascote feliz">
+        <span id="res-mascot-text">Comece lançando o mês</span>
+      </div>
     </div>
     <div class="cards">
       <div class="card"><div class="label">Entradas</div><div class="value green" id="res-ent">R$ 0</div></div>
@@ -1610,6 +1616,30 @@ function renderDestinoCard(item){
   </div>`;
 }
 
+function updateResumoMascot(entradas,saidas,investido,metas,saldo){
+  const img=document.getElementById('res-mascot-img');
+  const txt=document.getElementById('res-mascot-text');
+  if(!img||!txt)return;
+  const guardado=investido+metas;
+  const temMovimento=entradas>0||saidas>0||guardado>0;
+  let estado={src:'assets/mascote-preocupado.png',alt:'Mascote preocupado',texto:'Comece lançando o mês'};
+  if(!temMovimento){
+    estado={src:'assets/mascote-preocupado.png',alt:'Mascote esperando lançamentos',texto:'Comece lançando o mês'};
+  }else if(guardado>0&&saldo>0){
+    estado={src:'assets/mascote-feliz.png',alt:'Mascote feliz',texto:'Mandou bem!'};
+  }else if(guardado<=0&&(saldo<0||(entradas>0&&saidas>=entradas*0.85))){
+    estado={src:'assets/mascote-triste.png',alt:'Mascote triste',texto:'Gastou demais'};
+  }else if(guardado<=0&&entradas>0&&saidas>entradas*0.5){
+    estado={src:'assets/mascote-preocupado.png',alt:'Mascote preocupado',texto:'Atenção aos gastos'};
+  }else if(guardado>0){
+    estado={src:'assets/mascote-feliz.png',alt:'Mascote feliz',texto:'Você guardou dinheiro'};
+  }else{
+    estado={src:'assets/mascote-preocupado.png',alt:'Mascote preocupado',texto:'Tente guardar um pouco'};
+  }
+  img.src=estado.src;
+  img.alt=estado.alt;
+  txt.textContent=estado.texto;
+}
 function updateResumo(){
   const now=new Date(resumoMes.getFullYear(),resumoMes.getMonth(),1);
   const viewYear=now.getFullYear();
@@ -1631,6 +1661,7 @@ function updateResumo(){
   document.getElementById('res-cc').textContent=fmt(ccMes);
   document.getElementById('res-inv').textContent=fmt(investido);
   document.getElementById('res-meta').textContent=fmt(metas);
+  updateResumoMascot(entradas,saidas,investido,metas,saldo);
   renderAnnualSummary(viewYear);
 
   const bars=document.getElementById('resumo-bars');
@@ -1756,6 +1787,9 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
+
+
 
 
 
