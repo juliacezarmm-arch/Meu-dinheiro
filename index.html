@@ -108,6 +108,7 @@ td:last-child{white-space:normal}
 .chart-toggle{background:#242423;color:#9FE1CB;border:1px solid #3a3934;border-radius:var(--border-radius-md);min-width:32px;height:28px;font-size:16px;font-weight:800;cursor:pointer}
 .chart-toggle:hover{border-color:#9FE1CB}
 .chart-title-line{display:flex;align-items:center;gap:8px}
+.help-tooltip{position:fixed;z-index:9999;display:none;max-width:280px;background:#f5f5f2;color:#050505;border:1px solid #d8d2c2;border-radius:10px;padding:.65rem .75rem;font-size:13px;font-weight:800;line-height:1.35;box-shadow:0 14px 34px rgba(0,0,0,.45);pointer-events:none}.help-tooltip::after{content:"";position:absolute;left:18px;bottom:-7px;border-width:7px 7px 0 7px;border-style:solid;border-color:#f5f5f2 transparent transparent transparent}.help-tooltip.show{display:block}
 .month-message{background:#10100f;border:1px solid #31302c;border-left:4px solid #BA7517;border-radius:var(--border-radius-md);padding:.75rem;margin-bottom:.75rem}
 .month-message strong{display:block;font-size:14px;margin-bottom:3px}
 .month-message span{font-size:12px;color:var(--color-text-secondary)}
@@ -1635,33 +1636,34 @@ function updateResumoMascot(entradas,saidas,investido,metas,saldo,contexto){
   const guardado=investido+metas;
   const temMovimento=entradas>0||saidas>0||guardado>0;
   const gastoRatio=entradas>0?saidas/entradas:0;
+  const gastoPct=Math.round(gastoRatio*100);
   const cartaoMes=Number(contexto.cartaoMes||0);
   const topGasto=contexto.topGasto;
   const topTexto=topGasto&&topGasto.val>0?topGasto.label:'gastos do mês';
-  const bloco3h=Math.floor(new Date().getHours()/3);
-  const seed=(new Date().getDate()*11)+bloco3h+(resumoMes.getMonth()+1)*17+(resumoMes.getFullYear()%100);
+  const blocoHora=new Date().getHours();
+  const seed=(new Date().getDate()*11)+blocoHora+(resumoMes.getMonth()+1)*17+(resumoMes.getFullYear()%100);
   const metaBatida=S.invest.some(i=>i.kind==='meta'&&Number(i.meta||0)>0&&Number(i.valorAtual||0)>=Number(i.meta||0));
-  const cartaoPesado=entradas>0&&cartaoMes>entradas*0.35;
-  const poupouAlgumaCoisa=saldo>0||guardado>0;
   const imagens={
-    feliz:['assets/mascote-feliz.png','assets/mascote-lg-08.png','assets/mascote-lg-12.png','assets/mascote-lg-15.png'],
-    comemorando:['assets/mascote-comemorando.png','assets/mascote-lg-20.png','assets/mascote-lg-13.png','assets/mascote-lg-11.png'],
-    tranquilo:['assets/mascote-lg-07.png','assets/mascote-lg-12.png','assets/mascote-lg-15.png'],
-    pensativo:['assets/mascote-pensativo.png','assets/mascote-lg-04.png','assets/mascote-lg-06.png','assets/mascote-lg-18.png','assets/mascote-lg-09.png'],
-    preocupado:['assets/mascote-preocupado.png','assets/mascote-lg-03.png','assets/mascote-lg-18.png'],
-    triste:['assets/mascote-triste.png'],
-    bravo:['assets/mascote-bravo.png'],
-    dica:['assets/mascote-lg-01.png','assets/mascote-lg-05.png','assets/mascote-lg-10.png','assets/mascote-lg-16.png','assets/mascote-lg-17.png'],
-    meta:['assets/mascote-lg-14.png','assets/mascote-lg-19.png','assets/mascote-lg-20.png']
+    boasVindas:['assets/mascote-lg-13.png'],
+    aprovacao:['assets/mascote-lg-01.png'],
+    vitoria:['assets/mascote-lg-11.png'],
+    excelente:['assets/mascote-lg-12.png'],
+    felicidade:['assets/mascote-lg-20.png'],
+    investigando:['assets/mascote-lg-05.png'],
+    dica:['assets/mascote-lg-07.png'],
+    aprendizado:['assets/mascote-lg-09.png'],
+    pensando:['assets/mascote-lg-15.png'],
+    cuidado:['assets/mascote-lg-16.png'],
+    trabalhando:['assets/mascote-lg-17.png'],
+    guia:['assets/mascote-lg-10.png'],
+    crescimento:['assets/mascote-lg-18.png'],
+    confianca:['assets/mascote-lg-19.png']
   };
-  const estado={src:'assets/mascote-pensativo.png',alt:'Mascote pensativo',titulo:'Pensativo',texto:'Vamos entender o mês antes de decidir o próximo passo.'};
+  const estado={src:'assets/mascote-lg-13.png',alt:'Mascote de boas-vindas',titulo:'Boas-vindas',texto:'Oi! Vamos cuidar do seu dinheiro hoje?'};
 
-  function pegaImagem(tipo){
-    const lista=imagens[tipo]||imagens.pensativo;
-    return escolhaRotativa(lista,seed+3);
-  }
   function set(tipo,alt,titulo,frases){
-    estado.src=pegaImagem(tipo);
+    const lista=imagens[tipo]||imagens.boasVindas;
+    estado.src=escolhaRotativa(lista,seed+3);
     estado.alt=alt;
     estado.titulo=titulo;
     estado.texto=escolhaRotativa(frases,seed);
@@ -1678,77 +1680,59 @@ function updateResumoMascot(entradas,saidas,investido,metas,saldo,contexto){
   }
 
   if(!temMovimento){
-    set('pensativo','Mascote pensativo','Pensativo',[
-      'Comece lançando uma entrada para eu analisar o mês com você.',
-      'Sem dados ainda. Um lançamento já ajuda a enxergar o caminho.',
-      'Quando você colocar entradas e gastos, eu te mostro onde melhorar.',
-      'Dica rápida: registre primeiro o salário ou dinheiro que entrou no mês.',
-      'Vamos montar esse mês aos poucos. Comece pelo que você lembra agora.'
+    set('boasVindas','Mascote dando boas-vindas','Boas-vindas',[
+      'Oi! Vamos cuidar do seu dinheiro hoje?',
+      'Estou aqui para te ajudar. Comece colocando uma entrada do mês.',
+      'Vem comigo: um lançamento já ajuda a entender seu mês.',
+      'Primeiro passo: registre o dinheiro que entrou.'
     ]);
-  }else if(metaBatida&&guardado>0){
-    set('comemorando','Mascote comemorando','Comemorando',[
-      'Você bateu uma meta. Esse mês merece comemoração!',
-      'Meta alcançada! Agora vale pensar na próxima conquista.',
-      'Você chegou no alvo e ainda manteve o controle. Muito bom!',
-      'A meta saiu do papel. Agora escolha o próximo objetivo com calma.',
-      `Você guardou ${fmt(guardado)} e chegou mais longe. Isso é progresso real.`
+  }else if(metaBatida){
+    set('vitoria','Mascote comemorando vitória','Vitória',[
+      'Parabéns! Você alcançou sua meta!',
+      'Olha só, seu esforço está dando resultado!',
+      'Meta concluída. Agora você pode escolher o próximo objetivo.',
+      `Você guardou ${fmt(guardado)} e chegou mais perto do que queria.`
     ]);
-  }else if(entradas>0&&saidas>entradas*1.15&&guardado<=0){
-    set('bravo','Mascote bravo','Bravo',[
-      `Exagerou muito: os gastos passaram das entradas. Atenção com ${topTexto}.`,
-      `Esse mês saiu forte demais. Revise ${topTexto} antes de continuar gastando.`,
-      'O orçamento estourou bastante. Hora de segurar novas compras.',
-      `${dicaCartao()} Primeiro pare o vazamento, depois pense em guardar.`,
-      'Respira e revisa o maior gasto. O próximo lançamento pode ser uma escolha melhor.'
+  }else if(entradas>0&&gastoRatio>=0.85){
+    set('cuidado','Mascote dando alerta','Cuidado',[
+      'Atenção! Você está chegando perto do limite.',
+      'Talvez seja hora de segurar um pouquinho os gastos.',
+      `Você já usou ${gastoPct}% do que entrou. Olhe com carinho para ${topTexto}.`,
+      `${dicaCartao()} Cuidado para não apertar o fim do mês.`,
+      saldo<0?`O saldo ficou negativo em ${fmt(Math.abs(saldo))}. Vamos reduzir uma despesa primeiro.`:'Ainda dá tempo de ajustar antes de passar do orçamento.'
     ]);
-  }else if(saldo<0||(entradas>0&&gastoRatio>=0.9&&guardado<=0)){
-    set('triste','Mascote triste','Triste',[
-      `Passou do orçamento. O saldo ficou negativo em ${fmt(Math.abs(saldo))}.`,
-      `Gastou demais neste mês, principalmente com ${topTexto}.`,
-      'O mês fechou apertado. Tente cortar uma despesa antes de comprar de novo.',
-      `${dicaCartao()} O foco agora é voltar para o positivo.`,
-      'Escolha uma despesa para reduzir primeiro. Uma mudança pequena já melhora o mês.'
+  }else if(entradas>0&&gastoRatio>=0.6){
+    const tipo=seed%2===0?'pensando':'investigando';
+    set(tipo,tipo==='pensando'?'Mascote pensando':'Mascote investigando','Analisando',[
+      'Vamos acompanhar seus gastos.',
+      'Hmm... deixa eu analisar isso.',
+      'Estou vendo um padrão nos seus gastos.',
+      `Você gastou mais com ${topTexto}. Dá para revisar essa parte?`,
+      `${dicaCartao()} Pequenas mudanças fazem diferença no final do mês.`
     ]);
-  }else if(guardado<=0&&entradas>0&&gastoRatio>0.5){
-    set('preocupado','Mascote preocupado','Preocupado',[
-      `Chegando no limite: mais da metade da entrada já foi para gastos. Olhe ${topTexto}.`,
-      `Você gastou bastante com ${topTexto}. Talvez dê para reduzir um pouco.`,
-      'Ainda dá tempo de ajustar. Separe uma parte pequena para meta ou investimento.',
-      `${dicaCartao()} Se puder, evite novas parcelas agora.`,
-      'Antes da próxima compra, veja se ela ajuda uma meta ou só aperta o mês.'
+  }else if(entradas>0&&gastoRatio<=0.6){
+    const tipo=guardado>0?'felicidade':'excelente';
+    set(tipo,tipo==='felicidade'?'Mascote feliz com dinheiro guardado':'Mascote excelente','Excelente',[
+      'Mandou muito bem esse mês!',
+      'Seu planejamento está funcionando!',
+      `Seu dinheiro está tranquilo: você usou cerca de ${gastoPct}% do que entrou.`,
+      saldo>0?`Sobrou ${fmt(saldo)}. Ótimo momento para fortalecer uma meta.`:'Você manteve os gastos controlados neste mês.',
+      guardado>0?`Que orgulho! Você guardou ${fmt(guardado)}.`:dicaMeta()
     ]);
-  }else if(guardado>0&&saldo>0){
-    const tipoFeliz=cartaoPesado?'dica':'feliz';
-    set(tipoFeliz,'Mascote feliz','Feliz',[
-      `Você economizou ${fmt(saldo)} e ainda guardou ${fmt(guardado)}.`,
-      `Sobrou ${fmt(saldo)} neste mês. Esse é o caminho!`,
-      'Você guardou dinheiro e não zerou o saldo. Muito bom!',
-      cartaoPesado?`${dicaCartao()} Mesmo assim, você conseguiu guardar dinheiro.`:dicaMeta(),
-      `Seu maior gasto foi ${topTexto}. Como ainda sobrou dinheiro, dá para planejar melhor sem susto.`
-    ]);
-  }else if(entradas>0&&gastoRatio<=0.5&&saldo>=0){
-    set('tranquilo','Mascote tranquilo','Tranquilo',[
-      'Tudo sob controle. Se puder, transforme uma parte da sobra em meta.',
-      `Você não gastou tanto este mês. Ainda sobrou ${fmt(saldo)}.`,
-      'O mês está leve. Uma pequena meta agora pode virar conquista depois.',
-      dicaMeta(),
-      `Seu maior gasto foi ${topTexto}, mas ainda parece controlado.`
-    ]);
-  }else if(poupouAlgumaCoisa){
-    set('meta','Mascote focado em metas','Focado',[
-      dicaMeta(),
-      'Você já tem algum progresso. O segredo agora é continuar sem pressa.',
-      `Mesmo com gastos em ${topTexto}, você conseguiu separar algo. Bom sinal.`,
-      'A constância ganha do valor alto. Guardar um pouco todo mês ajuda muito.',
-      'Olhe suas metas antes de gastar: isso ajuda a escolher melhor.'
+  }else if(guardado>0){
+    set('crescimento','Mascote mostrando crescimento financeiro','Crescimento',[
+      'Que orgulho! Sua reserva está crescendo.',
+      `Você separou ${fmt(guardado)} para o futuro.`,
+      'Patrimônio cresce assim: um passo pequeno por vez.',
+      dicaMeta()
     ]);
   }else{
-    set('pensativo','Mascote pensativo','Pensativo',[
-      `Analisando os gastos: ${topTexto} merece um olhar com calma.`,
-      'Você pode melhorar escolhendo uma meta pequena para este mês.',
-      'O mês não está ruim, mas ainda dá para organizar melhor o dinheiro.',
-      dicaCartao(),
-      'Tente transformar uma sobra pequena em meta. O app fica mais útil quando você acompanha um objetivo.'
+    set('dica','Mascote dando dica','Dica',[
+      'Tenho uma dica para você!',
+      'Pequenas mudanças fazem diferença no final do mês.',
+      `Comece olhando ${topTexto}. Pode ter uma oportunidade de economia ali.`,
+      dicaMeta(),
+      'Aprender sobre dinheiro também é uma forma de economizar.'
     ]);
   }
 
@@ -1881,6 +1865,68 @@ function updateResumo(){
   saveData();
 }
 
+function setupHelpTooltips(){
+  let tip=document.getElementById('help-tooltip');
+  if(!tip){
+    tip=document.createElement('div');
+    tip.id='help-tooltip';
+    tip.className='help-tooltip';
+    document.body.appendChild(tip);
+  }
+  function moveTip(x,y){
+    const margin=12;
+    const rect=tip.getBoundingClientRect();
+    let left=x+14;
+    let top=y-rect.height-14;
+    if(left+rect.width>window.innerWidth-margin)left=window.innerWidth-rect.width-margin;
+    if(left<margin)left=margin;
+    if(top<margin)top=y+18;
+    if(top+rect.height>window.innerHeight-margin)top=window.innerHeight-rect.height-margin;
+    tip.style.left=left+'px';
+    tip.style.top=top+'px';
+  }
+  document.querySelectorAll('[title]').forEach(el=>{
+    if(!el.dataset.help){
+      el.dataset.help=el.getAttribute('title');
+      el.removeAttribute('title');
+    }
+  });
+  document.addEventListener('mouseover',e=>{
+    const el=e.target.closest('[data-help]');
+    if(!el)return;
+    tip.textContent=el.dataset.help;
+    tip.classList.add('show');
+    moveTip(e.clientX,e.clientY);
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!tip.classList.contains('show'))return;
+    moveTip(e.clientX,e.clientY);
+  });
+  document.addEventListener('mouseout',e=>{
+    if(e.target.closest('[data-help]'))tip.classList.remove('show');
+  });
+  document.addEventListener('focusin',e=>{
+    const el=e.target.closest('[data-help]');
+    if(!el)return;
+    const r=el.getBoundingClientRect();
+    tip.textContent=el.dataset.help;
+    tip.classList.add('show');
+    moveTip(r.left+r.width/2,r.top);
+  });
+  document.addEventListener('focusout',e=>{
+    if(e.target.closest('[data-help]'))tip.classList.remove('show');
+  });
+  document.addEventListener('touchstart',e=>{
+    const el=e.target.closest('[data-help]');
+    if(!el)return;
+    const t=e.touches[0];
+    tip.textContent=el.dataset.help;
+    tip.classList.add('show');
+    moveTip(t.clientX,t.clientY);
+    clearTimeout(tip.hideTimer);
+    tip.hideTimer=setTimeout(()=>tip.classList.remove('show'),2600);
+  },{passive:true});
+}
 document.querySelectorAll('input[type="date"]').forEach(el=>el.value=today());
 document.getElementById('today-label').textContent=todayText();
 document.getElementById('cc-data').value=today();
@@ -1888,6 +1934,7 @@ updateCategories();
 updateCartaoCategories();
 toggleSaidaCampos();
 setupCollapsibleForms();
+setupHelpTooltips();
 renderRegisteredCards();
 renderMetaInvestOptions();
 renderInvest();
@@ -1895,7 +1942,7 @@ renderMetas();
 updateResumo();
 appReady=true;
 setInterval(autoSaveDataFile,3*60*1000);
-setInterval(updateResumo,15*60*1000);
+setInterval(updateResumo,5*60*1000);
 window.addEventListener('beforeunload',function(e){
   if(!hasUnsavedChanges)return;
   e.preventDefault();
@@ -1904,6 +1951,8 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
+
 
 
 
