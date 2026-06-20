@@ -364,7 +364,8 @@ td:last-child{white-space:normal}
         </div>
       </div>
       <div id="cc-preview" style="font-size:12px;color:var(--color-text-secondary);min-height:18px;margin-bottom:4px"></div>
-      <button class="btn-green" onclick="addCartao()" title="Adiciona essa compra ao cartão escolhido."><i class="ti ti-plus" aria-hidden="true"></i> Adicionar</button>
+      <button class="btn-green" id="cc-submit" onclick="addCartao()" title="Adiciona essa compra ao cartão escolhido."><i class="ti ti-plus" aria-hidden="true"></i> Adicionar</button>
+      <button class="btn-green" id="cc-cancel-edit" onclick="cancelCartaoEdit()" style="display:none;background:#242423;border:1px solid #3a3934;margin-top:8px" title="Cancela a edição e limpa o formulário.">Cancelar edição</button>
     </div>
 
     <div class="cards">
@@ -463,6 +464,7 @@ const CATEGORIAS={
 let resumoMes=new Date();
 let extratoMes=new Date();
 let cartaoMes=new Date();
+let editingCartaoId=null;
 let extratoResumoAberto=false;
 const resumoCharts={annual:false,extrato:false,cartao:false,invest:false,metas:false};
 const investUi={acao:{},historico:{},grafico:{},mes:{},periodo:{}};
@@ -1024,6 +1026,18 @@ function addExtrato(){
   renderExtrato();updateResumo();
 }
 
+function resetCartaoForm(){
+  editingCartaoId=null;
+  document.getElementById('cc-desc').value='';
+  document.getElementById('cc-val').value='';
+  document.getElementById('cc-categoria').value='';
+  document.getElementById('cc-subcategoria').innerHTML='<option value="">Selecione subcategoria</option>';
+  document.getElementById('cc-gasto-tipo').value='';
+  document.getElementById('cc-preview').textContent='';
+  document.getElementById('cc-submit').innerHTML='<i class="ti ti-plus" aria-hidden="true"></i> Adicionar';
+  document.getElementById('cc-cancel-edit').style.display='none';
+}
+
 function addCartao(){
   const data=document.getElementById('cc-data').value||today();
   const desc=document.getElementById('cc-desc').value.trim();
@@ -1038,16 +1052,42 @@ function addCartao(){
   const vencDia=card.dueDay;
   const n=tipo==='parcelado'?parseInt(document.getElementById('cc-parcelas').value):1;
   const primeiraParcela=dueDateFor(new Date(data+'T12:00:00'),vencDia,0);
-  S.cartao.push({id:Date.now(),data,desc,tipo,val,parcelas:n,vencDia,cardId:card.id,banco:card.bank,cardColor:card.color,categoria,subcategoria,gastoTipo});
+  const registro={id:editingCartaoId||Date.now(),data,desc,tipo,val,parcelas:n,vencDia,cardId:card.id,banco:card.bank,cardColor:card.color,categoria,subcategoria,gastoTipo};
+  if(editingCartaoId){
+    const idx=S.cartao.findIndex(x=>x.id===editingCartaoId);
+    if(idx>=0)S.cartao[idx]=registro;
+  }else{
+    S.cartao.push(registro);
+  }
   extratoMes=new Date(primeiraParcela.getFullYear(),primeiraParcela.getMonth(),1);
   cartaoMes=new Date(primeiraParcela.getFullYear(),primeiraParcela.getMonth(),1);
-  document.getElementById('cc-desc').value='';
-  document.getElementById('cc-val').value='';
-  document.getElementById('cc-categoria').value='';
-  document.getElementById('cc-subcategoria').innerHTML='<option value="">Selecione subcategoria</option>';
-  document.getElementById('cc-gasto-tipo').value='';
-  document.getElementById('cc-preview').textContent='';
+  resetCartaoForm();
   renderCartao();renderExtrato();updateResumo();
+}
+
+function editCartao(id){
+  const item=S.cartao.find(x=>x.id===id);
+  if(!item)return;
+  editingCartaoId=id;
+  document.getElementById('cc-data').value=item.data||today();
+  document.getElementById('cc-card').value=item.cardId||'';
+  document.getElementById('cc-tipo').value=item.tipo||'compra';
+  document.getElementById('cc-parcelas-wrap').style.display=item.tipo==='parcelado'?'block':'none';
+  document.getElementById('cc-parcelas').value=String(item.parcelas||2);
+  document.getElementById('cc-categoria').value=item.categoria||'';
+  updateCartaoSubcategorias();
+  document.getElementById('cc-subcategoria').value=item.subcategoria||'';
+  document.getElementById('cc-gasto-tipo').value=item.gastoTipo||'';
+  document.getElementById('cc-desc').value=item.desc||'';
+  document.getElementById('cc-val').value=item.val||'';
+  document.getElementById('cc-submit').innerHTML='<i class="ti ti-plus" aria-hidden="true"></i> Salvar edição';
+  document.getElementById('cc-cancel-edit').style.display='block';
+  updatePreview();
+  document.getElementById('page-cartao').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cancelCartaoEdit(){
+  resetCartaoForm();
 }
 
 function addInvest(){
@@ -1173,7 +1213,7 @@ function renderCartao(){
   const wrap=document.getElementById('cc-wrap');
   const rows=S.cartao.filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
   if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
-  wrap.innerHTML='<table><thead><tr><th style="width:62px">Data</th><th>Descrição</th><th style="width:74px">Tipo</th><th style="width:58px">Vence</th><th style="width:118px">Valor</th><th style="width:22px"></th></tr></thead><tbody>'+
+  wrap.innerHTML='<table><thead><tr><th style="width:62px">Data</th><th>Descrição</th><th style="width:74px">Tipo</th><th style="width:58px">Vence</th><th style="width:118px">Valor</th><th style="width:54px"></th></tr></thead><tbody>'+
     rows.map(r=>{
       const d=new Date(r.data+'T12:00:00');
       const label=r.tipo==='parcelado'?`${r.parcelas}x de ${fmt(r.val/r.parcelas)}`:fmt(r.val);
@@ -1181,7 +1221,7 @@ function renderCartao(){
       const venc='dia '+(r.vencDia||10);
       const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
       const cat=`${r.subcategoria||'Sem categoria'}${r.gastoTipo?' · '+(r.gastoTipo==='fixo'?'fixo':'variável'):''}`;
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${desc}<div style="font-size:11px;color:var(--color-text-secondary)">${cat}</div></td><td><span class="badge b-compra">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
+      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${desc}<div style="font-size:11px;color:var(--color-text-secondary)">${cat}</div></td><td><span class="badge b-compra">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra sem precisar apagar e lançar de novo.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
     }).join('')+'</tbody></table>';
 }
 
@@ -1318,6 +1358,23 @@ function changeInvestHistoryMonth(id,mes){
 
 function changeInvestChartPeriod(id,periodo){
   investUi.periodo[id]=periodo;
+  refreshInvestViews();
+}
+
+function saveInvestAporte(id){
+  const item=S.invest.find(x=>x.id===id);
+  if(!item||item.kind!=='investimento')return;
+  const val=parseFloat(document.getElementById('aporte-val-'+id).value);
+  const data=document.getElementById('aporte-data-'+id).value||today();
+  if(isNaN(val)||val<=0){alert('Informe o valor que entrou no investimento.');return;}
+  const historico=ensureInvestHistory(item);
+  const saldo=Number(item.valorAtual||0)+val;
+  const origem=historico.length?'aporte_manual':'saldo_inicial';
+  historico.push({id:Date.now()+'-aporte',tipo:'aporte',data,valor:val,saldo,origem});
+  recalcInvestFromHistory(item);
+  investUi.acao[id]='';
+  investUi.historico[id]=true;
+  investUi.mes[id]=data.slice(0,7);
   refreshInvestViews();
 }
 
@@ -1552,7 +1609,15 @@ function renderDestinoCard(item){
           <div class="history-value" style="color:#2378D4">${fmt(saldoAnterior)}</div>
           <span></span>
         </div>`:'';
-  const painelAcao=acao==='atualizar'&&item.kind==='investimento'?`
+  const painelAcao=acao==='aportar'&&item.kind==='investimento'?`
+    <div class="goal-panel">
+      <div class="goal-panel-title">Colocar dinheiro no investimento</div>
+      <div class="row row2">
+        <input type="date" id="aporte-data-${item.id}" value="${today()}" title="Data em que esse dinheiro entrou ou já existia."/>
+        <input type="number" id="aporte-val-${item.id}" placeholder="Valor colocado (R$)" min="0" step="0.01" title="Valor que você já tinha ou colocou agora neste investimento."/>
+      </div>
+      <button onclick="saveInvestAporte(${item.id})" title="Registra esse dinheiro no histórico do investimento.">Salvar dinheiro colocado</button>
+    </div>`:acao==='atualizar'&&item.kind==='investimento'?`
     <div class="goal-panel">
       <div class="goal-panel-title">Atualizar valor do mês atual</div>
       <div class="row row2">
@@ -1620,7 +1685,7 @@ function renderDestinoCard(item){
     </div>
     ${progresso}
     <div class="goal-actions">
-      ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'atualizar')" title="Use quando o investimento mudou de valor, para calcular quanto rendeu.">Atualizar valor</button>`:''}
+      ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'aportar')" title="Use para registrar dinheiro que já existia ou que você colocou neste investimento.">Colocar dinheiro</button><button onclick="toggleInvestAction(${item.id},'atualizar')" title="Use quando o investimento mudou de valor, para calcular quanto rendeu.">Atualizar valor</button>`:''}
       <button onclick="toggleInvestAction(${item.id},'resgatar')" title="Use quando retirou dinheiro desse investimento ou meta.">Resgatar</button>
       <button onclick="toggleInvestHistory(${item.id})" title="Mostra ou esconde tudo que entrou, saiu ou foi atualizado aqui.">${historicoAberto?'Fechar hist.':'Histórico'}</button>
       <button onclick="toggleInvestChart(${item.id})" title="Mostra ou esconde o gráfico de evolução.">${graficoAberto?'Fechar gráfico':'Gráfico'}</button>
@@ -1961,6 +2026,7 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
 
 
 
