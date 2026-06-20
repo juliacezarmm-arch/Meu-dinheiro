@@ -1116,10 +1116,17 @@ function calcCryptoValue(qtd,cotacao){
   cotacao=Number(cotacao||0);
   return qtd>0&&cotacao>0?Number((qtd*cotacao).toFixed(2)):0;
 }
+function cryptoAveragePrice(qtd,investido){
+  qtd=Number(qtd||0);
+  investido=Number(investido||0);
+  return qtd>0&&investido>0?Number((investido/qtd).toFixed(2)):0;
+}
 function cryptoInfoText(qtd,cotacao,investido){
   const partes=[];
+  const precoMedio=cryptoAveragePrice(qtd,investido);
   if(Number(qtd)>0)partes.push('Quantidade: '+Number(qtd).toLocaleString('pt-BR',{maximumFractionDigits:8}));
-  if(Number(cotacao)>0)partes.push('Cotação: '+fmt(cotacao));
+  if(precoMedio>0)partes.push('Preço médio: '+fmt(precoMedio));
+  if(Number(cotacao)>0)partes.push('Cotação atual: '+fmt(cotacao));
   if(Number(investido)>0)partes.push('Investido: '+fmt(investido));
   return partes.join(' · ');
 }
@@ -1128,7 +1135,9 @@ function updateInvestCryptoPreview(){
   if(!preview)return;
   const qtd=parseFloat(document.getElementById('inv-crypto-qtd').value)||0;
   const cotacao=parseFloat(document.getElementById('inv-crypto-cotacao').value)||0;
-  preview.textContent='Valor atual calculado: '+fmt(calcCryptoValue(qtd,cotacao));
+  const investido=parseFloat(document.getElementById('inv-inicial').value)||0;
+  const medio=cryptoAveragePrice(qtd,investido);
+  preview.textContent='Valor atual: '+fmt(calcCryptoValue(qtd,cotacao))+(medio>0?' · preço médio: '+fmt(medio):'');
 }
 function toggleInvestCryptoFields(){
   const tipo=document.getElementById('inv-tipo').value;
@@ -1704,7 +1713,7 @@ function renderDestinoCard(item){
         <input type="number" id="update-crypto-qtd-${item.id}" value="${item.cryptoQtd||''}" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade atual que você tem dessa cripto."/>
         <input type="number" id="update-crypto-cotacao-${item.id}" value="${item.cryptoCotacao||''}" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais."/>
       </div>
-      <div class="hint">Valor atual = quantidade x cotação. O app calcula ao salvar.</div>
+      <div class="hint">Preço médio: ${fmt(cryptoAveragePrice(item.cryptoQtd,item.cryptoInvestido))} · Valor atual = quantidade x cotação.</div>
       `:`
       <div class="row row2">
         <input type="date" id="update-data-${item.id}" value="${today()}" title="Data em que você conferiu o valor atualizado."/>
@@ -2095,6 +2104,7 @@ document.getElementById('today-label').textContent=todayText();
 document.getElementById('cc-data').value=today();
 if(document.getElementById('inv-crypto-qtd'))document.getElementById('inv-crypto-qtd').addEventListener('input',updateInvestCryptoPreview);
 if(document.getElementById('inv-crypto-cotacao'))document.getElementById('inv-crypto-cotacao').addEventListener('input',updateInvestCryptoPreview);
+document.getElementById('inv-inicial').addEventListener('input',updateInvestCryptoPreview);
 toggleInvestCryptoFields();
 updateCategories();
 updateCartaoCategories();
@@ -2117,6 +2127,7 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
 
 
 
