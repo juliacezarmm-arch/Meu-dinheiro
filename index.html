@@ -395,6 +395,7 @@ td:last-child{white-space:normal}
         <select id="inv-tipo" title="Tipo de investimento, como poupança, CDB, Tesouro ou ações."><option>Poupança</option><option>CDB</option><option>CDI</option><option>Tesouro Direto</option><option>Ações</option><option>Fundos de investimento</option><option>Fundos imobiliários</option><option>ETF</option><option>Previdência privada</option><option>LCI/LCA</option><option>Debêntures</option><option>Cripto</option><option>Conta remunerada</option><option>Outro</option></select>
       </div>
       <div class="row row1"><input type="text" id="inv-desc" placeholder="Nome do investimento (opcional)" maxlength="40" title="Nome para identificar melhor esse investimento. Pode deixar em branco."></div>
+      <div class="row row1"><input type="number" id="inv-inicial" placeholder="Valor que já tenho (R$)" min="0" step="0.01" title="Use se você já tem dinheiro nesse investimento antes de começar a usar o app. Pode deixar em branco."></div>
       <button class="btn-green" onclick="addInvest()" title="Cadastra esse investimento para receber dinheiro pelo extrato."><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar investimento</button>
     </div>
     <div class="cards">
@@ -1053,8 +1054,17 @@ function addInvest(){
   const desc=document.getElementById('inv-desc').value.trim();
   const tipo=document.getElementById('inv-tipo').value;
   const nome=desc||tipo;
-  S.invest.push({id:Date.now(),kind:'investimento',nome,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[]});
+  const inicial=parseFloat(document.getElementById('inv-inicial').value)||0;
+  const item={id:Date.now(),kind:'investimento',nome,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[]};
+  if(inicial>0){
+    item.historico.push({id:item.id+'-inicial',tipo:'aporte',data:today(),valor:inicial,saldo:inicial,origem:'saldo_inicial'});
+    recalcInvestFromHistory(item);
+    investUi.historico[item.id]=true;
+    investUi.mes[item.id]=today().slice(0,7);
+  }
+  S.invest.push(item);
   document.getElementById('inv-desc').value='';
+  document.getElementById('inv-inicial').value='';
   renderInvestDestinationOptions();renderMetaInvestOptions();renderInvest();updateCategories();updateResumo();
 }
 
@@ -1567,10 +1577,10 @@ function renderDestinoCard(item){
       ${saldoAnteriorHtml}
       ${historicoMes.length?historicoMes.map(h=>{
         const d=new Date(h.data+'T12:00:00');
-        const nome=h.metaNome?'Meta - '+h.metaNome:(h.tipo==='aporte'?'Entrada investida':h.tipo==='resgate'?'Resgate':'Valor atualizado');
+        const nome=h.origem==='saldo_inicial'?'Saldo inicial':(h.metaNome?'Meta - '+h.metaNome:(h.tipo==='aporte'?'Entrada investida':h.tipo==='resgate'?'Resgate':'Valor atualizado'));
         const sinal=h.tipo==='resgate'?'-':h.tipo==='aporte'?'+':'';
         const cor=h.tipo==='resgate'?'#A32D2D':h.tipo==='aporte'?'#1D9E75':'#2378D4';
-        const extra=h.storageNome?'Guardado em '+h.storageNome:'Saldo: '+fmt(h.saldo||0);
+        const extra=h.origem==='saldo_inicial'?'Valor que já existia antes do app.':(h.storageNome?'Guardado em '+h.storageNome:'Saldo: '+fmt(h.saldo||0));
         return `<div class="history-row">
           <div>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</div>
           <div><strong>${nome}</strong><div class="history-kind">${extra}</div></div>
@@ -1951,6 +1961,8 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
+
 
 
 
