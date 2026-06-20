@@ -142,19 +142,29 @@ td:last-child{white-space:normal}
 .bank-card .bank-due{font-size:11px;position:relative;z-index:1;opacity:.9}
 .bank-card .bank-chip{width:30px;height:21px;border-radius:6px;background:rgba(255,255,255,.72);margin-bottom:8px;position:relative;z-index:1}
 .bank-card .del{position:absolute;right:8px;top:8px;color:#fff;background:rgba(0,0,0,.18)}
-.goal-list{display:grid;grid-template-columns:1fr;gap:10px}
-.goal-card{background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:1rem;min-width:0}
-.goal-card h3{font-size:15px;margin-bottom:4px}
-.goal-top{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px;align-items:start;margin-bottom:.75rem}
-.goal-meta{font-size:12px;color:var(--color-text-secondary);margin-bottom:.75rem}
-.goal-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:.75rem}
-.goal-actions button{flex:1 1 92px;background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:7px 8px;font-size:11px;cursor:pointer;white-space:nowrap}
+.goal-list{display:grid;grid-template-columns:1fr;gap:8px}
+.goal-card{background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:.75rem;min-width:0}
+.goal-card h3{font-size:14px;margin-bottom:3px}
+.goal-top{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:8px;align-items:start;margin-bottom:.5rem}
+.goal-meta{font-size:11px;color:var(--color-text-secondary);margin-bottom:.45rem;line-height:1.25}
+.goal-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:.5rem}
+.goal-actions button{flex:1 1 86px;background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:6px 7px;font-size:10.5px;cursor:pointer;white-space:nowrap}
 .goal-actions button:hover{border-color:#9FE1CB}
-.goal-panel{margin-top:.75rem;background:#10100f;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.75rem}
+.goal-panel{margin-top:.6rem;background:#10100f;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.65rem}
 .goal-panel-title{font-size:12px;font-weight:800;margin-bottom:.55rem}
 .goal-panel .row{margin-bottom:8px}
 .goal-panel button{width:100%;background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:8px;font-size:12px;cursor:pointer}
 .goal-panel button:hover{border-color:#9FE1CB}
+#inv-wrap .goal-list{max-height:560px;overflow-y:auto;padding-right:6px;scrollbar-color:#3a3934 #10100f;scrollbar-width:thin}
+#inv-wrap .goal-list::-webkit-scrollbar{width:8px}
+#inv-wrap .goal-list::-webkit-scrollbar-track{background:#10100f;border-radius:999px}
+#inv-wrap .goal-list::-webkit-scrollbar-thumb{background:#3a3934;border-radius:999px}
+#inv-wrap .goal-list::-webkit-scrollbar-thumb:hover{background:#55534d}
+.goal-card .plain-summary{margin-top:.45rem;gap:6px}
+.goal-card .plain-card{padding:.55rem .65rem}
+.goal-card .plain-card strong{font-size:12px;margin-bottom:2px}
+.goal-card .plain-card span{font-size:10.5px;line-height:1.25}
+.goal-card input[type="month"]{padding:7px 9px;font-size:12px}
 .history-head{display:grid;grid-template-columns:1fr;gap:8px;align-items:center;margin-bottom:.6rem}
 .history-row{display:grid;grid-template-columns:64px minmax(180px,1fr) 110px 24px;gap:10px;align-items:center;border-top:1px solid #31302c;padding:.65rem 0;font-size:12px}
 .history-row strong,.history-kind{overflow-wrap:anywhere}
@@ -393,10 +403,18 @@ td:last-child{white-space:normal}
   <div id="page-invest" class="page">
     <div class="add-form">
       <div class="row row1">
-        <select id="inv-tipo" title="Tipo de investimento, como poupança, CDB, Tesouro ou ações."><option>Poupança</option><option>CDB</option><option>CDI</option><option>Tesouro Direto</option><option>Ações</option><option>Fundos de investimento</option><option>Fundos imobiliários</option><option>ETF</option><option>Previdência privada</option><option>LCI/LCA</option><option>Debêntures</option><option>Cripto</option><option>Conta remunerada</option><option>Outro</option></select>
+        <select id="inv-tipo" onchange="toggleInvestCryptoFields()" title="Tipo de investimento, como poupança, CDB, Tesouro ou ações."><option>Poupança</option><option>CDB</option><option>CDI</option><option>Tesouro Direto</option><option>Ações</option><option>Fundos de investimento</option><option>Fundos imobiliários</option><option>ETF</option><option>Previdência privada</option><option>LCI/LCA</option><option>Debêntures</option><option>Cripto</option><option>Conta remunerada</option><option>Outro</option></select>
       </div>
       <div class="row row1"><input type="text" id="inv-desc" placeholder="Nome do investimento (opcional)" maxlength="40" title="Nome para identificar melhor esse investimento. Pode deixar em branco."></div>
       <div class="row row1"><input type="number" id="inv-inicial" placeholder="Valor que já tenho (R$)" min="0" step="0.01" title="Use se você já tem dinheiro nesse investimento antes de começar a usar o app. Pode deixar em branco."></div>
+      <div id="inv-crypto-fields" style="display:none">
+        <div class="row row2">
+          <input type="number" id="inv-crypto-qtd" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade que você tem. Exemplo: 0,005 Bitcoin.">
+          <input type="number" id="inv-crypto-cotacao" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais.">
+        </div>
+        <div class="hint" id="inv-crypto-preview">Valor atual calculado: R$ 0,00</div>
+      </div>
+
       <button class="btn-green" onclick="addInvest()" title="Cadastra esse investimento para receber dinheiro pelo extrato."><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar investimento</button>
     </div>
     <div class="cards">
@@ -1090,14 +1108,53 @@ function cancelCartaoEdit(){
   resetCartaoForm();
 }
 
+function isCryptoInvest(item){
+  return item&&item.kind==='investimento'&&item.tipo==='Cripto';
+}
+function calcCryptoValue(qtd,cotacao){
+  qtd=Number(qtd||0);
+  cotacao=Number(cotacao||0);
+  return qtd>0&&cotacao>0?Number((qtd*cotacao).toFixed(2)):0;
+}
+function cryptoInfoText(qtd,cotacao,investido){
+  const partes=[];
+  if(Number(qtd)>0)partes.push('Quantidade: '+Number(qtd).toLocaleString('pt-BR',{maximumFractionDigits:8}));
+  if(Number(cotacao)>0)partes.push('Cotação: '+fmt(cotacao));
+  if(Number(investido)>0)partes.push('Investido: '+fmt(investido));
+  return partes.join(' · ');
+}
+function updateInvestCryptoPreview(){
+  const preview=document.getElementById('inv-crypto-preview');
+  if(!preview)return;
+  const qtd=parseFloat(document.getElementById('inv-crypto-qtd').value)||0;
+  const cotacao=parseFloat(document.getElementById('inv-crypto-cotacao').value)||0;
+  preview.textContent='Valor atual calculado: '+fmt(calcCryptoValue(qtd,cotacao));
+}
+function toggleInvestCryptoFields(){
+  const tipo=document.getElementById('inv-tipo').value;
+  const box=document.getElementById('inv-crypto-fields');
+  const inicial=document.getElementById('inv-inicial');
+  if(!box||!inicial)return;
+  const show=tipo==='Cripto';
+  box.style.display=show?'block':'none';
+  inicial.placeholder=show?'Quanto investiu (R$)':'Valor que já tenho (R$)';
+  inicial.title=show?'Valor em reais que a pessoa colocou nessa criptomoeda.':'Use se você já tem dinheiro nesse investimento antes de começar a usar o app. Pode deixar em branco.';
+  updateInvestCryptoPreview();
+}
 function addInvest(){
   const desc=document.getElementById('inv-desc').value.trim();
   const tipo=document.getElementById('inv-tipo').value;
   const nome=desc||tipo;
-  const inicial=parseFloat(document.getElementById('inv-inicial').value)||0;
-  const item={id:Date.now(),kind:'investimento',nome,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[]};
-  if(inicial>0){
-    item.historico.push({id:item.id+'-inicial',tipo:'aporte',data:today(),valor:inicial,saldo:inicial,origem:'saldo_inicial'});
+  const investido=parseFloat(document.getElementById('inv-inicial').value)||0;
+  const isCrypto=tipo==='Cripto';
+  const cryptoQtd=isCrypto?(parseFloat(document.getElementById('inv-crypto-qtd').value)||0):0;
+  const cryptoCotacao=isCrypto?(parseFloat(document.getElementById('inv-crypto-cotacao').value)||0):0;
+  const valorAtualCrypto=calcCryptoValue(cryptoQtd,cryptoCotacao);
+  const inicial=isCrypto?(valorAtualCrypto||investido):investido;
+  if(isCrypto&&cryptoQtd>0&&cryptoCotacao<=0){alert('Informe a cotação atual da cripto.');return;}
+  const item={id:Date.now(),kind:'investimento',nome,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[],cryptoQtd,cryptoCotacao,cryptoInvestido:investido};
+  if(inicial>0||investido>0){
+    item.historico.push({id:item.id+'-inicial',tipo:'aporte',data:today(),valor:inicial||investido,saldo:inicial||investido,origem:'saldo_inicial',cryptoQtd:cryptoQtd||null,cryptoCotacao:cryptoCotacao||null,cryptoInvestido:investido||null});
     recalcInvestFromHistory(item);
     investUi.historico[item.id]=true;
     investUi.mes[item.id]=today().slice(0,7);
@@ -1105,6 +1162,9 @@ function addInvest(){
   S.invest.push(item);
   document.getElementById('inv-desc').value='';
   document.getElementById('inv-inicial').value='';
+  if(document.getElementById('inv-crypto-qtd'))document.getElementById('inv-crypto-qtd').value='';
+  if(document.getElementById('inv-crypto-cotacao'))document.getElementById('inv-crypto-cotacao').value='';
+  updateInvestCryptoPreview();
   renderInvestDestinationOptions();renderMetaInvestOptions();renderInvest();updateCategories();updateResumo();
 }
 
@@ -1385,14 +1445,29 @@ function saveInvestUpdate(id){
     alert('A meta atualiza pelo rendimento do investimento onde o dinheiro está guardado.');
     return;
   }
-  const val=parseFloat(document.getElementById('update-val-'+id).value);
   const data=document.getElementById('update-data-'+id).value||today();
-  if(isNaN(val)||val<0){alert('Informe o valor atual.');return;}
+  let val=0;
+  let cryptoQtd=null;
+  let cryptoCotacao=null;
+  let cryptoInvestido=null;
+  if(isCryptoInvest(item)){
+    cryptoQtd=parseFloat(document.getElementById('update-crypto-qtd-'+id).value)||0;
+    cryptoCotacao=parseFloat(document.getElementById('update-crypto-cotacao-'+id).value)||0;
+    cryptoInvestido=parseFloat(document.getElementById('update-crypto-investido-'+id).value)||Number(item.cryptoInvestido||0);
+    val=calcCryptoValue(cryptoQtd,cryptoCotacao);
+    if(cryptoQtd<=0||cryptoCotacao<=0){alert('Informe quantidade e cotação atual da cripto.');return;}
+    item.cryptoQtd=cryptoQtd;
+    item.cryptoCotacao=cryptoCotacao;
+    item.cryptoInvestido=cryptoInvestido;
+  }else{
+    val=parseFloat(document.getElementById('update-val-'+id).value);
+    if(isNaN(val)||val<0){alert('Informe o valor atual.');return;}
+  }
   const valorAnterior=Number(item.valorAtual||0);
   const fatorAtualizacao=valorAnterior>0?val/valorAnterior:1;
   item.valorAtual=val;
   const histId=Date.now();
-  ensureInvestHistory(item).push({id:histId+'-hist',tipo:'atualizacao',data,valor:val,saldo:item.valorAtual});
+  ensureInvestHistory(item).push({id:histId+'-hist',tipo:'atualizacao',data,valor:val,saldo:item.valorAtual,cryptoQtd,cryptoCotacao,cryptoInvestido});
   recalcInvestFromHistory(item);
   if(valorAnterior>0&&val!==valorAnterior){
     S.invest.filter(x=>x.kind==='meta'&&x.storageId===item.id&&Number(x.valorAtual||0)>0).forEach(meta=>{
@@ -1620,10 +1695,22 @@ function renderDestinoCard(item){
     </div>`:acao==='atualizar'&&item.kind==='investimento'?`
     <div class="goal-panel">
       <div class="goal-panel-title">Atualizar valor do mês atual</div>
+      ${isCryptoInvest(item)?`
+      <div class="row row2">
+        <input type="date" id="update-data-${item.id}" value="${today()}" title="Data em que você conferiu a cotação."/>
+        <input type="number" id="update-crypto-investido-${item.id}" value="${item.cryptoInvestido||''}" placeholder="Quanto investiu (R$)" min="0" step="0.01" title="Valor em reais que você colocou nessa cripto."/>
+      </div>
+      <div class="row row2">
+        <input type="number" id="update-crypto-qtd-${item.id}" value="${item.cryptoQtd||''}" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade atual que você tem dessa cripto."/>
+        <input type="number" id="update-crypto-cotacao-${item.id}" value="${item.cryptoCotacao||''}" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais."/>
+      </div>
+      <div class="hint">Valor atual = quantidade x cotação. O app calcula ao salvar.</div>
+      `:`
       <div class="row row2">
         <input type="date" id="update-data-${item.id}" value="${today()}" title="Data em que você conferiu o valor atualizado."/>
         <input type="number" id="update-val-${item.id}" placeholder="Valor atual (R$)" min="0" step="0.01" title="Valor que existe hoje nesse investimento."/>
       </div>
+      `}
       <button onclick="saveInvestUpdate(${item.id})" title="Salva o valor atual do investimento para calcular rendimento.">Salvar valor atualizado</button>
     </div>`:acao==='resgatar'?`
     <div class="goal-panel">
@@ -1645,7 +1732,8 @@ function renderDestinoCard(item){
         const nome=h.origem==='saldo_inicial'?'Saldo inicial':(h.metaNome?'Meta - '+h.metaNome:(h.tipo==='aporte'?'Entrada investida':h.tipo==='resgate'?'Resgate':'Valor atualizado'));
         const sinal=h.tipo==='resgate'?'-':h.tipo==='aporte'?'+':'';
         const cor=h.tipo==='resgate'?'#A32D2D':h.tipo==='aporte'?'#1D9E75':'#2378D4';
-        const extra=h.origem==='saldo_inicial'?'Valor que já existia antes do app.':(h.storageNome?'Guardado em '+h.storageNome:'Saldo: '+fmt(h.saldo||0));
+        const criptoInfo=cryptoInfoText(h.cryptoQtd,h.cryptoCotacao,h.cryptoInvestido);
+        const extra=criptoInfo||(h.origem==='saldo_inicial'?'Valor que já existia antes do app.':(h.storageNome?'Guardado em '+h.storageNome:'Saldo: '+fmt(h.saldo||0)));
         return `<div class="history-row">
           <div>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</div>
           <div><strong>${nome}</strong><div class="history-kind">${extra}</div></div>
@@ -2005,6 +2093,9 @@ function setupHelpTooltips(){
 document.querySelectorAll('input[type="date"]').forEach(el=>el.value=today());
 document.getElementById('today-label').textContent=todayText();
 document.getElementById('cc-data').value=today();
+if(document.getElementById('inv-crypto-qtd'))document.getElementById('inv-crypto-qtd').addEventListener('input',updateInvestCryptoPreview);
+if(document.getElementById('inv-crypto-cotacao'))document.getElementById('inv-crypto-cotacao').addEventListener('input',updateInvestCryptoPreview);
+toggleInvestCryptoFields();
 updateCategories();
 updateCartaoCategories();
 toggleSaidaCampos();
@@ -2026,6 +2117,12 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
+
+
+
+
+
 
 
 
