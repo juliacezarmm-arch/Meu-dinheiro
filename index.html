@@ -408,11 +408,12 @@ td:last-child{white-space:normal}
       <div class="row row1"><input type="text" id="inv-desc" placeholder="Nome do investimento (opcional)" maxlength="40" title="Nome para identificar melhor esse investimento. Pode deixar em branco."></div>
       <div class="row row1"><input type="number" id="inv-inicial" placeholder="Valor que já tenho (R$)" min="0" step="0.01" title="Use se você já tem dinheiro nesse investimento antes de começar a usar o app. Pode deixar em branco."></div>
       <div id="inv-crypto-fields" style="display:none">
+        <div class="row row1"><input type="number" id="inv-crypto-preco-medio" placeholder="Preço médio da cripto (R$)" min="0" step="0.01" title="Digite aqui o preço médio que aparece na corretora ou que você quer registrar."></div>
         <div class="row row2">
           <input type="number" id="inv-crypto-qtd" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade que você tem. Exemplo: 0,005 Bitcoin.">
           <input type="number" id="inv-crypto-cotacao" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais.">
         </div>
-        <div class="hint" id="inv-crypto-preview">Valor atual calculado: R$ 0,00</div>
+        <div class="hint" id="inv-crypto-preview">Valor atual: R$ 0,00</div>
       </div>
 
       <button class="btn-green" onclick="addInvest()" title="Cadastra esse investimento para receber dinheiro pelo extrato."><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar investimento</button>
@@ -1116,16 +1117,10 @@ function calcCryptoValue(qtd,cotacao){
   cotacao=Number(cotacao||0);
   return qtd>0&&cotacao>0?Number((qtd*cotacao).toFixed(2)):0;
 }
-function cryptoAveragePrice(qtd,investido){
-  qtd=Number(qtd||0);
-  investido=Number(investido||0);
-  return qtd>0&&investido>0?Number((investido/qtd).toFixed(2)):0;
-}
-function cryptoInfoText(qtd,cotacao,investido){
+function cryptoInfoText(qtd,cotacao,investido,precoMedio){
   const partes=[];
-  const precoMedio=cryptoAveragePrice(qtd,investido);
   if(Number(qtd)>0)partes.push('Quantidade: '+Number(qtd).toLocaleString('pt-BR',{maximumFractionDigits:8}));
-  if(precoMedio>0)partes.push('Preço médio: '+fmt(precoMedio));
+  if(Number(precoMedio)>0)partes.push('Preço médio: '+fmt(precoMedio));
   if(Number(cotacao)>0)partes.push('Cotação atual: '+fmt(cotacao));
   if(Number(investido)>0)partes.push('Investido: '+fmt(investido));
   return partes.join(' · ');
@@ -1135,8 +1130,7 @@ function updateInvestCryptoPreview(){
   if(!preview)return;
   const qtd=parseFloat(document.getElementById('inv-crypto-qtd').value)||0;
   const cotacao=parseFloat(document.getElementById('inv-crypto-cotacao').value)||0;
-  const investido=parseFloat(document.getElementById('inv-inicial').value)||0;
-  const medio=cryptoAveragePrice(qtd,investido);
+  const medio=parseFloat(document.getElementById('inv-crypto-preco-medio').value)||0;
   preview.textContent='Valor atual: '+fmt(calcCryptoValue(qtd,cotacao))+(medio>0?' · preço médio: '+fmt(medio):'');
 }
 function toggleInvestCryptoFields(){
@@ -1158,12 +1152,13 @@ function addInvest(){
   const isCrypto=tipo==='Cripto';
   const cryptoQtd=isCrypto?(parseFloat(document.getElementById('inv-crypto-qtd').value)||0):0;
   const cryptoCotacao=isCrypto?(parseFloat(document.getElementById('inv-crypto-cotacao').value)||0):0;
+  const cryptoPrecoMedio=isCrypto?(parseFloat(document.getElementById('inv-crypto-preco-medio').value)||0):0;
   const valorAtualCrypto=calcCryptoValue(cryptoQtd,cryptoCotacao);
   const inicial=isCrypto?(valorAtualCrypto||investido):investido;
   if(isCrypto&&cryptoQtd>0&&cryptoCotacao<=0){alert('Informe a cotação atual da cripto.');return;}
-  const item={id:Date.now(),kind:'investimento',nome,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[],cryptoQtd,cryptoCotacao,cryptoInvestido:investido};
+  const item={id:Date.now(),kind:'investimento',nome,tipo,meta:0,valorAtual:0,totalAportado:0,totalResgatado:0,historico:[],cryptoQtd,cryptoCotacao,cryptoPrecoMedio,cryptoInvestido:investido};
   if(inicial>0||investido>0){
-    item.historico.push({id:item.id+'-inicial',tipo:'aporte',data:today(),valor:inicial||investido,saldo:inicial||investido,origem:'saldo_inicial',cryptoQtd:cryptoQtd||null,cryptoCotacao:cryptoCotacao||null,cryptoInvestido:investido||null});
+    item.historico.push({id:item.id+'-inicial',tipo:'aporte',data:today(),valor:inicial||investido,saldo:inicial||investido,origem:'saldo_inicial',cryptoQtd:cryptoQtd||null,cryptoCotacao:cryptoCotacao||null,cryptoPrecoMedio:cryptoPrecoMedio||null,cryptoInvestido:investido||null});
     recalcInvestFromHistory(item);
     investUi.historico[item.id]=true;
     investUi.mes[item.id]=today().slice(0,7);
@@ -1173,6 +1168,7 @@ function addInvest(){
   document.getElementById('inv-inicial').value='';
   if(document.getElementById('inv-crypto-qtd'))document.getElementById('inv-crypto-qtd').value='';
   if(document.getElementById('inv-crypto-cotacao'))document.getElementById('inv-crypto-cotacao').value='';
+  if(document.getElementById('inv-crypto-preco-medio'))document.getElementById('inv-crypto-preco-medio').value='';
   updateInvestCryptoPreview();
   renderInvestDestinationOptions();renderMetaInvestOptions();renderInvest();updateCategories();updateResumo();
 }
@@ -1459,14 +1455,17 @@ function saveInvestUpdate(id){
   let cryptoQtd=null;
   let cryptoCotacao=null;
   let cryptoInvestido=null;
+  let cryptoPrecoMedio=null;
   if(isCryptoInvest(item)){
     cryptoQtd=parseFloat(document.getElementById('update-crypto-qtd-'+id).value)||0;
     cryptoCotacao=parseFloat(document.getElementById('update-crypto-cotacao-'+id).value)||0;
     cryptoInvestido=parseFloat(document.getElementById('update-crypto-investido-'+id).value)||Number(item.cryptoInvestido||0);
+    cryptoPrecoMedio=parseFloat(document.getElementById('update-crypto-preco-medio-'+id).value)||Number(item.cryptoPrecoMedio||0);
     val=calcCryptoValue(cryptoQtd,cryptoCotacao);
     if(cryptoQtd<=0||cryptoCotacao<=0){alert('Informe quantidade e cotação atual da cripto.');return;}
     item.cryptoQtd=cryptoQtd;
     item.cryptoCotacao=cryptoCotacao;
+    item.cryptoPrecoMedio=cryptoPrecoMedio;
     item.cryptoInvestido=cryptoInvestido;
   }else{
     val=parseFloat(document.getElementById('update-val-'+id).value);
@@ -1476,7 +1475,7 @@ function saveInvestUpdate(id){
   const fatorAtualizacao=valorAnterior>0?val/valorAnterior:1;
   item.valorAtual=val;
   const histId=Date.now();
-  ensureInvestHistory(item).push({id:histId+'-hist',tipo:'atualizacao',data,valor:val,saldo:item.valorAtual,cryptoQtd,cryptoCotacao,cryptoInvestido});
+  ensureInvestHistory(item).push({id:histId+'-hist',tipo:'atualizacao',data,valor:val,saldo:item.valorAtual,cryptoQtd,cryptoCotacao,cryptoPrecoMedio,cryptoInvestido});
   recalcInvestFromHistory(item);
   if(valorAnterior>0&&val!==valorAnterior){
     S.invest.filter(x=>x.kind==='meta'&&x.storageId===item.id&&Number(x.valorAtual||0)>0).forEach(meta=>{
@@ -1713,7 +1712,8 @@ function renderDestinoCard(item){
         <input type="number" id="update-crypto-qtd-${item.id}" value="${item.cryptoQtd||''}" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade atual que você tem dessa cripto."/>
         <input type="number" id="update-crypto-cotacao-${item.id}" value="${item.cryptoCotacao||''}" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais."/>
       </div>
-      <div class="hint">Preço médio: ${fmt(cryptoAveragePrice(item.cryptoQtd,item.cryptoInvestido))} · Valor atual = quantidade x cotação.</div>
+      <div class="row row1"><input type="number" id="update-crypto-preco-medio-${item.id}" value="${item.cryptoPrecoMedio||''}" placeholder="Preço médio (R$)" min="0" step="0.01" title="Digite o seu preço médio dessa cripto."/></div>
+      <div class="hint">Preço médio: ${fmt(item.cryptoPrecoMedio||0)} · Valor atual = quantidade x cotação.</div>
       `:`
       <div class="row row2">
         <input type="date" id="update-data-${item.id}" value="${today()}" title="Data em que você conferiu o valor atualizado."/>
@@ -1741,7 +1741,7 @@ function renderDestinoCard(item){
         const nome=h.origem==='saldo_inicial'?'Saldo inicial':(h.metaNome?'Meta - '+h.metaNome:(h.tipo==='aporte'?'Entrada investida':h.tipo==='resgate'?'Resgate':'Valor atualizado'));
         const sinal=h.tipo==='resgate'?'-':h.tipo==='aporte'?'+':'';
         const cor=h.tipo==='resgate'?'#A32D2D':h.tipo==='aporte'?'#1D9E75':'#2378D4';
-        const criptoInfo=cryptoInfoText(h.cryptoQtd,h.cryptoCotacao,h.cryptoInvestido);
+        const criptoInfo=cryptoInfoText(h.cryptoQtd,h.cryptoCotacao,h.cryptoInvestido,h.cryptoPrecoMedio);
         const extra=criptoInfo||(h.origem==='saldo_inicial'?'Valor que já existia antes do app.':(h.storageNome?'Guardado em '+h.storageNome:'Saldo: '+fmt(h.saldo||0)));
         return `<div class="history-row">
           <div>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</div>
@@ -2105,6 +2105,7 @@ document.getElementById('cc-data').value=today();
 if(document.getElementById('inv-crypto-qtd'))document.getElementById('inv-crypto-qtd').addEventListener('input',updateInvestCryptoPreview);
 if(document.getElementById('inv-crypto-cotacao'))document.getElementById('inv-crypto-cotacao').addEventListener('input',updateInvestCryptoPreview);
 document.getElementById('inv-inicial').addEventListener('input',updateInvestCryptoPreview);
+if(document.getElementById('inv-crypto-preco-medio'))document.getElementById('inv-crypto-preco-medio').addEventListener('input',updateInvestCryptoPreview);
 toggleInvestCryptoFields();
 updateCategories();
 updateCartaoCategories();
@@ -2127,6 +2128,7 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
 
 
 
