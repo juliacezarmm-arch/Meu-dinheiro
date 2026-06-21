@@ -402,20 +402,21 @@ td:last-child{white-space:normal}
   <!-- INVESTIMENTOS -->
   <div id="page-invest" class="page">
     <div class="add-form">
-      <div class="row row1">
+      <div class="row row2">
         <select id="inv-tipo" onchange="toggleInvestCryptoFields()" title="Tipo de investimento, como poupança, CDB, Tesouro ou ações."><option>Poupança</option><option>CDB</option><option>CDI</option><option>Tesouro Direto</option><option>Ações</option><option>Fundos de investimento</option><option>Fundos imobiliários</option><option>ETF</option><option>Previdência privada</option><option>LCI/LCA</option><option>Debêntures</option><option>Cripto</option><option>Conta remunerada</option><option>Outro</option></select>
+        <input type="text" id="inv-desc" placeholder="Nome do investimento (opcional)" maxlength="40" title="Nome para identificar melhor esse investimento. Pode deixar em branco.">
       </div>
-      <div class="row row1"><input type="text" id="inv-desc" placeholder="Nome do investimento (opcional)" maxlength="40" title="Nome para identificar melhor esse investimento. Pode deixar em branco."></div>
-      <div class="row row1"><input type="number" id="inv-inicial" placeholder="Valor que já tenho (R$)" min="0" step="0.01" title="Use se você já tem dinheiro nesse investimento antes de começar a usar o app. Pode deixar em branco."></div>
+      <div class="row row2">
+        <input type="number" id="inv-inicial" placeholder="Valor que já tenho (R$)" min="0" step="0.01" title="Use se você já tem dinheiro nesse investimento antes de começar a usar o app. Pode deixar em branco.">
+        <div id="inv-crypto-price-slot" style="display:none"><input type="number" id="inv-crypto-preco-medio" placeholder="Preço médio da cripto (R$)" min="0" step="0.01" title="Digite aqui o preço médio que aparece na corretora ou que você quer registrar."></div>
+      </div>
       <div id="inv-crypto-fields" style="display:none">
-        <div class="row row1"><input type="number" id="inv-crypto-preco-medio" placeholder="Preço médio da cripto (R$)" min="0" step="0.01" title="Digite aqui o preço médio que aparece na corretora ou que você quer registrar."></div>
         <div class="row row2">
           <input type="number" id="inv-crypto-qtd" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade que você tem. Exemplo: 0,005 Bitcoin.">
           <input type="number" id="inv-crypto-cotacao" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais.">
         </div>
         <div class="hint" id="inv-crypto-preview">Valor atual: R$ 0,00</div>
       </div>
-
       <button class="btn-green" onclick="addInvest()" title="Cadastra esse investimento para receber dinheiro pelo extrato."><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar investimento</button>
     </div>
     <div class="cards">
@@ -1136,10 +1137,12 @@ function updateInvestCryptoPreview(){
 function toggleInvestCryptoFields(){
   const tipo=document.getElementById('inv-tipo').value;
   const box=document.getElementById('inv-crypto-fields');
+  const priceSlot=document.getElementById('inv-crypto-price-slot');
   const inicial=document.getElementById('inv-inicial');
   if(!box||!inicial)return;
   const show=tipo==='Cripto';
   box.style.display=show?'block':'none';
+  if(priceSlot)priceSlot.style.display=show?'block':'none';
   inicial.placeholder=show?'Quanto investiu (R$)':'Valor que já tenho (R$)';
   inicial.title=show?'Valor em reais que a pessoa colocou nessa criptomoeda.':'Use se você já tem dinheiro nesse investimento antes de começar a usar o app. Pode deixar em branco.';
   updateInvestCryptoPreview();
@@ -2128,6 +2131,7 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
 
 
 
