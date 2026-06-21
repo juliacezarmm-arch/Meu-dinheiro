@@ -143,13 +143,16 @@ td:last-child{white-space:normal}
 .bank-card .bank-chip{width:30px;height:21px;border-radius:6px;background:rgba(255,255,255,.72);margin-bottom:8px;position:relative;z-index:1}
 .bank-card .del{position:absolute;right:8px;top:8px;color:#fff;background:rgba(0,0,0,.18)}
 .goal-list{display:grid;grid-template-columns:1fr;gap:8px}
-.goal-card{background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:.75rem;min-width:0}
+.goal-card{position:relative;background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:.75rem;min-width:0}
 .goal-card h3{font-size:14px;margin-bottom:3px}
 .goal-top{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:8px;align-items:start;margin-bottom:.5rem}
 .goal-meta{font-size:11px;color:var(--color-text-secondary);margin-bottom:.45rem;line-height:1.25}
-.goal-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:.5rem}
-.goal-actions button{flex:1 1 86px;background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:6px 7px;font-size:10.5px;cursor:pointer;white-space:nowrap}
+.goal-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:.45rem}
+.goal-actions button{flex:1 1 78px;background:#242423;color:#fff;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:5px 6px;font-size:10px;cursor:pointer;white-space:nowrap}
 .goal-actions button:hover{border-color:#9FE1CB}
+.goal-delete{position:absolute;top:7px;right:7px;width:22px;height:22px;border-radius:6px;border:1px solid #3a3934;background:#242423;color:#fff;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.goal-delete:hover{border-color:#A32D2D;color:#ffb3b3}
+.goal-card .goal-top{padding-right:24px}
 .goal-panel{margin-top:.6rem;background:#10100f;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.65rem}
 .goal-panel-title{font-size:12px;font-weight:800;margin-bottom:.55rem}
 .goal-panel .row{margin-bottom:8px}
@@ -1396,12 +1399,20 @@ function calcInvestMonthResult(item,mes){
 }
 
 function refreshInvestViews(){
+  const investList=document.querySelector('#inv-wrap .goal-list');
+  const metaList=document.querySelector('#meta-wrap .goal-list');
+  const investScroll=investList?investList.scrollTop:0;
+  const metaScroll=metaList?metaList.scrollTop:0;
   S.invest.forEach(recalcInvestFromHistory);
   renderMetaInvestOptions();
   renderInvest();
   renderMetas();
   renderExtrato();
   updateResumo();
+  const newInvestList=document.querySelector('#inv-wrap .goal-list');
+  const newMetaList=document.querySelector('#meta-wrap .goal-list');
+  if(newInvestList)newInvestList.scrollTop=investScroll;
+  if(newMetaList)newMetaList.scrollTop=metaScroll;
 }
 
 function toggleInvestAction(id,acao){
@@ -1772,6 +1783,7 @@ function renderDestinoCard(item){
       <div class="month-value">${metaPct.toFixed(0)}%</div>
     </div>`:'';
   return `<div class="goal-card">
+    <button class="goal-delete" onclick="delInv(${item.id})" aria-label="Excluir" title="Exclui este investimento ou meta. Se já tiver histórico, o app pede confirmação.">×</button>
     <div class="goal-top">
       <div>
         <h3>${item.nome}</h3>
@@ -1789,7 +1801,7 @@ function renderDestinoCard(item){
       <button onclick="toggleInvestAction(${item.id},'resgatar')" title="Use quando retirou dinheiro desse investimento ou meta.">Resgatar</button>
       <button onclick="toggleInvestHistory(${item.id})" title="Mostra ou esconde tudo que entrou, saiu ou foi atualizado aqui.">${historicoAberto?'Fechar hist.':'Histórico'}</button>
       <button onclick="toggleInvestChart(${item.id})" title="Mostra ou esconde o gráfico de evolução.">${graficoAberto?'Fechar gráfico':'Gráfico'}</button>
-      <button onclick="delInv(${item.id})" title="Exclui este investimento ou meta. Se já tiver histórico, o app pede confirmação.">Excluir</button>
+      
     </div>
     ${painelAcao}
     ${historicoHtml}
@@ -2131,6 +2143,8 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
+
 
 
 
