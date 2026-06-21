@@ -428,7 +428,12 @@ td:last-child{white-space:normal}
       <div class="card" title="Quanto os investimentos renderam em relação ao valor colocado."><div class="label">Rendimento</div><div class="value green" id="inv-rend">R$ 0</div></div>
       <div class="card" title="Quantidade de investimentos cadastrados."><div class="label">Investimentos</div><div class="value" id="inv-qtd">0</div></div>
     </div>
-    <div id="inv-wrap"><div class="empty">Nenhum investimento ainda.</div></div>
+    <div class="month-switch" aria-label="Escolher mês dos investimentos" title="Filtra histórico e rendimento de todos os investimentos pelo mesmo mês.">
+      <button onclick="changeInvestMonth(-1)" aria-label="Mês anterior" title="Ver investimentos do mês anterior.">‹</button>
+      <div class="current-month" id="inv-month-label" title="Mês mostrado nos investimentos.">Mês atual</div>
+      <button onclick="changeInvestMonth(1)" aria-label="Próximo mês" title="Ver investimentos do próximo mês.">›</button>
+      <button class="today-btn" onclick="goInvestCurrentMonth()" title="Volta os investimentos para o mês atual.">Mês atual</button>
+    </div>    <div id="inv-wrap"><div class="empty">Nenhum investimento ainda.</div></div>
   </div>
 
   <!-- METAS -->
@@ -488,6 +493,7 @@ const CATEGORIAS={
 let resumoMes=new Date();
 let extratoMes=new Date();
 let cartaoMes=new Date();
+let investMes=new Date();
 let editingCartaoId=null;
 let extratoResumoAberto=false;
 const resumoCharts={annual:false,extrato:false,cartao:false,invest:false,metas:false};
@@ -1431,7 +1437,14 @@ function toggleInvestChart(id){
   refreshInvestViews();
 }
 
-function changeInvestHistoryMonth(id,mes){
+function changeInvestMonth(delta){
+  investMes=new Date(investMes.getFullYear(),investMes.getMonth()+delta,1);
+  renderInvest();
+}
+function goInvestCurrentMonth(){
+  investMes=new Date();
+  renderInvest();
+}function changeInvestHistoryMonth(id,mes){
   investUi.mes[id]=mes;
   refreshInvestViews();
 }
@@ -1654,6 +1667,8 @@ function renderExtrato(){
 }
 
 function renderInvest(){
+  const invMonthLabel=document.getElementById('inv-month-label');
+  if(invMonthLabel)invMonthLabel.textContent=mesStr(investMes.getFullYear(),investMes.getMonth());
   S.invest.forEach(recalcInvestFromHistory);
   const investimentos=S.invest.filter(x=>x.kind==='investimento');
   const total=investimentos.reduce((s,x)=>s+x.valorAtual,0);
@@ -1693,7 +1708,7 @@ function renderDestinoCard(item){
   const acao=investUi.acao[item.id]||'';
   const historicoAberto=!!investUi.historico[item.id];
   const graficoAberto=!!investUi.grafico[item.id];
-  const mesHist=investUi.mes[item.id]||currentMonthInput();
+  const mesHist=monthKey(investMes.getFullYear(),investMes.getMonth()+1);
   const periodoGrafico=investUi.periodo[item.id]||'mes';
   const resultadoMes=calcInvestMonthResult(item,mesHist);
   const histOrdenado=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
@@ -1790,7 +1805,7 @@ function renderDestinoCard(item){
         <h3>${item.nome}</h3>
         <div class="goal-meta">${subtitulo}${item.meta>0?' · alvo '+fmt(item.meta):''}</div>
       </div>
-      <input type="month" value="${mesHist}" onchange="changeInvestHistoryMonth(${item.id},this.value)" title="Escolhe o mês do histórico desse investimento ou meta."/>
+
     </div>
     <div class="plain-summary">
       <div class="plain-card" title="Valor atual registrado para este investimento ou meta."><strong>Atual: ${fmt(item.valorAtual)}</strong><span>Valor que existe hoje.</span></div>
@@ -2144,6 +2159,11 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
+
+
+
+
 
 
 
