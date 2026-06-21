@@ -1829,7 +1829,7 @@ function renderDestinoCard(item){
     ${progresso}
     <div class="goal-actions">
       ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'atualizar')" title="Use quando o investimento mudou de valor, para calcular quanto rendeu.">Atualizar valor</button>`:''}
-      <button onclick="toggleInvestAction(${item.id},'resgatar')" title="Use quando retirou dinheiro desse investimento ou meta.">Resgatar</button>
+      ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'resgatar')" title="Use quando retirou dinheiro desse investimento.">Resgatar</button>`:''}
       <button onclick="toggleInvestHistory(${item.id})" title="Mostra ou esconde tudo que entrou, saiu ou foi atualizado aqui.">${historicoAberto?'Fechar hist.':'Histórico'}</button>
       <button onclick="toggleInvestChart(${item.id})" title="Mostra ou esconde o gráfico de evolução.">${graficoAberto?'Fechar gráfico':'Gráfico'}</button>
       
@@ -2174,6 +2174,7 @@ window.addEventListener('beforeunload',function(e){
 </script>
 </body>
 </html>
+
 
 
 
