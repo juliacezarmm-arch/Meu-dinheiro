@@ -14,7 +14,7 @@ assert(!/(?<![\w.])(?:alert|confirm|prompt)\s*\(/.test(src),'Caixas nativas de a
 assert(src.includes('if(!await fileWriteAllowed(handle,false))'),'Autosave não pode solicitar autorização do Chrome');
 assert(src.includes('fileWriteAllowed(handle,true)'),'A permissão de escrita deve depender de clique manual');
 const fn=name=>{
- const r=new RegExp('(?ms)^(?:async )?function '+name+'\\([^\\n]*\\)\\{.*?^\\}\\n');
+ const r=new RegExp('^(?:async )?function '+name+'\\([^\\n]*\\)\\{.*?^\\}\\n','ms');
  const match=src.match(r);assert(match,'Não consegui obter '+name);return match[0];
 };
 const timers=[],status=[],actions=[];
