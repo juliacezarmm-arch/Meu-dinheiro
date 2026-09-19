@@ -2,7 +2,7 @@ name: Validar integridade financeira
 on:
   push:
     branches: [main]
-    paths: ['index.html', 'tests/finance.test.js', 'tests/marco-zero.test.js', 'tests/card-ux.test.js', 'tests/autosave.test.js', '.github/workflows/verificar-financas.yml']
+    paths: ['index.html', 'js/recorrentes.js', 'tests/finance.test.js', 'tests/marco-zero.test.js', 'tests/card-ux.test.js', 'tests/autosave.test.js', 'tests/recorrentes.test.js', 'tests/recorrentes-browser-smoke.py', '.github/workflows/verificar-financas.yml']
   pull_request:
     branches: [main]
 permissions:
@@ -12,10 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verificar cálculos, marco zero, interface, autosave e sintaxe
+      - name: Validar cálculos, marco zero, interface, autosave e recorrências
         run: |
           node tests/finance.test.js
           node tests/marco-zero.test.js
           node tests/card-ux.test.js
           node tests/autosave.test.js
+          node tests/recorrentes.test.js
+          node --check js/recorrentes.js
           node --check /tmp/meu-dinheiro-validar.js
+      - name: Testar cadastro real no navegador
+        run: python3 tests/recorrentes-browser-smoke.py
