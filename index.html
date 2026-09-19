@@ -343,8 +343,8 @@ td:last-child{white-space:normal}
       <div class="row row1" id="ext-invest-row">
         <select id="ext-invest-dest" title="Escolha em qual investimento ou meta esse dinheiro vai ficar guardado."><option value="">Escolha o destino</option></select>
       </div>
-      <div class="row row2" id="ext-saida-row">
-        <select id="ext-gasto-tipo" title="Gasto fixo é algo que volta todo mês; variável muda conforme o mês.">
+      <div class="row row1" id="ext-saida-row">
+        <select id="ext-gasto-tipo" aria-hidden="true" tabindex="-1" style="display:none">
           <option value="">Tipo de gasto</option>
           <option value="fixo">Gasto fixo</option>
           <option value="variavel">Gasto variável</option>
@@ -405,8 +405,8 @@ td:last-child{white-space:normal}
         <select id="cc-categoria" onchange="updateCartaoSubcategorias()" title="Categoria da compra no cartão, para aparecer no resumo."><option value="">Selecione categoria</option></select>
         <select id="cc-subcategoria" title="Detalhe da categoria da compra, como roupa, mercado ou eletrônicos."><option value="">Selecione subcategoria</option></select>
       </div>
-      <div class="row row1">
-        <select id="cc-gasto-tipo" title="Marque se esse gasto é fixo ou variável.">
+      <div class="row row1" style="display:none" aria-hidden="true">
+        <select id="cc-gasto-tipo" tabindex="-1">
           <option value="">Tipo de gasto</option>
           <option value="fixo">Gasto fixo</option>
           <option value="variavel">Gasto variável</option>
@@ -1394,7 +1394,7 @@ function addExtrato(){
   const tipo=document.getElementById('ext-tipo').value;
   const categoria=document.getElementById('ext-categoria').value;
   const subcategoria=document.getElementById('ext-subcategoria').value;
-  const gastoTipo=document.getElementById('ext-gasto-tipo').value;
+  const gastoTipo='variavel'; // Lançamentos avulsos dispensam classificação manual.
   const pagamento=document.getElementById('ext-pagamento').value;
   const investDestId=parseInt(document.getElementById('ext-invest-dest').value);
   const val=parseFloat(document.getElementById('ext-val').value);
@@ -1434,7 +1434,7 @@ function addExtrato(){
     return;
   }
   if(!categoria||!subcategoria||!valorMonetarioValido(val)||val<=0){appAlert('Preencha categoria, subcategoria e valor.');return;}
-  if(tipo==='saida'&&(!gastoTipo||!pagamento)){appAlert('Para saídas, informe tipo de gasto e forma de pagamento.');return;}
+  if(tipo==='saida'&&!pagamento){appAlert('Para saídas, informe tipo de gasto e forma de pagamento.');return;}
   S.extrato.push({id:novoIdExtrato(),data,desc,tipo,val:Math.round(val*100)/100,categoria,subcategoria,gastoTipo:tipo==='saida'?gastoTipo:'',pagamento:tipo==='saida'?pagamento:''});
   document.getElementById('ext-desc').value='';
   document.getElementById('ext-val').value='';
@@ -1463,11 +1463,11 @@ function addCartao(){
   const tipo=document.getElementById('cc-tipo').value;
   const categoria=document.getElementById('cc-categoria').value;
   const subcategoria=document.getElementById('cc-subcategoria').value;
-  const gastoTipo=document.getElementById('cc-gasto-tipo').value;
+  const gastoTipo='variavel'; // Gastos recorrentes têm cadastro próprio.
   const val=parseFloat(document.getElementById('cc-val').value);
   const card=selectedCard();
   if(!card){appAlert('Escolha o cartão usado na compra.');return;}
-  if(!desc||!valorMonetarioValido(val)||val<=0||!categoria||!subcategoria||!gastoTipo){appAlert('Preencha descrição, categoria, subcategoria, tipo de gasto e valor.');return;}
+  if(!desc||!valorMonetarioValido(val)||val<=0||!categoria||!subcategoria){appAlert('Preencha descrição, categoria, subcategoria e valor.');return;}
   const vencDia=card.dueDay;
   const n=tipo==='parcelado'?parseInt(document.getElementById('cc-parcelas').value):1;
   const primeiraParcela=dueDateFor(new Date(data+'T12:00:00'),vencDia,0,card.closeDay);
@@ -1731,7 +1731,7 @@ function renderCartao(){
       const venc='dia '+(r.vencDia||10);
       const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
       const historico=S.saldoInicial&&parcelasNesteMes.some(x=>String(x.id).startsWith(String(r.id)+'-')&&x.data<S.saldoInicial.data);
-      const cat=`${r.subcategoria||'Sem categoria'}${r.gastoTipo?' · '+(r.gastoTipo==='fixo'?'fixo':'variável'):''}${historico?' · Histórico anterior à abertura':''}`;
+      const cat=`${r.subcategoria||'Sem categoria'}${r.recorrenciaId?' · Recorrente':''}${historico?' · Histórico anterior à abertura':''}`;
       return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${escHtml(desc)}<div style="font-size:11px;color:var(--color-text-secondary)">${escHtml(cat)}</div></td><td><span class="badge b-compra">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra sem precisar apagar e lançar de novo.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
     }).join('')+'</tbody></table>';
 }
@@ -2623,6 +2623,7 @@ setInterval(updateResumo,5*60*1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&hasUnsavedChanges){void persistLocalSession();void autoSaveDataFile();}});
 void restoreLocalSession();
 </script>
+<script src="js/recorrentes.js"></script>
 </body>
 </html>
 
