@@ -1,0 +1,15 @@
+name: Smoke de recorrências no navegador
+on:
+  push:
+    branches: [feature/recorrentes-20260919]
+    paths: ['.github/workflows/recurring-browser-smoke.yml']
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testar no Chrome headless
+        run: |
+          python3 tests/recorrentes-browser-smoke.py
