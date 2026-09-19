@@ -509,7 +509,7 @@ td:last-child{white-space:normal}
 <div id="card-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-editor-title" hidden><div class="site-dialog-panel">
   <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">✎</span><h2 id="card-editor-title">Editar cartão</h2></div>
   <p class="site-dialog-copy">Ajuste os dados do cartão. Vencimento e pagamento são datas diferentes.</p>
-  <form id="card-editor-form" onsubmit="event.preventDefault();salvarEdicaoCartao()">
+  <form id="card-editor-form" novalidate onsubmit="event.preventDefault();salvarEdicaoCartao()">
   <label class="site-field">Banco / cartão<select id="card-edit-bank" required></select></label>
   <div class="site-fields-row"><label class="site-field">Vencimento (dia)<input id="card-edit-due" type="number" inputmode="numeric" min="1" max="31" step="1" required placeholder="10"></label><label class="site-field">Dia habitual de pagamento<input id="card-edit-payment" type="number" inputmode="numeric" min="1" max="31" step="1" placeholder="17 (opcional)"></label></div>
   <p class="site-dialog-copy">Novos dados valem para compras futuras. Compras anteriores preservam os vencimentos já registrados.</p>
@@ -518,7 +518,7 @@ td:last-child{white-space:normal}
 <div id="card-payment-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-payment-title" hidden><div class="site-dialog-panel">
   <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">$</span><h2 id="card-payment-title">Registrar pagamento</h2></div>
   <p class="site-dialog-copy" id="card-payment-description"></p>
-  <form id="card-payment-form" onsubmit="event.preventDefault();salvarPagamentoFatura()">
+  <form id="card-payment-form" novalidate onsubmit="event.preventDefault();salvarPagamentoFatura()">
   <label class="site-field">Valor efetivamente pago (R$)<input id="card-payment-amount" type="number" inputmode="decimal" min="0.01" step="0.01" required></label>
   <label class="site-field">Data em que você pagou<input id="card-payment-date" type="date" required></label>
   <p class="site-dialog-copy">Essa data será a saída no Extrato. O vencimento permanece como referência da fatura, sem duplicar a despesa.</p>
@@ -1631,7 +1631,7 @@ function renderCartao(){
 
       <span>Vencimento padrão: dia ${card.dueDay}${card.paymentDay?' · Pagamento habitual: dia '+card.paymentDay:''}.</span>
       ${S.extrato.filter(x=>String(x.cardId)===String(card.id)&&x.faturaMes===faturaKey&&movimentoNoControleFinanceiro(x)).length?`<span>Pagamento(s) registrado(s) em: ${S.extrato.filter(x=>String(x.cardId)===String(card.id)&&x.faturaMes===faturaKey&&movimentoNoControleFinanceiro(x)).map(x=>x.data.split('-').reverse().join('/')).join(', ')}.</span>`:''}
-      ${aberto>0&&!historica?`<button class="btn-green" type="button" onclick="registrarPagamentoFatura(${card.id},'${faturaKey}')">Registrar pagamento</button>`:'<span>Sem valor pendente.</span>'}</div>`;
+      ${aberto>0&&!historica?`<button class="btn-green" type="button" onclick="registrarPagamentoFatura(${card.id},'${faturaKey}')">Registrar pagamento</button>`:(historica?'<span>Somente histórico; sem impacto no saldo.</span>':'<span>Pagamento registrado; sem valor pendente.</span>')}</div>`;
   }).join(''):'<div class="hint">Cadastre um cartão para acompanhar faturas e pagamentos.</div>';
   const wrap=document.getElementById('cc-wrap');
   const rows=S.cartao.filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
