@@ -1,0 +1,45 @@
+const fs=require('fs'), vm=require('vm'), assert=require('assert');
+const html=fs.readFileSync('index.html','utf8');
+const body=html.match(/<script\s*>([\s\S]*?)<\/script>/);
+assert(body,'Script do aplicativo ausente');
+fs.writeFileSync('/tmp/meu-dinheiro-validar.js',body[1]);
+assert(!/(?<![\w.])(?:alert|confirm|prompt)\s*\(/.test(body[1]),'Proibido usar alerta, confirmação ou prompt nativo do navegador');
+assert(!html.includes('beforeunload'),'A saída do site não pode acionar confirmação do navegador');
+assert(!html.includes('card-close-day')&&!html.includes('configurarFechamento('),'Não solicitar configuração de fechamento no lugar de pagamento');
+for(const id of ['app-toast','app-confirm-overlay','card-editor','card-payment-editor','card-payment-date','card-payment-amount','card-payment-day','card-edit-payment','card-edit-due']) assert(html.includes('id="'+id+'"'),'Controle de interface ausente: '+id);
+assert(html.includes('bank-edit-icon')&&html.includes('editarCartaoCadastrado(${c.id})'),'Ícone de lápis deve editar cartão');
+assert(html.includes('paymentDay:paymentText.trim()'),'Cartão deve guardar dia habitual de pagamento');
+assert(html.includes('data:dataPagamento'),'Dinheiro deve sair na data efetiva, não automaticamente no vencimento');
+assert(html.includes('vencimentoFatura'),'Pagamento e vencimento precisam ser datas distintas');
+function get(name){
+ const source=body[1];
+ const start=source.indexOf('function '+name+'(');
+ assert(start>=0,'Função ausente: '+name);
+ const rest=source.slice(start+10),m=/\n(?:async )?function [A-Za-z]/.exec(rest);
+ return source.slice(start,m?start+10+m.index:source.length);
+}
+const names=['isoDate','monthKey','dataISOValida','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','valorMonetarioValido','valorParcela','dueDateFor','getParcelasCartao','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','totalDaFaturaFinanceira','pagoNaFaturaFinanceira','diaDeCartaoValido','registrarPagamentoFatura','salvarPagamentoFatura'];
+const elements={};
+function el(id){return elements[id]||(elements[id]={value:'',textContent:'',hidden:true,min:'',max:'',focus(){}});}
+const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error,document:{getElementById:el}});
+vm.runInContext("const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};let pagamentoEmEdicao=null;function today(){return '2026-10-18'};function novoIdExtrato(){return 100;}function fmt(v){return 'R$ '+v.toFixed(2);}function abrirJanela(id){document.getElementById(id).hidden=false;}function fecharJanela(id){document.getElementById(id).hidden=true;pagamentoEmEdicao=null;}function appAlert(x){throw Error('Aviso inesperado: '+x)}function saveData(){}function renderCartao(){}function renderExtrato(){}function updateResumo(){};"+names.map(get).join('\n'),ctx);
+const run=x=>vm.runInContext(x,ctx);
+assert.strictEqual(run('diaDeCartaoValido(10,true)'),true);
+assert.strictEqual(run('diaDeCartaoValido(17,true)'),true);
+assert.strictEqual(run("diaDeCartaoValido('',false)"),true);
+assert.strictEqual(run('diaDeCartaoValido(32,true)'),false);
+run("S.saldoInicial={valor:2000,data:'2026-09-18',idsIgnorados:[]};S.cartoes=[{id:1,bank:'Itaú',dueDay:10,paymentDay:17,closeDay:null}];S.cartao=[{id:2,cardId:1,data:'2026-09-20',val:600,parcelas:1,vencDia:10,closeDay:null,desc:'Compra'}]");
+assert.strictEqual(run("totalDaFaturaFinanceira(1,'2026-10')"),60000);
+run("registrarPagamentoFatura(1,'2026-10')");
+assert.strictEqual(el('card-payment-date').value,'2026-10-18');
+assert(el('card-payment-description').textContent.includes('Vencimento dia 10'));
+assert(el('card-payment-description').textContent.includes('dia 17'));
+assert.strictEqual(el('card-payment-editor').hidden,false);
+el('card-payment-amount').value='200.00';el('card-payment-date').value='2026-10-17';
+run('salvarPagamentoFatura()');
+assert.strictEqual(run('S.extrato.length'),1);
+assert.strictEqual(run('S.extrato[0].data'),'2026-10-17','Saída deve usar data real do pagamento');
+assert.strictEqual(run('S.extrato[0].vencimentoFatura'),'2026-10-10','Vencimento não deve ser alterado pelo pagamento');
+assert.strictEqual(run("pagoNaFaturaFinanceira(1,'2026-10')"),20000);
+assert.strictEqual(run("totalDaFaturaFinanceira(1,'2026-10')-pagoNaFaturaFinanceira(1,'2026-10')"),40000,'Pagamento parcial não pode duplicar nem perder saldo');
+console.log('PASS: avisos internos, edição com lápis, vencimento diferente do pagamento, data real e parcela parcial');
