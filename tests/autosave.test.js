@@ -13,6 +13,8 @@ assert(!html.includes('beforeunload'),'Não instalar alerta de fechamento nativo
 assert(!/(?<![\w.])(?:alert|confirm|prompt)\s*\(/.test(src),'Caixas nativas de avisos não podem ser usadas');
 assert(src.includes('if(!await fileWriteAllowed(handle,false))'),'Autosave não pode solicitar autorização do Chrome');
 assert(src.includes('fileWriteAllowed(handle,true)'),'A permissão de escrita deve depender de clique manual');
+assert(src.includes('const handle=dataFileHandle;\n if(!handle){'),'A ação Salvar deve usar o arquivo já selecionado');
+assert(src.indexOf('fileWriteAllowed(handle,true)') < src.indexOf('await persistLocalSession();',src.indexOf('// A solicitação de permissão precisa acontecer')),'Permissão precisa ocorrer antes de operações de backup demoradas');
 const fn=name=>{
  const r=new RegExp('^(?:async )?function '+name+'\\([^\\n]*\\)\\{.*?^\\}\\n','ms');
  const match=src.match(r);assert(match,'Não consegui obter '+name);return match[0];
