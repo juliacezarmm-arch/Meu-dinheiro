@@ -21,6 +21,11 @@ jobs:
           new="new RegExp('^(?:async )?function '+name+'\\\\([^\\\\n]*\\\\)\\\\{.*?^\\\\}\\\\n','ms')"
           assert s.count(old)==1,(old,s.count(old))
           p.write_text(s.replace(old,new),encoding='utf-8')
+          p=Path('tests/finance.test.js');s=p.read_text(encoding='utf-8')
+          old="assert(html.includes('dataFileHandle=novoHandle;'),'Handle só é trocado após validação');"
+          new="assert(html.includes('applyDataFile(parsed);dataFileHandle=handle;'),'Handle só é trocado após validação');"
+          assert s.count(old)==1
+          p.write_text(s.replace(old,new),encoding='utf-8')
           PY
           git diff --check
       - name: Testar integridade, interface e autosave
@@ -34,6 +39,6 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html tests/autosave.test.js
+          git add index.html tests/autosave.test.js tests/finance.test.js
           git commit -m 'Salva dados automaticamente e restaura arquivo selecionado após atualização'
           git push origin HEAD:fix-autosave-restore-20260919
