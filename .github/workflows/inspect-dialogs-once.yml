@@ -1,0 +1,25 @@
+name: Inspecionar diálogos e cartão
+on:
+  push:
+    branches: [fix-card-edit-ux-20260919]
+    paths: ['.github/workflows/inspect-dialogs-once.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Listar pontos de interação nativos
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          print('NATIVE_CALLS_START')
+          for n,line in enumerate(s.splitlines(),1):
+              if re.search(r'\b(?:alert|confirm|prompt)\s*\(',line):
+                  print(f'{n}: {line.strip()[:170]}')
+          print('NATIVE_CALLS_END')
+          print('SCRIPT_LINES',len(s.splitlines()))
+          PY
