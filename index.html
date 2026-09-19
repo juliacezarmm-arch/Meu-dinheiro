@@ -602,6 +602,26 @@ function valorParcela(compra,indice){
   const centavos=Math.round(Number(compra.val)*100);
   return (Math.floor(centavos/n)+(indice<centavos%n?1:0))/100;
 }
+// Data de abertura = marco zero. Parcelas anteriores só aparecem no histórico do Cartão.
+function parcelaNoControleFinanceiro(parcela){
+  return !saldoInicialValido(S.saldoInicial)||parcela.data>=S.saldoInicial.data;
+}
+function parcelasCartaoFinanceiras(){
+  return getParcelasCartao().filter(parcelaNoControleFinanceiro);
+}
+function movimentoNoControleFinanceiro(x){
+  if(!movimentoRealizado(x))return false;
+  if(!saldoInicialValido(S.saldoInicial))return true;
+  return x.data>=S.saldoInicial.data&&!S.saldoInicial.idsIgnorados.some(id=>String(id)===String(x.id));
+}
+function totalDaFaturaFinanceira(cardId,mes){
+  return parcelasCartaoFinanceiras().filter(x=>String(x.cardId)===String(cardId)&&x.data.slice(0,7)===mes)
+    .reduce((centavos,x)=>centavos+Math.round(Number(x.val)*100),0);
+}
+function pagoNaFaturaFinanceira(cardId,mes){
+  return S.extrato.filter(x=>x.tipo==='saida'&&String(x.cardId)===String(cardId)&&x.faturaMes===mes&&movimentoNoControleFinanceiro(x))
+    .reduce((centavos,x)=>centavos+Math.round(Number(x.val)*100),0);
+}
 function receitaReal(x){return x.tipo==='entrada'&&x.categoria!=='Resgate'&&x.subcategoria!=='Dinheiro do mês passado';}
 function movimentoRealizado(x){return !S.saldoInicial||x.data<=today();}
 function pagoNaFatura(cardId,mes){
@@ -851,8 +871,9 @@ function registrarPagamentoFatura(cardId,mes){
   if(!S.saldoInicial){alert('Informe primeiro seu saldo inicial no Extrato.');return;}
   const card=S.cartoes.find(x=>String(x.id)===String(cardId));
   if(!card)return;
-  const total=totalDaFatura(cardId,mes);
-  const restante=total-pagoNaFatura(cardId,mes);
+  const total=totalDaFaturaFinanceira(cardId,mes);
+  if(total<=0){alert('Parcela anterior à abertura: consta somente no histórico do cartão.');return;}
+  const restante=total-pagoNaFaturaFinanceira(cardId,mes);
   if(restante<=0){alert('Esta fatura não possui valor em aberto.');return;}
   const resposta=prompt('Valor pago da fatura '+card.bank+' '+mes+' (sem separador de milhares):',(restante/100).toFixed(2));
   if(resposta===null)return;
@@ -1101,17 +1122,16 @@ function renderAnnualSummary(viewYear){
     {key:'metas',label:'Metas',color:'#9FE1CB'},
     {key:'saldo',label:'Variação caixa',color:'#f5f5f2'}
   ];
-  const parcelas=getParcelasCartao();
+  const parcelas=parcelasCartaoFinanceiras();
   const meses=Array.from({length:12},(_,m)=>{
-    const entradas=S.extrato.filter(x=>receitaReal(x)&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
-    const resgates=S.extrato.filter(x=>x.tipo==='entrada'&&x.categoria==='Resgate'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
-    const saidas=S.extrato.filter(x=>x.tipo==='saida'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
+    const entradas=S.extrato.filter(x=>receitaReal(x)&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
+    const resgates=S.extrato.filter(x=>x.tipo==='entrada'&&x.categoria==='Resgate'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
+    const saidas=S.extrato.filter(x=>x.tipo==='saida'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
     const cartao=parcelas.filter(x=>isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
-    const invest=S.extrato.filter(x=>x.tipo==='investimento'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
-    const metas=S.extrato.filter(x=>x.tipo==='meta'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
+    const invest=S.extrato.filter(x=>x.tipo==='investimento'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
+    const metas=S.extrato.filter(x=>x.tipo==='meta'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,m)).reduce((s,x)=>s+x.val,0);
     const anoMes=isoDate(viewYear,m,1).slice(0,7);
-    const depoisAbertura=S.saldoInicial&&anoMes>=S.saldoInicial.data.slice(0,7);
-    const saldo=entradas+resgates-saidas-(depoisAbertura?0:cartao)-invest-metas;
+    const saldo=entradas+resgates-saidas-(S.saldoInicial?0:cartao)-invest-metas;
     return {m,entradas,saidas,cartao,invest,metas,saldo};
   });
   const temDados=meses.some(m=>series.some(s=>m[s.key]!==0));
@@ -1487,7 +1507,7 @@ function getParcelasCartao(){
 }
 
 function getResumoCartaoExtrato(y,m){
-  const parcelas=getParcelasCartao().filter(r=>isSameMonthDate(r.data,y,m));
+  const parcelas=parcelasCartaoFinanceiras().filter(r=>isSameMonthDate(r.data,y,m));
   const total=parcelas.reduce((s,r)=>s+r.val,0);
   if(total<=0)return null;
   const vencimentos=[...new Set(parcelas.map(r=>new Date(r.data+'T12:00:00').getDate()))].sort((a,b)=>a-b);
@@ -1551,17 +1571,22 @@ function renderCartao(){
 
   const faturas=document.getElementById('cc-faturas');
   faturas.innerHTML=S.cartoes.length?S.cartoes.map(card=>{
-    const total=totalDaFatura(card.id,faturaKey),pago=pagoNaFatura(card.id,faturaKey);
-    const aberto=Math.max(0,total-pago);
-    const historica=S.saldoInicial&&faturaKey<S.saldoInicial.data.slice(0,7);
+    const total=totalDaFatura(card.id,faturaKey);
+    const vigente=totalDaFaturaFinanceira(card.id,faturaKey);
+    const historico=total-vigente;
+    const pago=pagoNaFaturaFinanceira(card.id,faturaKey);
+    const aberto=Math.max(0,vigente-pago);
+    const historica=!!S.saldoInicial&&total>0&&vigente===0;
     return `<div class="plain-card" style="margin:0 0 8px"><strong>${escHtml(card.bank)} · ${monthLabel}</strong>
-      <span>Fatura: ${fmt(total/100)} · Pago: ${fmt(pago/100)} · Em aberto: ${fmt(aberto/100)}</span>
-      ${historica?'<span>Fatura anterior à abertura: pagamentos antigos não são conciliados automaticamente.</span>':''}
+      ${historica?`<span>Histórico do cartão: ${fmt(total/100)}. Valor anterior à abertura; não gera saída nem saldo pendente.</span>`:`<span>Fatura no controle: ${fmt(vigente/100)} · Pago: ${fmt(pago/100)} · Em aberto: ${fmt(aberto/100)}</span>`}
+      ${historico>0&&!historica?`<span>Parcela(s) históricas fora do controle: ${fmt(historico/100)}.</span>`:''}
+
       ${card.closeDay?'':'<span>Fechamento não definido: vencimentos são estimativas. Configure o fechamento do cartão.</span>'}
       ${aberto>0&&!historica?`<button class="btn-green" type="button" onclick="registrarPagamentoFatura(${card.id},'${faturaKey}')">Registrar pagamento</button>`:'<span>Sem valor pendente.</span>'}</div>`;
   }).join(''):'<div class="hint">Cadastre um cartão para acompanhar faturas e pagamentos.</div>';
   const wrap=document.getElementById('cc-wrap');
   const rows=S.cartao.filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
+  const parcelasNesteMes=getParcelasCartao().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth));
   if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
   wrap.innerHTML='<table><thead><tr><th style="width:62px">Data</th><th>Descrição</th><th style="width:74px">Tipo</th><th style="width:58px">Vence</th><th style="width:118px">Valor</th><th style="width:54px"></th></tr></thead><tbody>'+
     rows.map(r=>{
@@ -1570,7 +1595,8 @@ function renderCartao(){
       const tipoLabel=r.tipo==='parcelado'?'Parcelado':'À vista';
       const venc='dia '+(r.vencDia||10);
       const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
-      const cat=`${r.subcategoria||'Sem categoria'}${r.gastoTipo?' · '+(r.gastoTipo==='fixo'?'fixo':'variável'):''}`;
+      const historico=S.saldoInicial&&parcelasNesteMes.some(x=>String(x.id).startsWith(String(r.id)+'-')&&x.data<S.saldoInicial.data);
+      const cat=`${r.subcategoria||'Sem categoria'}${r.gastoTipo?' · '+(r.gastoTipo==='fixo'?'fixo':'variável'):''}${historico?' · Histórico anterior à abertura':''}`;
       return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${escHtml(desc)}<div style="font-size:11px;color:var(--color-text-secondary)">${escHtml(cat)}</div></td><td><span class="badge b-compra">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra sem precisar apagar e lançar de novo.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
     }).join('')+'</tbody></table>';
 }
@@ -1933,14 +1959,14 @@ function renderExtrato(){
   }
   const rows=S.extrato.concat(resumoCartao?[resumoCartao]:[],linhaSaldo?[linhaSaldo]:[]).filter(r=>isSameMonthDate(r.data,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
   const parcelasMes=resumoCartao?[resumoCartao]:[];
-  const entradasMes=rows.filter(r=>receitaReal(r)&&movimentoRealizado(r)).reduce((s,r)=>s+r.val,0);
-  const resgatesMes=rows.filter(r=>r.tipo==='entrada'&&r.categoria==='Resgate'&&movimentoRealizado(r)).reduce((s,r)=>s+r.val,0);
-  const saidasMes=rows.filter(r=>r.tipo==='saida'&&movimentoRealizado(r)).reduce((s,r)=>s+r.val,0);
-  const investimentoMes=rows.filter(r=>r.tipo==='investimento'&&movimentoRealizado(r)).reduce((s,r)=>s+r.val,0);
-  const metaMes=rows.filter(r=>r.tipo==='meta'&&movimentoRealizado(r)).reduce((s,r)=>s+r.val,0);
+  const entradasMes=rows.filter(r=>receitaReal(r)&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
+  const resgatesMes=rows.filter(r=>r.tipo==='entrada'&&r.categoria==='Resgate'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
+  const saidasMes=rows.filter(r=>r.tipo==='saida'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
+  const investimentoMes=rows.filter(r=>r.tipo==='investimento'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
+  const metaMes=rows.filter(r=>r.tipo==='meta'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
   const cartaoMes=rows.filter(r=>r.tipo==='cartao').reduce((s,r)=>s+r.val,0);
   const aviso=parcelasMes.length?'<div class="hint">'+(S.saldoInicial?'O cartão é apenas uma previsão. Para descontar o dinheiro, lance o pagamento da fatura como saída; não registre a compra como outra despesa.':'O extrato mostra o cartão como uma soma do mês. Os detalhes ficam na aba Cartão.')+'</div>':'';
-  const avisoSaldo=S.saldoInicial?'<div class="hint">O saldo inicial não é uma entrada. Movimentos anteriores a ele continuam no histórico, mas não afetam seu saldo disponível.</div>':'';
+  const avisoSaldo=S.saldoInicial?'<div class="hint">O saldo inicial não é uma entrada. Parcelas anteriores ao início ficam somente na aba Cartão; não entram neste extrato, no resumo ou no saldo disponível.</div>':'';
   const resumoDetalhe=`<div class="plain-summary compact-summary">
     <div class="plain-card"><strong>Entradas: ${fmt(entradasMes)}</strong><span>Dinheiro que entrou em ${monthLabel}.</span></div>
     <div class="plain-card"><strong>Resgates: ${fmt(resgatesMes)}</strong><span>Transferências do investimento de volta ao dinheiro disponível, não são receitas.</span></div>
@@ -1958,11 +1984,11 @@ function renderExtrato(){
       const bc=r.tipo==='saldo_inicial'?'b-pagamento':r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
       const futuro=d>hoje;
       const tipoLabel=futuro?'previsto':r.tipo==='saldo_inicial'?'saldo':r.tipo==='cartao'?'cartão':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
-      const color=r.tipo==='saldo_inicial'?'#9FE1CB':r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#BA7517':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
+      const color=r.tipo==='saldo_inicial'?'#9FE1CB':r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#A32D2D':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
       const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
       const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes das compras na aba Cartão.</div>`:'';
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.desc||'-')}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${escHtml(categoria)}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${fmt(r.val)}</td><td>${action}</td></tr>`;
+      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.desc||'-')}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${escHtml(categoria)}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td>${action}</td></tr>`;
     }).join('')+'</tbody></table>';
 }
 
@@ -2250,15 +2276,13 @@ function updateResumo(){
   const viewMonth=now.getMonth();
   const nowKey=monthKey(viewYear,viewMonth);
   const monthLabel=mesStr(viewYear,viewMonth);
-  const entradas=S.extrato.filter(x=>receitaReal(x)&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
-  const map=getMesMap();
-  const ccMes=map[nowKey]||0;
-  const resgates=S.extrato.filter(x=>x.tipo==='entrada'&&x.categoria==='Resgate'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((t,x)=>t+x.val,0);
-  const saidasDiretas=S.extrato.filter(x=>x.tipo==='saida'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
-  const investido=S.extrato.filter(x=>x.tipo==='investimento'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
-  const metas=S.extrato.filter(x=>x.tipo==='meta'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
-  const depoisAbertura=S.saldoInicial&&isoDate(viewYear,viewMonth,1).slice(0,7)>=S.saldoInicial.data.slice(0,7);
-  const saidas=saidasDiretas+(depoisAbertura?0:ccMes);
+  const entradas=S.extrato.filter(x=>receitaReal(x)&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
+  const ccMes=parcelasCartaoFinanceiras().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).reduce((t,x)=>t+x.val,0);
+  const resgates=S.extrato.filter(x=>x.tipo==='entrada'&&x.categoria==='Resgate'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((t,x)=>t+x.val,0);
+  const saidasDiretas=S.extrato.filter(x=>x.tipo==='saida'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
+  const investido=S.extrato.filter(x=>x.tipo==='investimento'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
+  const metas=S.extrato.filter(x=>x.tipo==='meta'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).reduce((s,x)=>s+x.val,0);
+  const saidas=saidasDiretas+(S.saldoInicial?0:ccMes);
   const saldoMes=entradas+resgates-saidas-investido-metas;
   const saldo=S.saldoInicial?calcularSaldoDisponivelAte(today()):saldoMes;
   document.getElementById('res-month-label').textContent=monthLabel;
@@ -2279,14 +2303,14 @@ function updateResumo(){
   const bars=document.getElementById('resumo-bars');
   const entradaCat={}, saidaCat={}, cartaoCat={}, investCat={}, metaCat={};
   S.extrato.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>{
-    if(receitaReal(x)&&movimentoRealizado(x))addGroup(entradaCat,x.subcategoria||x.categoria||'Entrada',x.val);
-    if(x.tipo==='saida'&&movimentoRealizado(x))addGroup(saidaCat,x.subcategoria||x.categoria||'Saída',x.val);
+    if(receitaReal(x)&&movimentoNoControleFinanceiro(x))addGroup(entradaCat,x.subcategoria||x.categoria||'Entrada',x.val);
+    if(x.tipo==='saida'&&movimentoNoControleFinanceiro(x))addGroup(saidaCat,x.subcategoria||x.categoria||'Saída',x.val);
   });
-  getParcelasCartao().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>{
+  parcelasCartaoFinanceiras().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>{
     addGroup(cartaoCat,x.subcategoria||x.categoria||'Cartão',x.val);
   });
-  S.extrato.filter(x=>x.tipo==='investimento'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(investCat,x.subcategoria||x.categoria||'Investimento',x.val));
-  S.extrato.filter(x=>x.tipo==='meta'&&movimentoRealizado(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(metaCat,x.subcategoria||x.categoria||'Meta',x.val));
+  S.extrato.filter(x=>x.tipo==='investimento'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(investCat,x.subcategoria||x.categoria||'Investimento',x.val));
+  S.extrato.filter(x=>x.tipo==='meta'&&movimentoNoControleFinanceiro(x)&&isSameMonthDate(x.data,viewYear,viewMonth)).forEach(x=>addGroup(metaCat,x.subcategoria||x.categoria||'Meta',x.val));
 
   const entradaItems=objToItems(entradaCat,'#1D9E75');
   const saidaItems=objToItems(saidaCat,'#E24B4A');
