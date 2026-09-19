@@ -22,7 +22,7 @@ const names=['isoDate','monthKey','dataISOValida','saldoInicialValido','moviment
 const elements={};
 function el(id){return elements[id]||(elements[id]={value:'',textContent:'',hidden:true,min:'',max:'',focus(){}});}
 const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error,document:{getElementById:el}});
-vm.runInContext("const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};let pagamentoEmEdicao=null;function today(){return '2026-10-18'};function novoIdExtrato(){return 100;}function fmt(v){return 'R$ '+v.toFixed(2);}function abrirJanela(id){document.getElementById(id).hidden=false;}function fecharJanela(id){document.getElementById(id).hidden=true;pagamentoEmEdicao=null;}function appAlert(x){throw Error('Aviso inesperado: '+x)}function saveData(){}function renderCartao(){}function renderExtrato(){}function updateResumo(){};"+names.map(get).join('\n'),ctx);
+vm.runInContext("const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};let pagamentoEmEdicao=null;function today(){return '2026-10-18'};function novoIdExtrato(){return 100;}function fmt(v){return 'R$ '+v.toFixed(2);}function abrirJanela(id){document.getElementById(id).hidden=false;}function fecharJanela(id){document.getElementById(id).hidden=true;pagamentoEmEdicao=null;}function appAlert(x){if(!x.includes('Pagamento registrado'))throw Error('Aviso inesperado: '+x)}function saveData(){}function renderCartao(){}function renderExtrato(){}function updateResumo(){};"+names.map(get).join('\n'),ctx);
 const run=x=>vm.runInContext(x,ctx);
 assert.strictEqual(run('diaDeCartaoValido(10,true)'),true);
 assert.strictEqual(run('diaDeCartaoValido(17,true)'),true);
