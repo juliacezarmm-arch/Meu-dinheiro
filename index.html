@@ -553,6 +553,7 @@ function dataISOValida(v){
 }
 function validarDadosImportados(arquivo){
   if(!arquivo||typeof arquivo!=='object'||Array.isArray(arquivo))throw Error('Formato JSON inválido.');
+  if(arquivo.versao!==undefined&&(!Number.isInteger(arquivo.versao)||arquivo.versao>2||arquivo.versao<1))throw Error('Versão do arquivo incompatível.');
   const dados=arquivo.dados||arquivo;
   if(!dados||typeof dados!=='object'||Array.isArray(dados))throw Error('Objeto de dados inválido.');
   const colecoes=['extrato','cartao','invest','cartoes'];
@@ -571,13 +572,14 @@ function validarDadosImportados(arquivo){
       if(key==='cartao'&&!dataISOValida(r.data))throw Error('Compra sem data.');
       if(key==='extrato'&&!['entrada','saida','investimento','meta'].includes(r.tipo))throw Error('Tipo de lançamento inválido.');
       for(const campo of ['val','valorAtual','totalAportado','totalResgatado','meta']){
-        if(r[campo]!==undefined&&(!Number.isFinite(Number(r[campo]))||Number(r[campo])<0))throw Error('Valor financeiro inválido em '+key+': '+campo);
+        if(r[campo]!==undefined&&(typeof r[campo]!=='number'||!Number.isFinite(r[campo])||r[campo]<0))throw Error('Valor financeiro inválido em '+key+': '+campo);
       }
+      if(key==='cartoes'&&r.color!==undefined&&!/^#[0-9a-fA-F]{6}$/.test(r.color))throw Error('Cor de cartão inválida.');
       if(key==='cartao'&&(!Number.isInteger(Number(r.parcelas||1))||Number(r.parcelas||1)<1||Number(r.parcelas||1)>120))throw Error('Parcelamento inválido.');
       if(key==='invest'&&r.historico!==undefined){
         if(!Array.isArray(r.historico)||r.historico.length>100000)throw Error('Histórico de investimento inválido.');
         for(const h of r.historico){
-          if(!h||typeof h!=='object'||!dataISOValida(h.data)||!['aporte','resgate','atualizacao'].includes(h.tipo)||!Number.isFinite(Number(h.valor))||Number(h.valor)<0)throw Error('Movimentação de investimento inválida.');
+          if(!h||typeof h!=='object'||!dataISOValida(h.data)||!['aporte','resgate','atualizacao'].includes(h.tipo)||typeof h.valor!=='number'||!Number.isFinite(h.valor)||h.valor<0||(h.id!==undefined&&!/^[A-Za-z0-9_-]{1,100}$/.test(String(h.id))))throw Error('Movimentação de investimento inválida.');
         }
       }
     }
@@ -609,6 +611,9 @@ function pagoNaFatura(cardId,mes){
 function totalDaFatura(cardId,mes){
   return getParcelasCartao().filter(x=>String(x.cardId)===String(cardId)&&x.data.slice(0,7)===mes)
     .reduce((total,x)=>total+Math.round(Number(x.val)*100),0);
+}
+function ultimaDataFinanceira(item){
+  return ensureInvestHistory(item).reduce((ultima,m)=>m.data&&m.data>ultima?m.data:ultima,'');
 }
 function reservadoEmMetas(id){
   return S.invest.filter(x=>x.kind==='meta'&&String(x.storageId)===String(id))
@@ -1548,10 +1553,12 @@ function renderCartao(){
   faturas.innerHTML=S.cartoes.length?S.cartoes.map(card=>{
     const total=totalDaFatura(card.id,faturaKey),pago=pagoNaFatura(card.id,faturaKey);
     const aberto=Math.max(0,total-pago);
+    const historica=S.saldoInicial&&faturaKey<S.saldoInicial.data.slice(0,7);
     return `<div class="plain-card" style="margin:0 0 8px"><strong>${escHtml(card.bank)} · ${monthLabel}</strong>
       <span>Fatura: ${fmt(total/100)} · Pago: ${fmt(pago/100)} · Em aberto: ${fmt(aberto/100)}</span>
+      ${historica?'<span>Fatura anterior à abertura: pagamentos antigos não são conciliados automaticamente.</span>':''}
       ${card.closeDay?'':'<span>Fechamento não definido: vencimentos são estimativas. Configure o fechamento do cartão.</span>'}
-      ${aberto>0?`<button class="btn-green" type="button" onclick="registrarPagamentoFatura(${card.id},'${faturaKey}')">Registrar pagamento</button>`:'<span>Sem valor pendente.</span>'}</div>`;
+      ${aberto>0&&!historica?`<button class="btn-green" type="button" onclick="registrarPagamentoFatura(${card.id},'${faturaKey}')">Registrar pagamento</button>`:'<span>Sem valor pendente.</span>'}</div>`;
   }).join(''):'<div class="hint">Cadastre um cartão para acompanhar faturas e pagamentos.</div>';
   const wrap=document.getElementById('cc-wrap');
   const rows=S.cartao.filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
@@ -1750,6 +1757,8 @@ function saveInvestUpdate(id){
   }
   const data=document.getElementById('update-data-'+id).value||today();
   if(data>today()){alert('Atualizações de patrimônio futuro não são permitidas.');return;}
+  const relacionados=[item,...S.invest.filter(x=>x.kind==='meta'&&x.storageId===item.id)];
+  if(relacionados.some(x=>data<ultimaDataFinanceira(x))){alert('Atualize na data mais recente do histórico. Uma atualização retroativa pode alterar saldos de resgates posteriores.');return;}
   let val=0;
   let cryptoQtd=null;
   let cryptoCotacao=null;
@@ -1800,9 +1809,12 @@ function saveInvestResgate(id){
   if(data>today()||!valorMonetarioValido(val)||val<=0){alert('Informe um resgate válido, até a data de hoje.');return;}
   const livre=item.kind==='investimento'?Math.max(0,Math.round((item.valorAtual-reservadoEmMetas(item.id))*100)/100):item.valorAtual;
   if(val>livre+0.000001){alert('Resgate maior que o saldo livre. O dinheiro reservado em metas deve ser resgatado pela própria meta.');return;}
+  const storage=item.kind==='meta'?getMetaStorage(item):null;
+  if(item.kind==='meta'&&!storage){alert('Esta meta está sem investimento vinculado. Regularize o vínculo antes de resgatar.');return;}
+  if(storage&&val>Number(storage.valorAtual||0)+0.000001){alert('O investimento vinculado não possui saldo suficiente para este resgate.');return;}
+  if(data<ultimaDataFinanceira(item)||(storage&&data<ultimaDataFinanceira(storage))){alert('Registre resgates após a última movimentação do histórico para evitar saldo incorreto.');return;}
   const resgate=val;
   const extId=novoIdExtrato();
-  const storage=item.kind==='meta'?getMetaStorage(item):null;
   item.valorAtual-=resgate;
   item.totalResgatado+=resgate;
   ensureInvestHistory(item).push({id:extId+'-hist',tipo:'resgate',data,valor:resgate,saldo:item.valorAtual,extId,storageId:storage?storage.id:null,storageNome:storage?storage.nome:''});
@@ -2253,7 +2265,7 @@ function updateResumo(){
   document.querySelector('.saldo-bar').title='Saldo disponível HOJE, independentemente do mês do resumo.';
   document.getElementById('saldo-total').textContent=S.saldoInicial?fmt(saldo):'—';
   document.getElementById('saldo-note').textContent=S.saldoInicial
-    ? 'Saldo real a partir de '+S.saldoInicial.data.split('-').reverse().join('/')+'. O cartão só reduz esse valor após lançar o pagamento no extrato.'
+    ? 'Saldo de hoje, calculado a partir de '+S.saldoInicial.data.split('-').reverse().join('/')+'. O cartão só reduz esse valor após lançar o pagamento no extrato.'
     : 'Informe seu saldo inicial no Extrato para começar o controle automático.';
   document.getElementById('saldo-link').hidden=!!S.saldoInicial;
   document.getElementById('res-cc').parentElement.querySelector('.label').textContent=S.saldoInicial?'Cartão (previsto)':'Cartão (mês atual)';
