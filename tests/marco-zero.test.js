@@ -1,0 +1,33 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const html=fs.readFileSync('index.html','utf8');
+const script=html.match(/<script\s*>([\s\S]*?)<\/script>/);
+assert(script,'Script principal ausente');
+function fn(name){
+ const ini=script[1].indexOf('function '+name+'(');
+ assert(ini>=0,'Função ausente: '+name);
+ const fim=script[1].indexOf('\nfunction ',ini+10);
+ return script[1].slice(ini,fim<0?script[1].length:fim);
+}
+const names=['isoDate','monthKey','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','valorParcela','dueDateFor','getParcelasCartao','getMesMap','getResumoCartaoExtrato','isSameMonthDate','totalDaFaturaFinanceira','pagoNaFaturaFinanceira'];
+const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error});
+vm.runInContext("let hoje='2026-09-18'; function today(){return hoje;} const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];"+names.map(fn).join('\n'),ctx);
+const run=s=>vm.runInContext(s,ctx);
+run("S.saldoInicial={valor:2000,data:'2026-09-18',idsIgnorados:['50']};S.cartao=[{id:101,cardId:7,data:'2026-08-02',desc:'Compra parcelada',val:900,parcelas:3,vencDia:25,closeDay:10,categoria:'Compras',subcategoria:'Outros'},{id:102,cardId:7,data:'2026-09-01',desc:'Anterior no mesmo mês',val:100,parcelas:1,vencDia:10,closeDay:5}]");
+assert.strictEqual(run("getMesMap()['2026-08']"),300,'O cartão preserva a parcela de agosto no histórico');
+assert.strictEqual(run("getMesMap()['2026-09']"),400,'O cartão preserva também a parcela do dia 10/09');
+assert.strictEqual(run("parcelasCartaoFinanceiras().filter(x=>x.data<'2026-09-18').length"),0,'Abertura por dia, não apenas por mês');
+assert.strictEqual(run("parcelasCartaoFinanceiras().filter(x=>x.data.slice(0,7)==='2026-09').reduce((s,x)=>s+x.val,0)"),300);
+assert.strictEqual(run("getResumoCartaoExtrato(2026,7)"),null,'Agosto deve desaparecer do extrato');
+assert.strictEqual(run("getResumoCartaoExtrato(2026,8).val"),300,'Setembro só inclui a parcela de 25/09');
+assert.strictEqual(run("getResumoCartaoExtrato(2026,9).val"),300,'Outubro mantém a previsão');
+assert.strictEqual(run("totalDaFaturaFinanceira(7,'2026-08')"),0,'Histórico não gera saldo pendente');
+assert.strictEqual(run("totalDaFaturaFinanceira(7,'2026-09')"),30000,'A fatura do mês inicial exclui vencimentos anteriores');
+run("S.extrato=[{id:50,data:'2026-09-18',tipo:'saida',val:999},{id:51,data:'2026-09-17',tipo:'saida',val:300},{id:52,data:'2026-09-18',tipo:'entrada',val:200},{id:53,data:'2026-09-20',tipo:'saida',val:50},{id:54,data:'2026-09-17',tipo:'saida',cardId:7,faturaMes:'2026-09',val:100},{id:55,data:'2026-09-19',tipo:'saida',cardId:7,faturaMes:'2026-09',val:80}]");
+assert.strictEqual(run('movimentoNoControleFinanceiro(S.extrato[0])'),false,'Lançamento do mesmo dia já incorporado no saldo inicial');
+assert.strictEqual(run('movimentoNoControleFinanceiro(S.extrato[1])'),false,'Movimento anterior não contamina resumos');
+assert.strictEqual(run('movimentoNoControleFinanceiro(S.extrato[2])'),true);
+assert.strictEqual(run("pagoNaFaturaFinanceira(7,'2026-09')"),8000,'Pagamentos anteriores já estão incorporados ao saldo de partida');
+assert(html.includes('const historica=!!S.saldoInicial&&total>0&&vigente===0;'),'Histórico da fatura deve considerar dia da abertura');
+assert(html.includes('const parcelas=parcelasCartaoFinanceiras().filter('),'Extrato precisa filtrar parcelas pela data exata');
+assert(html.includes('const parcelas=parcelasCartaoFinanceiras();'),'Resumo anual não pode trazer histórico pré-abertura');
+console.log('PASS: marco zero, agosto apenas no Cartão, setembro parcial, outubro previsto, resumo/extrato e pagamentos sem duplicidade');
