@@ -1,0 +1,18 @@
+name: Validar integridade financeira
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', 'tests/finance.test.js', '.github/workflows/verificar-financas.yml']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar cálculos, regras e sintaxe
+        run: |
+          node tests/finance.test.js
+          node --check /tmp/meu-dinheiro-validar.js
