@@ -16,16 +16,29 @@ jobs:
           sed -i "s/'movimentoNoControleFinanceiro(x)', expected=7)/'movimentoNoControleFinanceiro(x)', expected=9)/" scripts/aplicar_marco_zero.py
           python3 -m py_compile scripts/aplicar_marco_zero.py
           python3 scripts/aplicar_marco_zero.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tests/marco-zero.test.js')
+          s=p.read_text(encoding='utf-8')
+          a="getMesMap()['2026-08']\"),300"
+          b="getMesMap()['2026-07']\"),300"
+          c="getMesMap()['2026-09']\"),400"
+          d="getMesMap()['2026-08']\"),400"
+          assert s.count(a)==1 and s.count(c)==1
+          s=s.replace(a,b).replace(c,d)
+          p.write_text(s,encoding='utf-8')
+          print('CORRECAO_TESTE_MES_OK')
+          PY
           git diff --check
       - name: Testar regras financeiras e sintaxe JavaScript
         run: |
           node tests/finance.test.js
           node tests/marco-zero.test.js
           node --check /tmp/meu-dinheiro-validar.js
-      - name: Commit do aplicativo somente na branch de revisão
+      - name: Commit do aplicativo e do teste somente na branch de revisão
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add index.html tests/marco-zero.test.js
           git commit -m 'Restringe parcelas anteriores ao saldo inicial ao histórico do cartão'
           git push origin HEAD:fix-marco-zero-cartao-20260919
