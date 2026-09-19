@@ -93,7 +93,9 @@ function openRecEditor(id=null){
 }
 function closeRecEditor(){$('rec-form').hidden=true;editingRecId=null;}
 function cardForecasts(){
- const hoje=today(),horizon=new Date(hoje+'T12:00:00');horizon.setMonth(horizon.getMonth()+13);
+ const hoje=today(),horizon=new Date(hoje+'T12:00:00');horizon.setMonth(horizon.getMonth()+36);
+ const selecionado=new Date(cartaoMes.getFullYear(),cartaoMes.getMonth()+13,1,12);
+ if(selecionado>horizon)horizon.setTime(selecionado.getTime());
  const fim=isoDate(horizon.getFullYear(),horizon.getMonth(),horizon.getDate());
  return S.recorrentes.filter(r=>r.metodo==='cartao'&&!r.excluida).flatMap(r=>ocorrencias(r,fim).filter(d=>d>hoje&&!originalJaRegistrado(r,d)).map(data=>{
   const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));if(!card)return null;
@@ -150,7 +152,8 @@ function saveRecEditor(event){
  if(!nome||!valorMonetarioValido(valor)||valor<=0||!dataISOValida(inicio)||fim&&!dataISOValida(fim)||fim&&fim<=inicio||!['semanal','mensal','anual'].includes(frequencia)||!['entrada','saida'].includes(tipo)||!categoria||!subcategoria){appAlert('Preencha descrição, valor, categoria e datas válidas. Encerramento precisa ser posterior ao início.');return;}
  if(tipo==='entrada'&&metodo!=='recebimento'||tipo==='saida'&&!['cartao','debito_automatico','debito','pix','transferencia'].includes(metodo)){appAlert('Escolha uma forma de pagamento válida.');return;}
  if(metodo==='cartao'&&!S.cartoes.some(c=>String(c.id)===String(cartaoId))){appAlert('Cadastre e selecione um cartão antes de salvar.');return;}
- const newRecord={id:existing?existing.id:novoIdGlobal(),nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false};
+ let novoId=novoIdGlobal();while(S.recorrentes.some(x=>String(x.id)===String(novoId)))novoId++;
+ const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false};
  if(existing){
   // Passado imutável: edição troca apenas ocorrências a partir de amanhã.
   newRecord.vigenteDesde=datePlusOne(today());
@@ -182,7 +185,7 @@ validarDadosImportados=function(file){
   if(!Array.isArray(dados.recorrentes)||dados.recorrentes.length>2000)throw Error('Cadastro de recorrências inválido.');
   const ids=new Set();
   for(const r of dados.recorrentes){
-   if(!r||typeof r!=='object'||!Number.isSafeInteger(Number(r.id))||ids.has(String(r.id))||typeof r.nome!=='string'||r.nome.length>75||!valorMonetarioValido(r.valor)||r.valor<=0||!['entrada','saida'].includes(r.tipo)||!['semanal','mensal','anual'].includes(r.frequencia)||!dataISOValida(r.inicio)||r.fim!==null&&r.fim!==undefined&&!dataISOValida(r.fim)||r.vigenteDesde&&!dataISOValida(r.vigenteDesde))throw Error('Recorrência inválida no arquivo.');
+   if(!r||typeof r!=='object'||!Number.isSafeInteger(Number(r.id))||Number(r.id)<=0||ids.has(String(r.id))||typeof r.nome!=='string'||!r.nome.trim()||r.nome.length>75||!valorMonetarioValido(r.valor)||r.valor<=0||!['entrada','saida'].includes(r.tipo)||!['cartao','debito_automatico','debito','pix','transferencia','recebimento'].includes(r.metodo)||!['semanal','mensal','anual'].includes(r.frequencia)||!dataISOValida(r.inicio)||r.fim!==null&&r.fim!==undefined&&!dataISOValida(r.fim)||r.vigenteDesde&&!dataISOValida(r.vigenteDesde))throw Error('Recorrência inválida no arquivo.');
    ids.add(String(r.id));
   }
  }
@@ -196,7 +199,9 @@ applyDataFile=function(file){
  try{oldApply(file);}catch(error){S.recorrentes=former;throw error;}
  S.recorrentes=Array.isArray(dados.recorrentes)?dados.recorrentes:[];
  S.recorrenciaIgnoradas=Array.isArray(dados.recorrenciaIgnoradas)?dados.recorrenciaIgnoradas:[];
- syncRecurring();renderCartao();renderExtrato();updateResumo();
+ const added=syncRecurring();renderCartao();renderExtrato();updateResumo();
+ // Restauração assíncrona pode reaplicar o status antigo de salvamento após o cadastro ser gerado.
+ if(added)setTimeout(()=>{hasUnsavedChanges=true;saveData();},0);
 };
 const oldCardList=renderRegisteredCards;
 renderRegisteredCards=function(){oldCardList();cardOptions();};
@@ -227,7 +232,7 @@ renderExtrato=function(){oldExtratoRender();const wrap=$('ext-wrap'),forecast=ca
  const box=document.createElement('div');box.className='rec-predictions';box.innerHTML='<strong>Recorrências previstas (não movimentam o saldo)</strong>'+forecast.map(x=>`<div class="rec-prediction"><span>${displayDate(x.data)} · ${escHtml(x.desc)}<br><small>${escHtml(kindLabel[x.metodo]||x.metodo)}</small></span><b style="color:${x.tipo==='entrada'?'#9FE1CB':'#efaba4'}">${x.tipo==='saida'?'−':'+'}${fmt(x.valor)}</b></div>`).join('');wrap.insertBefore(box,wrap.firstChild);
 };
 const oldEditPurchase=editCartao;
-editCartao=function(id){const row=S.cartao.find(x=>String(x.id)===String(id));if(row&&row.recorrenciaId){openRecEditor(row.recorrenciaId);showPage('extrato',document.querySelectorAll('.nav button')[1]);return;}oldEditPurchase(id);};
+editCartao=function(id){const row=S.cartao.find(x=>String(x.id)===String(id));if(row&&row.recorrenciaId){showPage('extrato',document.querySelectorAll('.nav button')[1]);openRecEditor(row.recorrenciaId);return;}oldEditPurchase(id);};
 const oldDelCC=delCC;
 delCC=function(id){const row=S.cartao.find(x=>String(x.id)===String(id));oldDelCC(id);if(row&&!S.cartao.some(x=>String(x.id)===String(id))){ignoreRecurring(row);saveData();renderRecurring();}};
 const oldDelExt=delExt;
