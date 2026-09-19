@@ -15,6 +15,7 @@ jobs:
           persist-credentials: true
       - name: Aplicar correções financeiras
         run: |
+          python3 scripts/preparar_revisao.py
           python3 scripts/revisao_financeira.py
           python3 scripts/revisao_integridade.py
           git diff --check
