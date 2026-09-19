@@ -14,7 +14,9 @@ jobs:
         with:
           persist-credentials: true
       - name: Aplicar alteração pontual
-        run: python3 scripts/one_time_saldo_inicial.py
+        run: |
+          python3 scripts/one_time_saldo_inicial.py
+          sed -i '/wrap.innerHTML=resumo+avisoSaldo+aviso/s/[[:space:]]*$//' index.html
       - name: Conferir integridade JavaScript e alterações
         run: |
           python3 - <<'PY'
