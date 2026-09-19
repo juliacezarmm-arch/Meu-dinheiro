@@ -1,0 +1,33 @@
+name: Revisao financeira em branch isolada
+on:
+  push:
+    branches: [revisao-logica-financeira-20260919]
+    paths: ['.github/workflows/revisao-financeira.yml']
+permissions:
+  contents: write
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar branch de revisão
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Aplicar correções financeiras
+        run: |
+          python3 scripts/revisao_financeira.py
+          python3 scripts/revisao_integridade.py
+          git diff --check
+      - name: Verificar sintaxe e regras financeiras
+        run: |
+          node --check tests/finance.test.js
+          node tests/finance.test.js
+          node --check /tmp/meu-dinheiro-validar.js
+          git diff --stat
+      - name: Enviar apenas o aplicativo corrigido para a branch de revisão
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Corrige integridade financeira e validação dos dados'
+          git push origin HEAD:revisao-logica-financeira-20260919
