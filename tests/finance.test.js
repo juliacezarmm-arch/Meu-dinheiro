@@ -43,7 +43,7 @@ assert.strictEqual(run('validarDadosImportados('+valid+').extrato.length'),1);
 assert.throws(()=>run("validarDadosImportados({extrato:[{id:1,data:'2026-02-30',tipo:'entrada',val:10}],cartao:[],invest:[],cartoes:[]})"));
 assert.throws(()=>run("validarDadosImportados({extrato:[{id:1,data:'2026-09-19',tipo:'entrada',val:10},{id:1,data:'2026-09-19',tipo:'saida',val:10}],cartao:[],invest:[],cartoes:[]})"));
 assert(html.includes('idsIgnorados:S.extrato.filter(x=>x.data<=today())'),'Saldo inicial precisa manter lançamentos futuros');
-assert(html.includes('applyDataFile(parsed);dataFileHandle=handle;'),'Handle só é trocado após validação');
+assert(html.includes('validarDadosImportados(parsed);')&&html.includes('dataFileHandle=handle;knownFileSignature='),'Arquivo só é associado após validação');
 assert(html.includes('faturaMes:mes'),'Pagamentos vinculados à fatura');
 assert(html.includes('S.extrato.some(x=>String(x.destId)===String(id))'),'Exclusão com proteção de histórico');
 console.log('PASS: saldo, datas futuras, receitas/resgates, centavos, fechamento, faturas, metas, JSON, HTML e vínculos');

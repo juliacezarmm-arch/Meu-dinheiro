@@ -4,7 +4,7 @@ const body=html.match(/<script\s*>([\s\S]*?)<\/script>/);
 assert(body,'Script do aplicativo ausente');
 fs.writeFileSync('/tmp/meu-dinheiro-validar.js',body[1]);
 assert(!/(?<![\w.])(?:alert|confirm|prompt)\s*\(/.test(body[1]),'Proibido usar alerta, confirmação ou prompt nativo do navegador');
-assert(!html.includes('beforeunload'),'A saída do site não pode acionar confirmação do navegador');
+assert(html.includes('beforeunload'),'F5 deve advertir quando houver alterações não salvas');
 assert(!html.includes('card-close-day')&&!html.includes('configurarFechamento('),'Não solicitar configuração de fechamento no lugar de pagamento');
 for(const id of ['app-toast','app-confirm-overlay','card-editor','card-payment-editor','card-payment-date','card-payment-amount','card-payment-day','card-edit-payment','card-edit-due']) assert(html.includes('id="'+id+'"'),'Controle de interface ausente: '+id);
 assert(html.includes('bank-edit-icon')&&html.includes('editarCartaoCadastrado(${c.id})'),'Ícone de lápis deve editar cartão');

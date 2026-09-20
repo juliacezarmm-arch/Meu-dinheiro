@@ -7,16 +7,19 @@ if not chrome:
  sys.exit(2)
 root=Path.cwd()
 html=(root/'index.html').read_text(encoding='utf-8')
-assert '<script src="js/recorrentes.js?v=20260920-dia2"></script>' in html
+assert '<script src="js/recorrentes.js?v=20260920-json1"></script>' in html
 script=r'''<script>
 (function(){
 const report=(ok,msg)=>{document.body.insertAdjacentHTML('beforeend','<pre id="smoke-result">'+(ok?'PASS: ':'FAIL: ')+String(msg).replace(/</g,'&lt;')+'</pre>');};
 setTimeout(()=>{
 try{
+ if(!document.body.classList.contains('file-closed'))throw Error('Sem JSON a tela deve ficar bloqueada');
  if(!document.getElementById('recorrentes-area'))throw Error('Cadastro ausente');
  if(!document.getElementById('rec-card-open'))throw Error('Área própria de assinatura ausente');
  if(document.querySelector('#cc-gasto-tipo').closest('.row').style.display!=='none')throw Error('Tipo fixo/variável visível');
  const d=new Date(today()+'T12:00:00');d.setDate(d.getDate()-1);
+ dataFileHandle={kind:'file',name:'teste.json',getFile:async()=>({size:1,lastModified:1}),queryPermission:async()=> 'granted',createWritable:async()=>({write:async()=>{},close:async()=>{}})};
+ knownFileSignature='1:1';setFileAccessState(true);
  S.saldoInicial={valor:500,data:isoDate(d.getFullYear(),d.getMonth(),d.getDate()),idsIgnorados:[]};
  document.getElementById('rec-open').click();
  if(document.getElementById('rec-form').parentElement.id!=='recorrentes-area')throw Error('Cadastro da conta fora do Extrato');

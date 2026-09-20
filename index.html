@@ -23,7 +23,7 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .header h1{font-size:20px;font-weight:500}
 .brand-logo{width:42px;height:42px;object-fit:contain;flex:none;border:0;background:transparent;padding:0;margin:0}
 .today-label{margin-left:auto;font-size:12px;color:var(--color-text-secondary);background:#171716;border:1px solid #3a3934;border-radius:999px;padding:5px 9px;white-space:nowrap}
-.data-tools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:.45rem 1.25rem .55rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.data-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:.45rem 1.25rem .55rem;border-bottom:0.5px solid var(--color-border-tertiary)}
 .data-tools button,.data-tools label{background:#171716;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:6px 10px;font-size:12px;font-weight:800;text-align:center;cursor:pointer}
 .data-tools button:hover,.data-tools label:hover{border-color:#9FE1CB}
 .data-tools input{display:none}
@@ -258,6 +258,11 @@ td:last-child{white-space:normal}
 .site-toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:20000;display:flex;align-items:center;gap:12px;width:min(94%,480px);background:#1a2924;color:#f5f5f2;border:1px solid #69cda9;border-radius:12px;padding:12px 13px;box-shadow:0 18px 45px rgba(0,0,0,.6);font-size:13px;line-height:1.4}.site-toast span{flex:1}.site-toast button{background:transparent;color:#f5f5f2;border:0;font-size:22px;cursor:pointer}
 .input-caption{display:block;font-size:12px;color:#c5c3ba;margin-bottom:5px}.bank-card-actions{position:absolute;right:8px;top:8px;z-index:2;display:flex;gap:5px}.bank-card .bank-card-actions .del{position:static;min-width:28px;min-height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);border-radius:7px;color:#fff;cursor:pointer}.bank-card .bank-card-actions .del:hover{background:rgba(0,0,0,.42);border-color:white}.bank-edit-icon{width:15px;height:15px;display:block}
 @media(max-width:520px){.site-dialog-panel{padding:17px}.site-fields-row{grid-template-columns:1fr}.site-dialog-actions button{flex:1}}
+/* O documento JSON e a unica fonte ativa. Nenhum formulario e editavel sem arquivo. */
+body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
+#refresh-file-name{font-size:13px;color:#9FE1CB;overflow-wrap:anywhere}
+#refresh-error{font-size:12px;color:#ffb3b3;margin-top:12px}
+@media(max-width:520px){#refresh-overlay .site-dialog-actions{flex-direction:column-reverse}#refresh-overlay .site-dialog-actions button{width:100%}}
 </style>
 </head>
 <body>
@@ -269,11 +274,11 @@ td:last-child{white-space:normal}
     <div class="today-label" id="today-label"></div>
   </div>
   <div class="data-tools">
-    <button onclick="openDataFile()" title="Abre um arquivo de dados salvo no computador para continuar usando suas informações.">Abrir dados</button>
-    <button onclick="manualSave()" title="Os dados já são guardados neste navegador. Clique para autorizar ou atualizar o arquivo JSON vinculado.">Salvar</button>
-    <button onclick="saveAsDataFile()" title="Escolha um arquivo JSON para manter uma cópia sincronizada. O navegador exige o seletor de arquivos nesta operação.">Salvar como</button>
-    <input type="file" id="import-file" accept="application/json,.json" onchange="importData(event)"/>
-    <div class="save-status" id="save-status" role="status" aria-live="polite">Recuperando salvamento automático…</div>
+    <button type="button" onclick="openDataFile()" title="Abra um JSON para consultar e editar seus registros.">Abrir dados</button>
+    <button type="button" onclick="manualSave()" title="Grava diretamente as alteracoes no arquivo JSON aberto.">Salvar</button>
+    <button type="button" onclick="saveAsDataFile()" title="Cria um JSON novo ou salva os dados em outro arquivo.">Salvar como</button>
+    <button type="button" onclick="atualizarAplicativo()" title="Atualiza o aplicativo, fechando o arquivo atual.">Atualizar</button>
+    <div class="save-status" id="save-status" role="status" aria-live="polite">Abra um arquivo JSON para começar.</div>
   </div>
   <nav class="nav">
     <button onclick="showPage('resumo',this)" class="active" title="Mostra o resumo do mês: saldo, entradas, saídas, metas, investimentos e gráficos."><i class="ti ti-home" aria-hidden="true"></i> Resumo</button>
@@ -514,6 +519,11 @@ td:last-child{white-space:normal}
 <!-- Caixas de diálogo exclusivas do próprio aplicativo. -->
 <div id="app-toast" class="site-toast" role="status" aria-live="polite" hidden><span id="app-toast-message"></span><button type="button" onclick="fecharAviso()" aria-label="Dispensar aviso">×</button></div>
 <div id="app-confirm-overlay" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title" hidden><div class="site-dialog-panel"><div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">?</span><h2 id="app-confirm-title">Confirmar operação</h2></div><p id="app-confirm-message" class="site-dialog-copy"></p><div class="site-dialog-actions"><button type="button" class="site-button quiet" id="app-confirm-cancel">Cancelar</button><button type="button" class="site-button primary" id="app-confirm-accept">Confirmar</button></div></div></div>
+<div id="refresh-overlay" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="refresh-title" hidden><div class="site-dialog-panel">
+  <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">↻</span><h2 id="refresh-title">Salvar alterações?</h2></div>
+  <p id="refresh-file-name"></p><p id="refresh-error" role="alert" hidden></p>
+  <div class="site-dialog-actions"><button type="button" class="site-button quiet" id="refresh-cancel" onclick="cancelarAtualizacao()">Cancelar</button><button type="button" class="site-button quiet" id="refresh-discard" onclick="atualizarSemSalvar()">Atualizar sem salvar</button><button type="button" class="site-button primary" id="refresh-save" onclick="salvarEAtualizar()">Salvar e atualizar</button></div>
+</div></div>
 <div id="card-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-editor-title" hidden><div class="site-dialog-panel">
   <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">✎</span><h2 id="card-editor-title">Editar cartão</h2></div>
   <p class="site-dialog-copy">Ajuste os dados do cartão. Vencimento e pagamento são datas diferentes.</p>
@@ -539,12 +549,10 @@ let hasUnsavedChanges=false;
 let appReady=false;
 let isApplyingData=false;
 let dataRevision=0;
-let localSaveTimer=null;
 let diskSaveTimer=null;
-let localSaveQueue=Promise.resolve();
 let diskSaveQueue=Promise.resolve();
 let knownFileSignature=null;
-let lastLocalSaveFailed=false;
+let refreshBusy=false;
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const BANK_COLORS={
   'Nubank':'#7B2CBF','Itaú':'#EC7000','Bradesco':'#C8102E','Santander':'#E1251B',
@@ -770,7 +778,6 @@ async function confirmarSaldoInicial(){
   }
   saveData();
   renderSaldoInicial();toggleSaldoInicial(false);renderExtrato();updateResumo();
-  setSaveStatus('Saldo definido. Backup automático ativado; o JSON será sincronizado quando autorizado.');
 }
 function goToSaldoInicial(){
   const botao=document.querySelectorAll('.nav button')[1];
@@ -780,53 +787,12 @@ function goToSaldoInicial(){
   (saldoInicialValido(S.saldoInicial)?document.querySelector('#saldo-start-saved .saldo-corrigir'):document.getElementById('saldo-inicial-valor')).focus();
 }
 
-// Backup local permanente (IndexedDB). O site NUNCA pede acesso ao disco em temporizadores.
-let localDbPromise=null;
-function localDb(){
- if(!window.indexedDB)return Promise.reject(new Error('IndexedDB indisponível'));
- if(!localDbPromise)localDbPromise=new Promise((resolve,reject)=>{
-  const req=window.indexedDB.open('meu-dinheiro-sessao',1);
-  req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('dados'))req.result.createObjectStore('dados');};
-  req.onsuccess=()=>resolve(req.result);
-  req.onerror=()=>reject(req.error||new Error('Falha ao abrir banco local'));
- });
- return localDbPromise;
-}
-async function localGet(key){
- const db=await localDb();
- return new Promise((resolve,reject)=>{
-  const tx=db.transaction('dados','readonly');const req=tx.objectStore('dados').get(key);
-  tx.oncomplete=()=>resolve(req.result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
- });
-}
-async function localSet(key,value){
- const db=await localDb();
- return new Promise((resolve,reject)=>{
-  const tx=db.transaction('dados','readwrite');tx.objectStore('dados').put(value,key);
-  tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
- });
-}
-async function persistLocalSession(){
- if(!appReady||isApplyingData)return false;
- const revision=dataRevision;
- const snapshot={payload:JSON.stringify(dataPayload()),dirty:hasUnsavedChanges,updatedAt:Date.now(),fileName:dataFileHandle?dataFileHandle.name:''};
- localSaveQueue=localSaveQueue.catch(()=>{}).then(()=>localSet('session',snapshot));
- try{
-  await localSaveQueue;lastLocalSaveFailed=false;
-  if(revision===dataRevision){
-   const suffix=dataFileHandle?(hasUnsavedChanges?' · JSON aguarda sincronização.':' · JSON sincronizado.'):' · use Salvar como para criar um JSON.';
-   setSaveStatus('Dados guardados automaticamente neste navegador'+suffix);
-  }
-  return true;
- }catch(error){
-  lastLocalSaveFailed=true;
-  setSaveStatus('Falha no backup local! Use Salvar como para preservar seus dados.');
-  return false;
- }
-}
-function scheduleLocalSave(){
- clearTimeout(localSaveTimer);
- localSaveTimer=setTimeout(()=>{void persistLocalSession();},400);
+// O JSON e a unica fonte ativa. Os backups antigos do navegador nao sao lidos,
+// atualizados nem apagados automaticamente: poderao ser recuperados separadamente
+// se o usuario ainda nao tiver exportado uma versao antiga.
+function setFileAccessState(open){
+ document.body.classList.toggle('file-closed',!open);
+ for(const area of document.querySelectorAll('.nav,.page'))area.inert=!open;
 }
 async function fileSignature(handle){
  try{const file=await handle.getFile();return String(file.size)+':'+String(file.lastModified);}catch{return null;}
@@ -839,60 +805,36 @@ async function fileWriteAllowed(handle,ask){
  return result==='granted';
 }
 async function fileUnchanged(handle,ask){
- if(!knownFileSignature)return true;
+ if(!knownFileSignature)return false;
  const current=await fileSignature(handle);
+ if(!current){setSaveStatus('Arquivo indisponível — abra o JSON novamente.');return false;}
  if(current===knownFileSignature)return true;
- if(!ask){setSaveStatus('O JSON foi alterado fora do aplicativo. Backup preservado no navegador; use Salvar para decidir.');return false;}
- return await appConfirm('O arquivo JSON foi alterado fora do aplicativo. Substituir o conteúdo dele pelos dados atualmente exibidos?');
+ if(!ask){setSaveStatus('Arquivo alterado fora do aplicativo. Clique Salvar para conferir.');return false;}
+ return await appConfirm('O arquivo '+handle.name+' foi modificado fora do aplicativo. Substituir esse arquivo pelos dados desta tela?');
 }
 async function finishFileSave(handle,revision){
- if(handle!==dataFileHandle)return;
- knownFileSignature=await fileSignature(handle);
- try{await localSet('fileSignature',knownFileSignature);}catch{lastLocalSaveFailed=true;}
+ if(handle!==dataFileHandle)return false;
+ const signature=await fileSignature(handle);
+ if(!signature)throw Error('Não foi possível verificar a gravação.');
+ knownFileSignature=signature;
  if(dataRevision===revision)hasUnsavedChanges=false;
- await persistLocalSession();
- setSaveStatus(hasUnsavedChanges?'Nova alteração aguardando o próximo salvamento.':'Arquivo JSON salvo automaticamente.');
+ setSaveStatus(hasUnsavedChanges?'Não salvo':'Salvo');
+ return !hasUnsavedChanges;
 }
-async function restoreLocalSession(){
- const revision=dataRevision;
- try{
-  const snapshot=await localGet('session');
-  const handle=await localGet('fileHandle');
-  const signature=await localGet('fileSignature');
-  if(dataRevision!==revision){setSaveStatus('Alteração recente mantida.');return;}
-  if(snapshot&&typeof snapshot.payload==='string'){
-   applyDataFile(JSON.parse(snapshot.payload));
-   dataRevision++;
-   hasUnsavedChanges=!!snapshot.dirty;
-  }
-  if(handle&&handle.kind==='file')dataFileHandle=handle;
-  knownFileSignature=typeof signature==='string'?signature:null;
-  if(snapshot&&dataFileHandle){
-   setSaveStatus('Dados e arquivo selecionado restaurados. '+(hasUnsavedChanges?'Backup local protegido; clique Salvar se o Chrome precisar autorizar o arquivo.':'Arquivo sincronizado na última utilização.'));
-   if(hasUnsavedChanges){clearTimeout(diskSaveTimer);diskSaveTimer=setTimeout(()=>{void autoSaveDataFile();},10000);}
-  }else if(snapshot){
-   setSaveStatus('Dados recuperados do salvamento automático neste navegador. '+(snapshot.fileName?'Reabra '+snapshot.fileName+' se desejar sincronizar o JSON.':'Use Salvar como para criar uma cópia JSON.'));
-  }else setSaveStatus('Salvamento automático ativado. Seus dados serão guardados neste navegador.');
- }catch(error){
-  setSaveStatus('Não foi possível restaurar o backup do navegador. Abra seu último JSON para recuperar os dados.');
- }
-}
-
 function saveData(){
- if(!appReady||isApplyingData)return;
+ if(!appReady||isApplyingData||!dataFileHandle)return;
  hasUnsavedChanges=true;dataRevision++;
- setSaveStatus('Alteração registrada. Salvando backup automático…');
- scheduleLocalSave();
+ setSaveStatus('Não salvo');
  clearTimeout(diskSaveTimer);
  diskSaveTimer=setTimeout(()=>{void autoSaveDataFile();},10000);
 }
 function setSaveStatus(text){
  const el=document.getElementById('save-status');if(!el)return;
- el.textContent=(dataFileHandle?'Arquivo: '+dataFileHandle.name+' · ':'')+text;
+ el.textContent=dataFileHandle?(dataFileHandle.name+(text?' · '+text:'')):(text||'Abra um arquivo JSON para começar.');
 }
-function manualSave(){void saveDataFile();}
+function manualSave(){void saveDataFile(true);}
 function dataPayload(){
-  return {versao:2,exportadoEm:new Date().toISOString(),dados:S};
+ return {versao:2,exportadoEm:new Date().toISOString(),dados:S};
 }
 function applyDataFile(data){
   const dados=validarDadosImportados(data);
@@ -916,14 +858,6 @@ function applyDataFile(data){
   hasUnsavedChanges=false;
   isApplyingData=false;
 }
-function downloadDataFile(){
- const blob=new Blob([JSON.stringify(dataPayload(),null,2)],{type:'application/json'});
- const url=URL.createObjectURL(blob);const a=document.createElement('a');
- a.href=url;a.download='meu-dinheiro-dados.json';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
- dataFileHandle=null;knownFileSignature=null;hasUnsavedChanges=false;
- void localSet('fileHandle',null);void localSet('fileSignature',null);
- void persistLocalSession();setSaveStatus('JSON baixado. O backup automático permanece neste navegador.');
-}
 async function writeDataFile(handle){
  const job=diskSaveQueue.catch(()=>{}).then(async()=>{
   const revision=dataRevision;
@@ -934,76 +868,118 @@ async function writeDataFile(handle){
  });
  diskSaveQueue=job;return job;
 }
-async function saveDataFile(){
+async function saveDataFile(askPermission=true){
  const handle=dataFileHandle;
- if(!handle){
-  const localSaved=await persistLocalSession();
-  setSaveStatus(localSaved?'Salvo no navegador. Use Salvar como para escolher um arquivo JSON.':'Backup local indisponível. Use Salvar como para preservar seus dados.');
-  return;
- }
+ if(!handle){setSaveStatus('Abra um arquivo JSON para salvar.');return false;}
+ if(!hasUnsavedChanges){setSaveStatus('Salvo');return true;}
  try{
-  // A solicitação de permissão precisa acontecer no gesto do clique, antes de IndexedDB.
-  if(!await fileWriteAllowed(handle,true)){
-   await persistLocalSession();
-   setSaveStatus('Backup salvo no navegador. Para editar o JSON, autorize o acesso ao arquivo no Chrome.');
-   return;
+  // Permissao do Chrome so e solicitada por um clique explicito.
+  if(!await fileWriteAllowed(handle,askPermission)){
+   setSaveStatus('Não salvo — autorize o JSON pelo botão Salvar.');return false;
   }
-  await persistLocalSession();
-  if(!await fileUnchanged(handle,true))return;
+  if(!await fileUnchanged(handle,askPermission)){
+   setSaveStatus('Não salvo — arquivo externo alterado ou indisponível.');return false;
+  }
   const revision=await writeDataFile(handle);
-  await finishFileSave(handle,revision);
- }catch(error){appAlert('Não consegui atualizar o JSON. Seus dados continuam guardados neste navegador.');setSaveStatus('Falha na sincronização com o arquivo JSON.');}
+  return await finishFileSave(handle,revision);
+ }catch(error){setSaveStatus('Não salvo — falha ao gravar o JSON.');return false;}
 }
 async function saveAsDataFile(){
+ if(!window.showSaveFilePicker){appAlert('Este navegador não permite vincular um JSON para edição. Use um navegador compatível no computador.');return false;}
  try{
-  if(!window.showSaveFilePicker){downloadDataFile();return;}
   const handle=await window.showSaveFilePicker({suggestedName:dataFileHandle?dataFileHandle.name:'meu-dinheiro-dados.json',types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]});
+  if(!await fileWriteAllowed(handle,true)){setSaveStatus('Não salvo — arquivo sem permissão de gravação.');return false;}
   const revision=await writeDataFile(handle);
-  dataFileHandle=handle;knownFileSignature=await fileSignature(handle);
+  const signature=await fileSignature(handle);
+  if(!signature){setSaveStatus('Não foi possível verificar o JSON criado.');return false;}
+  dataFileHandle=handle;knownFileSignature=signature;
   hasUnsavedChanges=dataRevision!==revision;
-  try{await localSet('fileHandle',handle);await localSet('fileSignature',knownFileSignature);}catch{appAlert('JSON salvo, mas não consegui lembrar o arquivo para a próxima visita.');}
-  await persistLocalSession();setSaveStatus('JSON selecionado e salvo. Próximas alterações serão sincronizadas automaticamente quando autorizadas.');
- }catch(error){if(error&&error.name==='AbortError')return;appAlert('Não consegui salvar o JSON. O backup no navegador continua disponível.');}
+  setFileAccessState(true);
+  setSaveStatus(hasUnsavedChanges?'Não salvo':'Salvo');
+  return !hasUnsavedChanges;
+ }catch(error){
+  if(error&&error.name==='AbortError')return false;
+  setSaveStatus('Falha ao criar ou salvar o JSON.');return false;
+ }
 }
 async function autoSaveDataFile(){
- if(!appReady||isApplyingData||!hasUnsavedChanges)return;
- await persistLocalSession();
- if(!dataFileHandle){setSaveStatus('Salvo automaticamente no navegador. Use Salvar como para vincular um JSON.');return;}
+ if(!appReady||isApplyingData||!hasUnsavedChanges||!dataFileHandle)return false;
  const handle=dataFileHandle;
  try{
-  if(!await fileWriteAllowed(handle,false)){setSaveStatus('Backup automático salvo no navegador. Clique Salvar uma vez para autorizar a atualização do JSON.');return;}
-  if(!await fileUnchanged(handle,false))return;
+  if(!await fileWriteAllowed(handle,false)){setSaveStatus('Não salvo — clique Salvar.');return false;}
+  if(!await fileUnchanged(handle,false))return false;
   const revision=await writeDataFile(handle);
-  await finishFileSave(handle,revision);
- }catch(error){setSaveStatus('Backup salvo no navegador; não consegui sincronizar o JSON. Use Salvar.');}
+  return await finishFileSave(handle,revision);
+ }catch(error){setSaveStatus('Não salvo — falha ao gravar o JSON.');return false;}
 }
 async function openDataFile(){
+ if(hasUnsavedChanges){setSaveStatus('Não salvo — salve antes de abrir outro JSON.');return false;}
+ if(!window.showOpenFilePicker){
+  appAlert('Este navegador não permite editar o mesmo arquivo JSON diretamente. Abra o Meu Dinheiro em um navegador compatível no computador.');return false;
+ }
  try{
-  if(hasUnsavedChanges&&!await appConfirm('Há dados guardados somente neste navegador. Abrir outro arquivo substituirá a sessão atual. Continuar?'))return;
-  if(!window.showOpenFilePicker){document.getElementById('import-file').click();return;}
   const handles=await window.showOpenFilePicker({multiple:false,types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]});
-  const handle=handles[0];const file=await handle.getFile();const parsed=JSON.parse(await file.text());
-  applyDataFile(parsed);dataFileHandle=handle;knownFileSignature=String(file.size)+':'+String(file.lastModified);dataRevision++;
-  try{await localSet('fileHandle',handle);await localSet('fileSignature',knownFileSignature);}catch{appAlert('Arquivo aberto, mas o navegador não conseguiu lembrar sua seleção.');}
-  await persistLocalSession();
-  setSaveStatus('Arquivo reaberto e preservado nesta sessão. Se necessário, clique Salvar uma vez para autorizar a atualização automática do JSON.');
- }catch(error){if(error&&error.name==='AbortError')return;appAlert('Não consegui abrir esse JSON. Seus dados atuais não foram apagados.');}
+  const handle=handles[0];if(!handle)return false;
+  const file=await handle.getFile();const parsed=JSON.parse(await file.text());
+  validarDadosImportados(parsed);
+  if(!await fileWriteAllowed(handle,true)){
+   setSaveStatus('Permita editar o arquivo JSON para continuar.');return false;
+  }
+  const previousHandle=dataFileHandle,previousSignature=knownFileSignature;
+  dataFileHandle=handle;knownFileSignature=String(file.size)+':'+String(file.lastModified);
+  try{applyDataFile(parsed);}catch(error){
+   dataFileHandle=previousHandle;knownFileSignature=previousSignature;
+   setFileAccessState(!!previousHandle);throw error;
+  }
+  dataRevision++;
+  setFileAccessState(true);
+  setSaveStatus(hasUnsavedChanges?'Não salvo — recorrência atualizada.':'Salvo');
+  return true;
+ }catch(error){
+  if(error&&error.name==='AbortError')return false;
+  appAlert('Não consegui abrir esse JSON. O arquivo original não foi alterado.');return false;
+ }
 }
-async function importData(event){
- const file=event.target.files&&event.target.files[0];if(!file)return;
- if(hasUnsavedChanges&&!await appConfirm('Há alterações guardadas neste navegador. Substituir a sessão atual pelo JSON importado?')){event.target.value='';return;}
- const reader=new FileReader();
- reader.onload=async()=>{
-  try{
-   const parsed=JSON.parse(reader.result);applyDataFile(parsed);
-   dataFileHandle=null;knownFileSignature=null;dataRevision++;
-   await localSet('fileHandle',null);await localSet('fileSignature',null);
-   await persistLocalSession();setSaveStatus('JSON importado e guardado neste navegador. Use Salvar como para vincular um arquivo editável.');
-  }catch(error){appAlert('Não consegui importar ou guardar o JSON. Confira o arquivo e tente novamente.');}
-  finally{event.target.value='';}
- };
- reader.readAsText(file,'utf-8');
+function cancelarAtualizacao(){
+ if(refreshBusy)return;
+ document.getElementById('refresh-overlay').hidden=true;
 }
+function atualizarAplicativo(){
+ if(refreshBusy)return;
+ if(!hasUnsavedChanges){window.location.reload();return;}
+ const overlay=document.getElementById('refresh-overlay');
+ document.getElementById('refresh-file-name').textContent=dataFileHandle?dataFileHandle.name:'Arquivo JSON';
+ document.getElementById('refresh-error').hidden=true;
+ overlay.hidden=false;
+ document.getElementById('refresh-cancel').focus();
+}
+function atualizarSemSalvar(){
+ if(refreshBusy)return;
+ hasUnsavedChanges=false;
+ dataFileHandle=null;knownFileSignature=null;
+ document.getElementById('refresh-overlay').hidden=true;
+ window.location.reload();
+}
+async function salvarEAtualizar(){
+ if(refreshBusy)return;
+ refreshBusy=true;
+ const button=document.getElementById('refresh-save');button.disabled=true;
+ const error=document.getElementById('refresh-error');error.hidden=true;
+ try{
+  const success=await saveDataFile(true);
+  if(success&&!hasUnsavedChanges){
+   document.getElementById('refresh-overlay').hidden=true;
+   dataFileHandle=null;knownFileSignature=null;
+   window.location.reload();return;
+  }
+  error.textContent='Não foi possível salvar. Seus dados ainda estão nesta tela.';error.hidden=false;
+ }finally{refreshBusy=false;button.disabled=false;}
+}
+// Em F5/atualização pela barra, o Chrome só permite seu aviso padrão.
+// A janela personalizada com botão Salvar é exclusiva do botão Atualizar do app.
+window.addEventListener('beforeunload',event=>{
+ if(hasUnsavedChanges){event.preventDefault();event.returnValue='';}
+});
 // O fechamento do banco não é a data de pagamento. Editar não reescreve compras antigas.
 function editarCartaoCadastrado(id){
  const card=S.cartoes.find(c=>String(c.id)===String(id));if(!card)return;
@@ -2636,12 +2612,12 @@ renderInvest();
 renderMetas();
 updateResumo();
 appReady=true;
+setFileAccessState(false);
+setSaveStatus('Abra um arquivo JSON para começar.');
 setInterval(()=>{if(hasUnsavedChanges)void autoSaveDataFile();},10000);
 setInterval(updateResumo,5*60*1000);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&hasUnsavedChanges){void persistLocalSession();void autoSaveDataFile();}});
-void restoreLocalSession();
 </script>
-<script src="js/recorrentes.js?v=20260920-dia2"></script>
+<script src="js/recorrentes.js?v=20260920-json1"></script>
 </body>
 </html>
 
