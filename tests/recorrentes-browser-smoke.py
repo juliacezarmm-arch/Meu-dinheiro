@@ -7,7 +7,7 @@ if not chrome:
  sys.exit(2)
 root=Path.cwd()
 html=(root/'index.html').read_text(encoding='utf-8')
-assert '<script src="js/recorrentes.js?v=20260920-integrado1"></script>' in html
+assert '<script src="js/recorrentes.js?v=20260920-planejamento1"></script>' in html
 script=r'''<script>
 (function(){
 const report=(ok,msg)=>{document.body.insertAdjacentHTML('beforeend','<pre id="smoke-result">'+(ok?'PASS: ':'FAIL: ')+String(msg).replace(/</g,'&lt;')+'</pre>');};
@@ -16,6 +16,8 @@ try{
  if(!document.body.classList.contains('file-closed'))throw Error('Sem JSON a tela deve ficar bloqueada');
  if(!document.getElementById('recorrentes-area'))throw Error('Cadastro ausente');
  if(!document.getElementById('rec-card-open'))throw Error('Área própria de assinatura ausente');
+ if(!document.getElementById('rec-card-toggle'))throw Error('Assinaturas sem botão para recolher');
+ if(!document.querySelector('#cc-wrap'))throw Error('Tabela de lançamentos do cartão ausente');
  if(document.querySelector('#cc-gasto-tipo').closest('.row').style.display!=='none')throw Error('Tipo fixo/variável visível');
  const d=new Date(today()+'T12:00:00');d.setDate(d.getDate()-1);
  dataFileHandle={kind:'file',name:'teste.json',getFile:async()=>({size:1,lastModified:1}),queryPermission:async()=> 'granted',createWritable:async()=>({write:async()=>{},close:async()=>{}})};
@@ -55,7 +57,7 @@ try{
  if(el('rec-body').hidden)throw Error('Expandir não funciona');
  if(!el('rec-list').querySelector('.rec-item-bottom .rec-inline-actions'))throw Error('Ações fora da linha do dia');
  el('rec-card-open').click();
- if(el('rec-form').parentElement.id!=='rec-cartao-area')throw Error('Assinatura não está na aba Cartão');
+ if(el('rec-form').parentElement.id!=='rec-card-body')throw Error('Assinatura não está na aba Cartão');
  if(el('rec-card-row').hidden||el('rec-method').value!=='cartao')throw Error('Assinatura sem seleção exclusiva de cartão');
  if(!el('rec-method').closest('label').hidden)throw Error('Forma de pagamento redundante na assinatura');
  if(el('rec-card-row').parentElement.id!=='rec-form')throw Error('Cartão exclusivo não inserido no formulário da assinatura');

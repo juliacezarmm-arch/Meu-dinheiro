@@ -69,6 +69,11 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
 .btn-green:hover{background:#0F6E56}
 .section-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:1.25rem 0 .75rem}
 table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.extrato-pagar{font:700 10px var(--font-sans);padding:6px 5px;background:#1D9E75;border:1px solid #1D9E75;border-radius:7px;color:white;cursor:pointer;white-space:nowrap}
+#ext-wrap td:nth-child(5){font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
+#ext-wrap td:last-child{overflow:visible;white-space:nowrap;text-align:right}
+#cc-wrap td:nth-child(6){font-variant-numeric:tabular-nums;white-space:nowrap}
+@media(max-width:580px){#ext-wrap table{font-size:11px}#ext-wrap th,#ext-wrap td{padding:6px 3px}#ext-wrap th:last-child{width:94px!important}#ext-wrap .extrato-pagar{font-size:9px;padding:5px 3px}#cc-wrap table{font-size:11px}#cc-wrap th,#cc-wrap td{padding:6px 3px}}
 th{text-align:left;padding:8px 6px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;font-size:12px}
 td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 td:last-child{white-space:normal}
@@ -542,13 +547,13 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('card-editor')">Cancelar</button><button class="site-button primary" type="submit">Salvar cartão</button></div></form>
 </div></div>
 <div id="card-payment-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-payment-title" hidden><div class="site-dialog-panel">
-  <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">$</span><h2 id="card-payment-title">Registrar pagamento</h2></div>
+  <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">$</span><h2 id="card-payment-title">Marcar como pago</h2></div>
   <p class="site-dialog-copy" id="card-payment-description"></p>
   <form id="card-payment-form" novalidate onsubmit="event.preventDefault();salvarPagamentoFatura()">
   <label class="site-field">Valor efetivamente pago (R$)<input id="card-payment-amount" type="number" inputmode="decimal" min="0.01" step="0.01" required></label>
   <label class="site-field">Data em que você pagou<input id="card-payment-date" type="date" required></label>
   <p class="site-dialog-copy">Essa data será a saída no Extrato. O vencimento permanece como referência da fatura, sem duplicar a despesa.</p>
-  <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('card-payment-editor')">Cancelar</button><button class="site-button primary" type="submit">Registrar pagamento</button></div></form>
+  <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('card-payment-editor')">Cancelar</button><button class="site-button primary" type="submit">Confirmar pagamento</button></div></form>
 </div></div>
 <script>
 const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};
@@ -1010,7 +1015,7 @@ function registrarPagamentoFatura(cardId,mes){
  const total=totalDaFaturaFinanceira(cardId,mes),restante=total-pagoNaFaturaFinanceira(cardId,mes);
  if(total<=0){appAlert('Esse valor é apenas histórico do cartão e não gera saída.');return;}
  if(restante<=0){appAlert('Esta fatura não possui valor pendente.');return;}
- pagamentoEmEdicao={cardId:card.id,mes};document.getElementById('card-payment-title').textContent='Pagamento · '+card.bank;
+ pagamentoEmEdicao={cardId:card.id,mes};document.getElementById('card-payment-title').textContent='Marcar como pago · '+card.bank;
  const habitual=card.paymentDay?' · Você costuma pagar dia '+card.paymentDay+'.':'';
  document.getElementById('card-payment-description').textContent='Fatura '+mes+' · Vencimento dia '+card.dueDay+'.'+habitual+' Restante: '+fmt(restante/100)+'. Escolha a data em que o dinheiro realmente saiu.';
  const amount=document.getElementById('card-payment-amount');amount.value=(restante/100).toFixed(2);amount.max=(restante/100).toFixed(2);
@@ -1719,22 +1724,25 @@ function renderCartao(){
 
       <span>Vencimento padrão: dia ${card.dueDay}${card.paymentDay?' · Pagamento habitual: dia '+card.paymentDay:''}.</span>
       ${S.extrato.filter(x=>String(x.cardId)===String(card.id)&&x.faturaMes===faturaKey&&movimentoNoControleFinanceiro(x)).length?`<span>Pagamento(s) registrado(s) em: ${S.extrato.filter(x=>String(x.cardId)===String(card.id)&&x.faturaMes===faturaKey&&movimentoNoControleFinanceiro(x)).map(x=>x.data.split('-').reverse().join('/')).join(', ')}.</span>`:''}
-      ${aberto>0&&!historica?`<button class="btn-green" type="button" onclick="registrarPagamentoFatura(${card.id},'${faturaKey}')">Registrar pagamento</button>`:(historica?'<span>Somente histórico; sem impacto no saldo.</span>':'<span>Pagamento registrado; sem valor pendente.</span>')}</div>`;
+      ${aberto>0&&!historica?'<span>Fatura pendente: marque o pagamento diretamente no Extrato.</span>':(historica?'<span>Somente histórico; sem impacto no saldo.</span>':'<span>Pagamento registrado; sem valor pendente.</span>')}</div>`;
   }).join(''):'<div class="hint">Cadastre um cartão para acompanhar faturas e pagamentos.</div>';
   const wrap=document.getElementById('cc-wrap');
-  const rows=S.cartao.filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
+  const forecasts=typeof window.cardRecurringForecasts==='function'?window.cardRecurringForecasts():[];
+  const rows=S.cartao.concat(forecasts).filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
   const parcelasNesteMes=getParcelasCartao().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth));
   if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
-  wrap.innerHTML='<table><thead><tr><th style="width:62px">Data</th><th>Descrição</th><th style="width:74px">Tipo</th><th style="width:58px">Vence</th><th style="width:118px">Valor</th><th style="width:54px"></th></tr></thead><tbody>'+
+  wrap.innerHTML='<table><thead><tr><th style="width:62px">Data</th><th>Descrição</th><th style="width:74px">Tipo</th><th style="width:54px">Vence</th><th style="width:64px">Parcelas</th><th style="width:108px">Valor total</th><th style="width:54px"></th></tr></thead><tbody>'+
     rows.map(r=>{
       const d=new Date(r.data+'T12:00:00');
-      const label=r.tipo==='parcelado'?`${r.parcelas} parcelas (aprox. ${fmt(valorParcela(r,0))})`:fmt(r.val);
+      const label=fmt(r.val);
+      const qtdParcelas=Number(r.parcelas)||1;
       const tipoLabel=r.tipo==='parcelado'?'Parcelado':'À vista';
       const venc='dia '+(r.vencDia||10);
       const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
       const historico=S.saldoInicial&&parcelasNesteMes.some(x=>String(x.id).startsWith(String(r.id)+'-')&&x.data<S.saldoInicial.data);
-      const cat=`${r.subcategoria||'Sem categoria'}${r.recorrenciaId?' · Recorrente':''}${historico?' · Histórico anterior à abertura':''}`;
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${escHtml(desc)}<div style="font-size:11px;color:var(--color-text-secondary)">${escHtml(cat)}</div></td><td><span class="badge b-compra">${tipoLabel}</span></td><td>${venc}</td><td>${label}</td><td><button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra sem precisar apagar e lançar de novo.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>`;
+      const cat=`${r.subcategoria||'Sem categoria'}${historico?' · Histórico anterior à abertura':''}`;
+      const actions=r.previsto?`<button class="del" type="button" onclick="editRecurringCardForecast(${Number(r.recorrenciaId)})" aria-label="Editar assinatura" title="Edita a programação desta assinatura">✎</button>`:`<button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button>`;
+      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${escHtml(desc)}<div style="font-size:11px;color:var(--color-text-secondary)">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':tipoLabel}</span></td><td>${venc}</td><td style="text-align:center">${qtdParcelas}x</td><td style="white-space:nowrap;font-variant-numeric:tabular-nums">${label}</td><td>${actions}</td></tr>`;
     }).join('')+'</tbody></table>';
 }
 
@@ -2076,13 +2084,55 @@ function renderStockChart(item,mes,periodo){
   </div>`;
 }
 
+// Faturas pendentes são compromissos: entram na projeção, mas não no caixa até o pagamento.
+// Cada cartão mantém sua própria fatura; compras e assinaturas nunca viram saídas duplicadas.
+function faturasPendentesDoMes(y,m){
+  const mes=isoDate(y,m,1).slice(0,7);
+  return S.cartoes.flatMap(card=>{
+    const total=totalDaFaturaFinanceira(card.id,mes);
+    const pago=pagoNaFaturaFinanceira(card.id,mes);
+    const restante=Math.max(0,total-pago);
+    if(!restante)return [];
+    const dia=Math.min(Number(card.dueDay)||10,new Date(y,m+1,0).getDate());
+    return [{id:'fatura-pendente-'+card.id+'-'+mes,data:isoDate(y,m,dia),desc:'Fatura · '+card.bank,tipo:'cartao',categoria:'Cartão de crédito',subcategoria:card.bank,val:restante/100,cardId:card.id,faturaMes:mes,faturaPendente:true,auto:true}];
+  });
+}
+function calcularSobraPrevistaAte(fim){
+  if(!saldoInicialValido(S.saldoInicial)||!dataISOValida(fim)||fim<today())return null;
+  let centavos=Math.round(calcularSaldoDisponivelAte(today())*100);
+  const ignorados=new Set(S.saldoInicial.idsIgnorados.map(String));
+  for(const x of S.extrato){
+    if(x.data<=today()||x.data>fim||x.data<S.saldoInicial.data||ignorados.has(String(x.id)))continue;
+    if(x.tipo==='entrada'&&x.subcategoria==='Dinheiro do mês passado')continue;
+    const val=Math.round(Number(x.val||0)*100);
+    if(x.tipo==='entrada')centavos+=val;
+    else if(['saida','investimento','meta'].includes(x.tipo))centavos-=val;
+  }
+  const limite=new Date(fim+'T12:00:00');
+  const cursor=new Date(today().slice(0,7)+'-01T12:00:00');
+  let i=0;
+  for(;cursor<=limite&&i<240;i++,cursor.setMonth(cursor.getMonth()+1)){
+    if(typeof window.cashRecurringForecasts==='function')for(const rec of window.cashRecurringForecasts(cursor.getFullYear(),cursor.getMonth())){
+      if(rec.data>fim)continue;
+      centavos+=(rec.tipo==='entrada'?1:-1)*Math.round(rec.val*100);
+    }
+  }
+  if(cursor<=limite)return null;
+  const meses=new Set(parcelasCartaoFinanceiras().filter(x=>x.data<=fim).map(x=>String(x.cardId)+'|'+x.data.slice(0,7)));
+  for(const chave of meses){
+    const [id,mes]=chave.split('|');
+    centavos-=Math.max(0,totalDaFaturaFinanceira(id,mes)-pagoNaFaturaFinanceira(id,mes));
+  }
+  return centavos/100;
+}
+
 function renderExtrato(){
   const wrap=document.getElementById('ext-wrap');
   const viewYear=extratoMes.getFullYear();
   const viewMonth=extratoMes.getMonth();
   const monthLabel=mesStr(viewYear,viewMonth);
   document.getElementById('ext-month-label').textContent=monthLabel;
-  const resumoCartao=getResumoCartaoExtrato(viewYear,viewMonth);
+  const faturas=faturasPendentesDoMes(viewYear,viewMonth);
   const inicioMes=isoDate(viewYear,viewMonth,1);
   let linhaSaldo=null;
   if(saldoInicialValido(S.saldoInicial)){
@@ -2094,17 +2144,17 @@ function renderExtrato(){
       linhaSaldo={id:'saldo-transportado',data:inicioMes,desc:'Saldo vindo do mês anterior',tipo:'saldo_inicial',categoria:'Transporte automático',val:calcularSaldoDisponivelAte(limite),auto:true};
     }
   }
-  const rowsBase=S.extrato.concat(resumoCartao?[resumoCartao]:[],linhaSaldo?[linhaSaldo]:[]).filter(r=>isSameMonthDate(r.data,viewYear,viewMonth)&&!(r.recorrenciaId&&saldoInicialValido(S.saldoInicial)&&(r.data<S.saldoInicial.data||S.saldoInicial.idsIgnorados.some(id=>String(id)===String(r.id)))));
+  const rowsBase=S.extrato.concat(faturas,linhaSaldo?[linhaSaldo]:[]).filter(r=>isSameMonthDate(r.data,viewYear,viewMonth)&&!(r.recorrenciaId&&saldoInicialValido(S.saldoInicial)&&(r.data<S.saldoInicial.data||S.saldoInicial.idsIgnorados.some(id=>String(id)===String(r.id)))));
   const proximas=typeof window.cashRecurringForecasts==='function'?window.cashRecurringForecasts(viewYear,viewMonth):[];
   const rows=rowsBase.concat(proximas).sort((a,b)=>b.data.localeCompare(a.data));
-  const parcelasMes=resumoCartao?[resumoCartao]:[];
+  const parcelasMes=faturas;
   const entradasMes=rowsBase.filter(r=>receitaReal(r)&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
   const resgatesMes=rowsBase.filter(r=>r.tipo==='entrada'&&r.categoria==='Resgate'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
   const saidasMes=rowsBase.filter(r=>r.tipo==='saida'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
   const investimentoMes=rowsBase.filter(r=>r.tipo==='investimento'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
   const metaMes=rowsBase.filter(r=>r.tipo==='meta'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
   const cartaoMes=rowsBase.filter(r=>r.tipo==='cartao').reduce((s,r)=>s+r.val,0);
-  const aviso=parcelasMes.length?'<div class="hint">'+(S.saldoInicial?'O cartão é apenas uma previsão. Para descontar o dinheiro, lance o pagamento da fatura como saída; não registre a compra como outra despesa.':'O extrato mostra o cartão como uma soma do mês. Os detalhes ficam na aba Cartão.')+'</div>':'';
+  const aviso=parcelasMes.length?'<div class="hint">As faturas pendentes entram na sobra prevista. Ao pagar, use o botão da fatura abaixo; o saldo de hoje só muda após registrar o pagamento.</div>':'';
   const avisoSaldo=S.saldoInicial?'<div class="hint">O saldo inicial não é uma entrada. Parcelas anteriores ao início ficam somente na aba Cartão; não entram neste extrato, no resumo ou no saldo disponível.</div>':'';
   const resumoDetalhe=`<div class="plain-summary compact-summary">
     <div class="plain-card"><strong>Entradas: ${fmt(entradasMes)}</strong><span>Dinheiro que entrou em ${monthLabel}.</span></div>
@@ -2112,21 +2162,24 @@ function renderExtrato(){
     <div class="plain-card"><strong>Saídas: ${fmt(saidasMes)}</strong><span>Gastos lançados direto no extrato.</span></div>
     <div class="plain-card"><strong>Investimentos: ${fmt(investimentoMes)}</strong><span>Dinheiro separado para investimentos.</span></div>
     <div class="plain-card"><strong>Metas: ${fmt(metaMes)}</strong><span>Dinheiro guardado para metas cadastradas.</span></div>
-    <div class="plain-card"><strong>Cartão previsto: ${fmt(cartaoMes)}</strong><span>Fatura prevista para ${monthLabel}, não é pagamento.</span></div>
+    <div class="plain-card"><strong>Cartão a pagar: ${fmt(cartaoMes)}</strong><span>Valor em aberto nas faturas deste mês.</span></div>
   </div>`;
   const resumo=`<button class="summary-toggle" onclick="toggleExtratoResumo()" title="Abre ou fecha um resumo simples do extrato deste mês."><span>Resumo do mês</span><span>${extratoResumoAberto?'-':'+'}</span></button>${extratoResumoAberto?resumoDetalhe:''}`;
-  if(!rows.length){wrap.innerHTML=resumo+avisoSaldo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
+  const fimMes=isoDate(viewYear,viewMonth,new Date(viewYear,viewMonth+1,0).getDate());
+  const sobra=calcularSobraPrevistaAte(fimMes);
+  const projecao=saldoInicialValido(S.saldoInicial)?`<div class="plain-summary compact-summary" style="margin:8px 0 12px"><div class="plain-card"><strong>Saldo de hoje: ${fmt(calcularSaldoDisponivelAte(today()))}</strong><span>Somente dinheiro lançado até hoje.</span></div><div class="plain-card"><strong style="color:${sobra===null?'#c5c3ba':sobra<0?'#efaba4':'#9FE1CB'}">${sobra===null?'Sobra prevista indisponível':'Sobra prevista até '+fimMes.slice(8,10)+'/'+fimMes.slice(5,7)+': '+fmt(sobra)}</strong><span>Inclui entradas e contas programadas e faturas em aberto, sem descontar compras duas vezes.</span></div></div>`:'';
+  if(!rows.length){wrap.innerHTML=resumo+projecao+avisoSaldo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
   const hoje=new Date(today()+'T12:00:00');
-  wrap.innerHTML=resumo+avisoSaldo+aviso+'<table><thead><tr><th style="width:64px">Data</th><th>Descrição</th><th style="width:130px">Categoria</th><th style="width:70px">Status</th><th style="width:86px">Valor</th><th style="width:22px"></th></tr></thead><tbody>'+
+  wrap.innerHTML=resumo+projecao+avisoSaldo+aviso+'<table><thead><tr><th style="width:54px">Data</th><th>Descrição</th><th style="width:94px">Categoria</th><th style="width:67px">Status</th><th style="width:116px">Valor</th><th style="width:110px"></th></tr></thead><tbody>'+
     rows.map(r=>{
       const d=new Date(r.data+'T12:00:00');
       const bc=r.tipo==='saldo_inicial'?'b-pagamento':r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
       const futuro=d>hoje;
-      const tipoLabel=r.previsto||futuro?'previsto':r.tipo==='saldo_inicial'?'saldo':r.tipo==='cartao'?'cartão':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
+      const tipoLabel=r.faturaPendente?'a pagar':r.previsto||futuro?'previsto':r.tipo==='saldo_inicial'?'saldo':r.tipo==='cartao'?'cartão':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
       const color=r.tipo==='saldo_inicial'?'#9FE1CB':r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#A32D2D':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
-      const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
+      const action=r.faturaPendente?`<button class="extrato-pagar" type="button" onclick="registrarPagamentoFatura(${Number(r.cardId)},'${r.faturaMes}')" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button>`:r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
-      const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes das compras na aba Cartão.</div>`:'';
+      const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.faturaPendente?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento da fatura; ainda não pago.</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes na aba Cartão.</div>`:'';
       return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.desc||'-')}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${escHtml(categoria)}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td>${action}</td></tr>`;
     }).join('')+'</tbody></table>';
 }
@@ -2627,7 +2680,7 @@ setSaveStatus('Abra um arquivo JSON para começar.');
 setInterval(()=>{if(hasUnsavedChanges)void autoSaveDataFile();},10000);
 setInterval(updateResumo,5*60*1000);
 </script>
-<script src="js/recorrentes.js?v=20260920-integrado1"></script>
+<script src="js/recorrentes.js?v=20260920-planejamento1"></script>
 </body>
 </html>
 

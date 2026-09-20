@@ -41,7 +41,7 @@ S.recorrenciaIgnoradas=Array.isArray(S.recorrenciaIgnoradas)?S.recorrenciaIgnora
 let editingRecId=null;
 let editingRecMode="conta";
 const style=document.createElement('style');
-style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}#rec-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-body[hidden]{display:none!important}.rec-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px}.rec-item-date{font-size:12px;color:#c5c3ba;line-height:1.45;flex:1 1 225px}.rec-inline-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0}.rec-inline-actions .rec-button{padding:6px 8px;font-size:11px;white-space:nowrap}.rec-form [hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
+style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}#rec-card-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-card-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-card-body[hidden]{display:none!important}#rec-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-body[hidden]{display:none!important}.rec-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px}.rec-item-date{font-size:12px;color:#c5c3ba;line-height:1.45;flex:1 1 225px}.rec-inline-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0}.rec-inline-actions .rec-button{padding:6px 8px;font-size:11px;white-space:nowrap}.rec-form [hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
 document.head.appendChild(style);
 const section=document.createElement('section');section.id='recorrentes-area';section.className='rec-area';
 section.innerHTML=`<div class="rec-top"><button type="button" id="rec-toggle" aria-expanded="true" aria-controls="rec-body">Registros recorrentes <span id="rec-toggle-symbol" aria-hidden="true">−</span></button></div>
@@ -58,7 +58,7 @@ section.innerHTML=`<div class="rec-top"><button type="button" id="rec-toggle" ar
 <div class="rec-list" id="rec-list"></div></div>`;
 const anchor=document.querySelector('#page-extrato .add-form');anchor.parentNode.insertBefore(section,anchor);
 const cardSection=document.createElement('section');cardSection.id='rec-cartao-area';cardSection.className='rec-area';
-cardSection.innerHTML='<div class="rec-top"><div><strong>Assinaturas recorrentes no cartão</strong><p>Cadastre cobranças periódicas do crédito aqui, separadas dos débitos da conta. Excluir interrompe o futuro, mas mantém as cobranças anteriores.</p></div><button type="button" class="rec-button primary" id="rec-card-open">+ Nova assinatura</button></div><div class="rec-list" id="rec-card-list"></div>';
+cardSection.innerHTML='<div class="rec-top"><button type="button" id="rec-card-toggle" aria-expanded="true" aria-controls="rec-card-body">Assinaturas recorrentes no cartão <span id="rec-card-toggle-symbol" aria-hidden="true">−</span></button></div><div id="rec-card-body"><p class="rec-caption">Cadastre e edite assinaturas aqui. As cobranças aparecem junto às demais compras em Lançamentos.</p><button type="button" class="rec-button primary" id="rec-card-open">+ Nova assinatura</button><div class="rec-list" id="rec-card-list"></div></div>';
 const cardAnchor=document.querySelector('#page-cartao .section-title:nth-of-type(2)')||document.querySelector('#page-cartao #cc-card').closest('.add-form');cardAnchor.parentNode.insertBefore(cardSection,cardAnchor);
 const $=id=>document.getElementById(id);
 const cardRow=$('rec-card-row');
@@ -121,6 +121,7 @@ function openRecEditor(id=null,mode='conta'){
  editingRecMode=r?(r.metodo==='cartao'?'cartao':'conta'):mode;
  const area=$(editingRecMode==='cartao'?'rec-cartao-area':'recorrentes-area');
  if(editingRecMode==='conta')setRecAreaExpanded(true);
+ else setCardRecAreaExpanded(true);
  const list=area.querySelector('.rec-list');list.parentNode.insertBefore($('rec-form'),list);
  $('rec-form').hidden=false;
  $('rec-form-title').textContent=r?'Editar '+(editingRecMode==='cartao'?'assinatura':'registro recorrente'):(editingRecMode==='cartao'?'Nova assinatura recorrente':'Novo registro recorrente');
@@ -139,6 +140,12 @@ function setRecAreaExpanded(expanded){
  $('rec-toggle').setAttribute('aria-expanded',String(expanded));
  $('rec-toggle-symbol').textContent=expanded?'−':'+';
  if(!expanded&&$('rec-form').parentElement===$('rec-body'))closeRecEditor();
+}
+function setCardRecAreaExpanded(expanded){
+ $('rec-card-body').hidden=!expanded;
+ $('rec-card-toggle').setAttribute('aria-expanded',String(expanded));
+ $('rec-card-toggle-symbol').textContent=expanded?'−':'+';
+ if(!expanded&&$('rec-form').parentElement===$('rec-card-body'))closeRecEditor();
 }
 function closeRecEditor(){$('rec-form').hidden=true;editingRecId=null;editingRecMode='conta';placeCardRow();$('rec-body').appendChild($('rec-form'));}
 function cardForecasts(){
@@ -280,11 +287,10 @@ getParcelasCartao=function(){
   return {id:x.id+'-0',cardId:x.cardId,data:isoDate(d.getFullYear(),d.getMonth(),d.getDate()),desc:'Cartão previsto - '+x.desc,tipo:'cartao',categoria:x.categoria,subcategoria:x.subcategoria,val:x.val,auto:true,previsto:true};
  }));
 };
-const oldCardRender=renderCartao;
-renderCartao=function(){oldCardRender();const wrap=$('cc-wrap'),futuras=cardForecasts().filter(x=>cartaoTemMes(x,cartaoMes.getFullYear(),cartaoMes.getMonth()));
- const existing=$('rec-card-forecast');if(existing)existing.remove();
- if(futuras.length){const box=document.createElement('div');box.id='rec-card-forecast';box.className='rec-predictions';box.innerHTML='<strong>Assinaturas programadas (ainda não cobradas)</strong>'+futuras.map(x=>`<div class="rec-card-prediction">${displayDate(x.data)} · ${escHtml(x.desc)} · ${fmt(x.val)} · ${escHtml(x.banco)}</div>`).join('');wrap.parentNode.insertBefore(box,wrap);}
-};
+// Mesmo modelo de lançamentos para compras avulsas e assinaturas futuras;
+// a previsão não vira registro persistido até chegar sua data.
+window.cardRecurringForecasts=cardForecasts;
+window.editRecurringCardForecast=id=>openRecEditor(id,'cartao');
 
 const oldEditPurchase=editCartao;
 editCartao=function(id){const row=S.cartao.find(x=>String(x.id)===String(id));if(row&&row.recorrenciaId){showPage('cartao',document.querySelectorAll('.nav button')[2]);openRecEditor(row.recorrenciaId);return;}oldEditPurchase(id);};
@@ -295,6 +301,7 @@ delExt=function(id){const row=S.extrato.find(x=>String(x.id)===String(id));oldDe
 const oldDelCard=delRegisteredCard;
 delRegisteredCard=function(id){if(S.recorrentes.some(r=>!r.excluida&&r.metodo==='cartao'&&String(r.cartaoId)===String(id))){appAlert('Este cartão está vinculado a uma recorrência. Encerre ou exclua o cadastro antes de removê-lo.');return;}oldDelCard(id);};
 $('rec-toggle').addEventListener('click',()=>setRecAreaExpanded($('rec-body').hidden));
+$('rec-card-toggle').addEventListener('click',()=>setCardRecAreaExpanded($('rec-card-body').hidden));
 $('rec-open').addEventListener('click',()=>openRecEditor());$('rec-close').addEventListener('click',closeRecEditor);
 $('rec-card-open').addEventListener('click',()=>openRecEditor(null,'cartao'));
 $('rec-form').addEventListener('submit',saveRecEditor);
