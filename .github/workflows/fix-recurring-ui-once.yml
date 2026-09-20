@@ -12,6 +12,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Aplicar alteracoes sem tocar nos dados do usuario
         run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/patch_recurring_accounts.py')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("if 'rec-end' in s or 'rec-shortcut' in s or 'data-reccancel' in s:","if 'id=\"rec-end\"' in s or 'id=\"rec-shortcut\"' in s or 'data-reccancel=' in s:")
+          p.write_text(s,encoding='utf-8')
+          PY
           python3 -m py_compile scripts/patch_recurring_accounts.py scripts/patch_recurring_tests.py
           python3 scripts/patch_recurring_accounts.py
           python3 scripts/patch_recurring_tests.py
