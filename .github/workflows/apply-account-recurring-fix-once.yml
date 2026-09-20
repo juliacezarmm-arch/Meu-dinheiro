@@ -1,0 +1,34 @@
+name: Aplicar correção recorrências da conta
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/apply-account-recurring-fix-once.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Corrigir interface e testes
+        run: |
+          python3 scripts/fix_recurring_account_ui.py
+          python3 scripts/update_recurring_account_tests.py
+          git diff --check
+      - name: Validar regras financeiras e o formulário no Chrome
+        run: |
+          node tests/finance.test.js
+          node tests/marco-zero.test.js
+          node tests/card-ux.test.js
+          node tests/autosave.test.js
+          node tests/recorrentes.test.js
+          node --check js/recorrentes.js
+          node --check /tmp/meu-dinheiro-validar.js
+          python3 tests/recorrentes-browser-smoke.py
+      - name: Publicar apenas arquivos validados
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/recorrentes.js tests/recorrentes.test.js tests/recorrentes-browser-smoke.py
+          git commit -m 'Separa recorrências da conta e encerra registros por exclusão'
+          git push origin HEAD:main
