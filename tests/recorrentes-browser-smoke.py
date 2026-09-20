@@ -7,7 +7,7 @@ if not chrome:
  sys.exit(2)
 root=Path.cwd()
 html=(root/'index.html').read_text(encoding='utf-8')
-assert '<script src="js/recorrentes.js?v=20260920-conta2"></script>' in html
+assert '<script src="js/recorrentes.js?v=20260920-dia2"></script>' in html
 script=r'''<script>
 (function(){
 const report=(ok,msg)=>{document.body.insertAdjacentHTML('beforeend','<pre id="smoke-result">'+(ok?'PASS: ':'FAIL: ')+String(msg).replace(/</g,'&lt;')+'</pre>');};
@@ -26,7 +26,9 @@ try{
  const el=id=>document.getElementById(id);
  el('rec-name').value='Salário smoke';el('rec-value').value='100';el('rec-type').value='entrada';el('rec-type').dispatchEvent(new Event('change'));
  el('rec-category').value='Trabalho';el('rec-category').dispatchEvent(new Event('change'));el('rec-subcategory').value='Salário';
- el('rec-frequency').value='mensal';el('rec-start').value=today();
+ el('rec-frequency').value='mensal';el('rec-frequency').dispatchEvent(new Event('change'));el('rec-day').value=String(Number(today().slice(8)));
+ if(el('rec-day-label').hidden||!el('rec-date-label').hidden)throw Error('Dia do mês não aparece no Extrato');
+ if(el('rec-day-label').textContent.indexOf('Dia do recebimento')<0)throw Error('Rótulo de recebimento incorreto');
  el('rec-form').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));
  if(S.recorrentes.length!==1)throw Error('Cadastro não criado');
  const lines=S.extrato.filter(x=>x.recorrenciaId===S.recorrentes[0].id);
