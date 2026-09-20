@@ -1,0 +1,55 @@
+name: Atualizar versao do script de recorrencias
+on:
+  push:
+    paths:
+      - .github/workflows/cache-recorrentes-totais-20260920.yml
+permissions:
+  contents: write
+jobs:
+  conferir-e-publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Atualizar versao do JavaScript e referencias dos testes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          old='js/recorrentes.js?v=20260920-compact1'
+          new='js/recorrentes.js?v=20260920-totais1'
+          for filename in ['index.html','tests/recorrentes.test.js','tests/recorrentes-browser-smoke.py']:
+              path=Path(filename)
+              text=path.read_text(encoding='utf-8')
+              assert text.count(old)==1, f'{filename}: referencia inesperada, abortar'
+              path.write_text(text.replace(old,new,1),encoding='utf-8')
+          print('PATCH OK: script versionado sem mexer nos registros financeiros')
+          PY
+      - name: Verificar JavaScript e todos os testes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          match=re.search(r'<script\s*>([\s\S]*?)</script>',html)
+          assert match
+          Path('/tmp/meu-dinheiro-bust.js').write_text(match.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/meu-dinheiro-bust.js
+          node --check js/recorrentes.js
+          node tests/layout-totais.test.js
+          node tests/recorrentes.test.js
+          node tests/finance.test.js
+          node tests/ciclo-fatura.test.js
+          node tests/marco-zero.test.js
+          node tests/card-ux.test.js
+          node tests/planejamento.test.js
+          node tests/autosave.test.js
+          node tests/parcelas-pagas.test.js
+          python3 tests/recorrentes-browser-smoke.py
+      - name: Publicar arquivos validados
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html tests/recorrentes.test.js tests/recorrentes-browser-smoke.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'Atualizar versao do script para ativar layout recorrente imediatamente'
+          git push
