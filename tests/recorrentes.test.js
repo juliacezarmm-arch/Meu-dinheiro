@@ -1,6 +1,6 @@
 const assert=require('assert'),fs=require('fs'),vm=require('vm');
 const html=fs.readFileSync('index.html','utf8'),js=fs.readFileSync('js/recorrentes.js','utf8');
-assert(html.includes('<script src="js/recorrentes.js?v=20260920-json1"></script>'),'Carregamento de recorrências ausente');
+assert(html.includes('<script src="js/recorrentes.js?v=20260920-integrado1"></script>'),'Carregamento de recorrências ausente');
 assert(html.includes('id="ext-gasto-tipo" aria-hidden="true"'),'Tipo fixo/variável não deve aparecer no Extrato');
 assert(html.includes('id="cc-gasto-tipo" tabindex="-1"'),'Tipo fixo/variável não deve aparecer no Cartão');
 assert(!/(?<![\w.])(?:alert|confirm|prompt)\s*\(/.test(js),'Não chamar caixas nativas');
@@ -34,4 +34,8 @@ assert(!js.includes('id=\"rec-end\"')&&!js.includes('data-reccancel'),'Campos du
 assert(js.includes('cardRow.hidden=true;cardRow.remove()'),'Campo de cartão precisa sair fisicamente do formulário da conta');
 assert(!js.includes('id=\"rec-end\"'),'Encerramento não pertence ao cadastro inicial');
 assert(js.includes('data-recdelete=\"${r.id}\">Excluir agora'),'Exclusão deve estar na lista dos registros criados');
+assert(js.includes('id=\"rec-toggle\"')&&js.includes('setRecAreaExpanded'),'Registros precisam abrir e fechar');
+assert(js.includes('rec-inline-actions')&&js.includes('rec-item-date'),'Editar e excluir devem ficar ao lado do dia');
+assert(!js.includes('Recorrências previstas (não movimentam o saldo)'),'Não mostrar caixa de previsões separada');
+assert(html.includes('rowsBase.concat(proximas)')&&html.includes('const entradasMes=rowsBase.filter'),'Previsões na tabela mas fora do saldo até a data');
 console.log('PASS: recorrências, separação conta/cartão, exclusão prospectiva, histórico e validação');

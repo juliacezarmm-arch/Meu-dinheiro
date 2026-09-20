@@ -2086,14 +2086,16 @@ function renderExtrato(){
       linhaSaldo={id:'saldo-transportado',data:inicioMes,desc:'Saldo vindo do mês anterior',tipo:'saldo_inicial',categoria:'Transporte automático',val:calcularSaldoDisponivelAte(limite),auto:true};
     }
   }
-  const rows=S.extrato.concat(resumoCartao?[resumoCartao]:[],linhaSaldo?[linhaSaldo]:[]).filter(r=>isSameMonthDate(r.data,viewYear,viewMonth)&&!(r.recorrenciaId&&saldoInicialValido(S.saldoInicial)&&(r.data<S.saldoInicial.data||S.saldoInicial.idsIgnorados.some(id=>String(id)===String(r.id))))).sort((a,b)=>b.data.localeCompare(a.data));
+  const rowsBase=S.extrato.concat(resumoCartao?[resumoCartao]:[],linhaSaldo?[linhaSaldo]:[]).filter(r=>isSameMonthDate(r.data,viewYear,viewMonth)&&!(r.recorrenciaId&&saldoInicialValido(S.saldoInicial)&&(r.data<S.saldoInicial.data||S.saldoInicial.idsIgnorados.some(id=>String(id)===String(r.id)))));
+  const proximas=typeof window.cashRecurringForecasts==='function'?window.cashRecurringForecasts(viewYear,viewMonth):[];
+  const rows=rowsBase.concat(proximas).sort((a,b)=>b.data.localeCompare(a.data));
   const parcelasMes=resumoCartao?[resumoCartao]:[];
-  const entradasMes=rows.filter(r=>receitaReal(r)&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
-  const resgatesMes=rows.filter(r=>r.tipo==='entrada'&&r.categoria==='Resgate'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
-  const saidasMes=rows.filter(r=>r.tipo==='saida'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
-  const investimentoMes=rows.filter(r=>r.tipo==='investimento'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
-  const metaMes=rows.filter(r=>r.tipo==='meta'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
-  const cartaoMes=rows.filter(r=>r.tipo==='cartao').reduce((s,r)=>s+r.val,0);
+  const entradasMes=rowsBase.filter(r=>receitaReal(r)&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
+  const resgatesMes=rowsBase.filter(r=>r.tipo==='entrada'&&r.categoria==='Resgate'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
+  const saidasMes=rowsBase.filter(r=>r.tipo==='saida'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
+  const investimentoMes=rowsBase.filter(r=>r.tipo==='investimento'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
+  const metaMes=rowsBase.filter(r=>r.tipo==='meta'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
+  const cartaoMes=rowsBase.filter(r=>r.tipo==='cartao').reduce((s,r)=>s+r.val,0);
   const aviso=parcelasMes.length?'<div class="hint">'+(S.saldoInicial?'O cartão é apenas uma previsão. Para descontar o dinheiro, lance o pagamento da fatura como saída; não registre a compra como outra despesa.':'O extrato mostra o cartão como uma soma do mês. Os detalhes ficam na aba Cartão.')+'</div>':'';
   const avisoSaldo=S.saldoInicial?'<div class="hint">O saldo inicial não é uma entrada. Parcelas anteriores ao início ficam somente na aba Cartão; não entram neste extrato, no resumo ou no saldo disponível.</div>':'';
   const resumoDetalhe=`<div class="plain-summary compact-summary">
@@ -2112,7 +2114,7 @@ function renderExtrato(){
       const d=new Date(r.data+'T12:00:00');
       const bc=r.tipo==='saldo_inicial'?'b-pagamento':r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
       const futuro=d>hoje;
-      const tipoLabel=futuro?'previsto':r.tipo==='saldo_inicial'?'saldo':r.tipo==='cartao'?'cartão':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
+      const tipoLabel=r.previsto||futuro?'previsto':r.tipo==='saldo_inicial'?'saldo':r.tipo==='cartao'?'cartão':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
       const color=r.tipo==='saldo_inicial'?'#9FE1CB':r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#A32D2D':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
       const action=r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
@@ -2617,7 +2619,7 @@ setSaveStatus('Abra um arquivo JSON para começar.');
 setInterval(()=>{if(hasUnsavedChanges)void autoSaveDataFile();},10000);
 setInterval(updateResumo,5*60*1000);
 </script>
-<script src="js/recorrentes.js?v=20260920-json1"></script>
+<script src="js/recorrentes.js?v=20260920-integrado1"></script>
 </body>
 </html>
 

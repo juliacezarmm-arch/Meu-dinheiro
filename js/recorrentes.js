@@ -41,10 +41,11 @@ S.recorrenciaIgnoradas=Array.isArray(S.recorrenciaIgnoradas)?S.recorrenciaIgnora
 let editingRecId=null;
 let editingRecMode="conta";
 const style=document.createElement('style');
-style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}.rec-form [hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
+style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}#rec-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-body[hidden]{display:none!important}.rec-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px}.rec-item-date{font-size:12px;color:#c5c3ba;line-height:1.45;flex:1 1 225px}.rec-inline-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0}.rec-inline-actions .rec-button{padding:6px 8px;font-size:11px;white-space:nowrap}.rec-form [hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
 document.head.appendChild(style);
 const section=document.createElement('section');section.id='recorrentes-area';section.className='rec-area';
-section.innerHTML=`<div class="rec-top"><div><strong>Registros recorrentes</strong><p>Cadastre salário, débito automático, Pix ou transferência. Exclua o cadastro quando quiser; os lançamentos anteriores permanecem.</p></div><button type="button" class="rec-button primary" id="rec-open">+ Novo registro</button></div>
+section.innerHTML=`<div class="rec-top"><button type="button" id="rec-toggle" aria-expanded="true" aria-controls="rec-body">Registros recorrentes <span id="rec-toggle-symbol" aria-hidden="true">−</span></button></div>
+<div id="rec-body"><p class="rec-caption">Cadastre salário, débito automático, Pix ou transferência. Exclua o cadastro quando quiser; os lançamentos anteriores permanecem.</p><button type="button" class="rec-button primary" id="rec-open">+ Novo registro</button>
 <form class="rec-form" id="rec-form" hidden novalidate><strong id="rec-form-title">Novo registro recorrente</strong>
 <div class="row row2" style="margin-top:12px"><label>Descrição<input id="rec-name" type="text" maxlength="75" placeholder="Ex.: Office, salário, academia" required></label><label>Valor (R$)<input id="rec-value" type="number" min="0.01" step="0.01" required placeholder="60,00"></label></div>
 <div class="row row2"><label>Tipo<select id="rec-type"><option value="saida">Despesa</option><option value="entrada">Entrada / salário</option></select></label><label>Forma de movimentação<select id="rec-method"><option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="pix">Pix</option><option value="transferencia">Transferência</option></select></label></div>
@@ -54,7 +55,7 @@ section.innerHTML=`<div class="rec-top"><div><strong>Registros recorrentes</stro
 
 <p class="rec-caption" id="rec-guidance">Informe o dia da cobrança ou do recebimento. A movimentação é programada a partir de hoje. Confira se o pagamento ou recebimento realmente ocorreu.</p>
 <div class="rec-actions"><button type="submit" class="rec-button primary" id="rec-submit">Salvar recorrência</button><button type="button" class="rec-button" id="rec-close">Cancelar edição</button></div></form>
-<div class="rec-list" id="rec-list"></div>`;
+<div class="rec-list" id="rec-list"></div></div>`;
 const anchor=document.querySelector('#page-extrato .add-form');anchor.parentNode.insertBefore(section,anchor);
 const cardSection=document.createElement('section');cardSection.id='rec-cartao-area';cardSection.className='rec-area';
 cardSection.innerHTML='<div class="rec-top"><div><strong>Assinaturas recorrentes no cartão</strong><p>Cadastre cobranças periódicas do crédito aqui, separadas dos débitos da conta. Excluir interrompe o futuro, mas mantém as cobranças anteriores.</p></div><button type="button" class="rec-button primary" id="rec-card-open">+ Nova assinatura</button></div><div class="rec-list" id="rec-card-list"></div>';
@@ -119,7 +120,8 @@ function openRecEditor(id=null,mode='conta'){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));editingRecId=r?r.id:null;
  editingRecMode=r?(r.metodo==='cartao'?'cartao':'conta'):mode;
  const area=$(editingRecMode==='cartao'?'rec-cartao-area':'recorrentes-area');
- area.insertBefore($('rec-form'),area.querySelector('.rec-list'));
+ if(editingRecMode==='conta')setRecAreaExpanded(true);
+ const list=area.querySelector('.rec-list');list.parentNode.insertBefore($('rec-form'),list);
  $('rec-form').hidden=false;
  $('rec-form-title').textContent=r?'Editar '+(editingRecMode==='cartao'?'assinatura':'registro recorrente'):(editingRecMode==='cartao'?'Nova assinatura recorrente':'Novo registro recorrente');
  $('rec-name').value=r?r.nome:'';$('rec-value').value=r?r.valor:'';
@@ -132,7 +134,13 @@ function openRecEditor(id=null,mode='conta'){
  recurrenceTiming();
  $('rec-submit').textContent=r?'Salvar alterações':editingRecMode==='cartao'?'Salvar assinatura':'Salvar recorrência';$('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
 }
-function closeRecEditor(){$('rec-form').hidden=true;editingRecId=null;editingRecMode='conta';placeCardRow();$('recorrentes-area').appendChild($('rec-form'));}
+function setRecAreaExpanded(expanded){
+ $('rec-body').hidden=!expanded;
+ $('rec-toggle').setAttribute('aria-expanded',String(expanded));
+ $('rec-toggle-symbol').textContent=expanded?'−':'+';
+ if(!expanded&&$('rec-form').parentElement===$('rec-body'))closeRecEditor();
+}
+function closeRecEditor(){$('rec-form').hidden=true;editingRecId=null;editingRecMode='conta';placeCardRow();$('rec-body').appendChild($('rec-form'));}
 function cardForecasts(){
  const hoje=today(),horizon=new Date(hoje+'T12:00:00');horizon.setMonth(horizon.getMonth()+36);
  const selecionado=new Date(cartaoMes.getFullYear(),cartaoMes.getMonth()+13,1,12);
@@ -145,8 +153,11 @@ function cardForecasts(){
 }
 function cashForecastsForMonth(y,m){
  const last=isoDate(y,m,new Date(y,m+1,0).getDate());
- return S.recorrentes.filter(r=>r.metodo!=='cartao'&&!r.excluida).flatMap(r=>ocorrencias(r,last).filter(d=>d>today()&&d.slice(0,7)===last.slice(0,7)&&(!saldoInicialValido(S.saldoInicial)||d>S.saldoInicial.data)&&!originalJaRegistrado(r,d)).map(data=>({data,desc:r.nome,valor:r.valor,tipo:r.tipo,metodo:r.metodo}))).sort((a,b)=>a.data.localeCompare(b.data));
+ return S.recorrentes.filter(r=>r.metodo!=='cartao'&&!r.excluida).flatMap(r=>ocorrencias(r,last).filter(d=>d>today()&&d.slice(0,7)===last.slice(0,7)&&(!saldoInicialValido(S.saldoInicial)||d>S.saldoInicial.data)&&!originalJaRegistrado(r,d)).map(data=>({id:'rec-futuro-'+r.id+'-'+data,data,desc:r.nome,val:r.valor,tipo:r.tipo,categoria:r.categoria,subcategoria:r.subcategoria,pagamento:r.metodo,auto:true,previsto:true}))).sort((a,b)=>a.data.localeCompare(b.data));
 }
+// O Extrato exibe previsões na própria tabela; só o registro efetivo entra no saldo e no JSON.
+window.cashRecurringForecasts=cashForecastsForMonth;
+
 function syncRecurring(){
  if(!Array.isArray(S.recorrentes)||!S.recorrentes.length){renderRecurring();return false;}
  let changed=false;const hoje=today();
@@ -183,8 +194,8 @@ function renderRecurring(){
    const freq={semanal:'Semanal',mensal:'Mensal',anual:'Anual'}[r.frequencia]||r.frequencia;
    const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));
    return `<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">${escHtml(r.nome)}</span><span class="rec-tag${ended?' inactive':''}">${ended?'Encerrado':r.tipo==='entrada'?'Entrada':'Saída'}</span></div>
-    <div class="rec-item-sub"><strong style="color:#f5f5f2">${r.tipo==='saida'?'−':'+'}${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo]||r.metodo)}${card?' ('+escHtml(card.bank)+')':''}<br>${r.frequencia==='mensal'?(r.tipo==='entrada'?'Dia do recebimento: ':'Dia da cobrança: ')+(r.diaCobranca||Number(r.inicio.slice(8))):'Próxima programação desde: '+displayDate(r.inicio)}${r.fim?' · Encerramento anterior: '+displayDate(r.fim):''}${next?' · Próxima: '+displayDate(next):''}</div>
-    <div class="rec-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir agora</button></div></div>`;
+    <div class="rec-item-sub"><strong style="color:#f5f5f2">${r.tipo==='saida'?'−':'+'}${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo]||r.metodo)}${card?' ('+escHtml(card.bank)+')':''}</div>
+    <div class="rec-item-bottom"><span class="rec-item-date">${r.frequencia==='mensal'?(r.tipo==='entrada'?'Dia do recebimento: ':'Dia da cobrança: ')+(r.diaCobranca||Number(r.inicio.slice(8))):'Próxima programação desde: '+displayDate(r.inicio)}${r.fim?' · Encerramento anterior: '+displayDate(r.fim):''}${next?' · Próxima: '+displayDate(next):''}</span><span class="rec-inline-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir agora</button></span></div></div>`;
   }).join('');
  }
  $('rec-list').innerHTML=html(ativos.filter(r=>r.metodo!=='cartao'),'Nenhum registro recorrente da conta. Cadastre salário, Pix ou débito automático.');
@@ -274,11 +285,7 @@ renderCartao=function(){oldCardRender();const wrap=$('cc-wrap'),futuras=cardFore
  const existing=$('rec-card-forecast');if(existing)existing.remove();
  if(futuras.length){const box=document.createElement('div');box.id='rec-card-forecast';box.className='rec-predictions';box.innerHTML='<strong>Assinaturas programadas (ainda não cobradas)</strong>'+futuras.map(x=>`<div class="rec-card-prediction">${displayDate(x.data)} · ${escHtml(x.desc)} · ${fmt(x.val)} · ${escHtml(x.banco)}</div>`).join('');wrap.parentNode.insertBefore(box,wrap);}
 };
-const oldExtratoRender=renderExtrato;
-renderExtrato=function(){oldExtratoRender();const wrap=$('ext-wrap'),forecast=cashForecastsForMonth(extratoMes.getFullYear(),extratoMes.getMonth());
- if(!forecast.length)return;
- const box=document.createElement('div');box.className='rec-predictions';box.innerHTML='<strong>Recorrências previstas (não movimentam o saldo)</strong>'+forecast.map(x=>`<div class="rec-prediction"><span>${displayDate(x.data)} · ${escHtml(x.desc)}<br><small>${escHtml(kindLabel[x.metodo]||x.metodo)}</small></span><b style="color:${x.tipo==='entrada'?'#9FE1CB':'#efaba4'}">${x.tipo==='saida'?'−':'+'}${fmt(x.valor)}</b></div>`).join('');wrap.insertBefore(box,wrap.firstChild);
-};
+
 const oldEditPurchase=editCartao;
 editCartao=function(id){const row=S.cartao.find(x=>String(x.id)===String(id));if(row&&row.recorrenciaId){showPage('cartao',document.querySelectorAll('.nav button')[2]);openRecEditor(row.recorrenciaId);return;}oldEditPurchase(id);};
 const oldDelCC=delCC;
@@ -287,6 +294,7 @@ const oldDelExt=delExt;
 delExt=function(id){const row=S.extrato.find(x=>String(x.id)===String(id));oldDelExt(id);if(row&&!S.extrato.some(x=>String(x.id)===String(id))){ignoreRecurring(row);saveData();renderRecurring();}};
 const oldDelCard=delRegisteredCard;
 delRegisteredCard=function(id){if(S.recorrentes.some(r=>!r.excluida&&r.metodo==='cartao'&&String(r.cartaoId)===String(id))){appAlert('Este cartão está vinculado a uma recorrência. Encerre ou exclua o cadastro antes de removê-lo.');return;}oldDelCard(id);};
+$('rec-toggle').addEventListener('click',()=>setRecAreaExpanded($('rec-body').hidden));
 $('rec-open').addEventListener('click',()=>openRecEditor());$('rec-close').addEventListener('click',closeRecEditor);
 $('rec-card-open').addEventListener('click',()=>openRecEditor(null,'cartao'));
 $('rec-form').addEventListener('submit',saveRecEditor);

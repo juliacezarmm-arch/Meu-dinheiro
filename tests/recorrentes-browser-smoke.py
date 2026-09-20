@@ -7,7 +7,7 @@ if not chrome:
  sys.exit(2)
 root=Path.cwd()
 html=(root/'index.html').read_text(encoding='utf-8')
-assert '<script src="js/recorrentes.js?v=20260920-json1"></script>' in html
+assert '<script src="js/recorrentes.js?v=20260920-integrado1"></script>' in html
 script=r'''<script>
 (function(){
 const report=(ok,msg)=>{document.body.insertAdjacentHTML('beforeend','<pre id="smoke-result">'+(ok?'PASS: ':'FAIL: ')+String(msg).replace(/</g,'&lt;')+'</pre>');};
@@ -22,7 +22,9 @@ try{
  knownFileSignature='1:1';setFileAccessState(true);
  S.saldoInicial={valor:500,data:isoDate(d.getFullYear(),d.getMonth(),d.getDate()),idsIgnorados:[]};
  document.getElementById('rec-open').click();
- if(document.getElementById('rec-form').parentElement.id!=='recorrentes-area')throw Error('Cadastro da conta fora do Extrato');
+ if(document.getElementById('rec-form').parentElement.id!=='rec-body')throw Error('Cadastro da conta fora do Extrato');
+ elToggle=document.getElementById('rec-toggle');
+ if(!elToggle||document.getElementById('rec-body').hidden)throw Error('Área de recorrência não abriu');
  if(Array.from(document.getElementById('rec-method').options).some(o=>o.value==='cartao'))throw Error('Opção cartão apareceu nos débitos da conta');
  if(document.querySelector('#rec-form #rec-card-row'))throw Error('Campo cartão ainda está dentro do formulário da conta');
  if(document.getElementById('rec-card-row'))throw Error('Campo cartão não deveria existir no Extrato');
@@ -39,6 +41,19 @@ try{
  if(Math.abs(calcularSaldoDisponivelAte(today())-600)>0.001)throw Error('Saldo incorreto: '+calcularSaldoDisponivelAte(today()));
  renderExtrato();renderCartao();updateResumo();
  if(S.extrato.filter(x=>x.recorrenciaId===S.recorrentes[0].id).length!==1)throw Error('Lançamento duplicado');
+ const amanha=new Date(today()+'T12:00:00');amanha.setDate(amanha.getDate()+1);
+ const futureDate=isoDate(amanha.getFullYear(),amanha.getMonth(),amanha.getDate());
+ S.recorrentes.push({id:989898,nome:'Despesa futura',valor:70,tipo:'saida',metodo:'debito_automatico',inicio:futureDate,frequencia:'mensal',diaCobranca:amanha.getDate(),categoria:'Casa',subcategoria:'Telefone',excluida:false});
+ extratoMes=new Date(futureDate+'T12:00:00');renderExtrato();
+ if(document.querySelector('#ext-wrap .rec-predictions'))throw Error('Caixa separada de previsões continua visível');
+ if(!Array.from(document.querySelectorAll('#ext-wrap tbody tr')).some(tr=>tr.textContent.includes('Despesa futura')&&tr.textContent.includes('previsto')))throw Error('Futuro não entrou na tabela geral');
+ if(S.extrato.some(x=>x.recorrenciaId===989898))throw Error('Futuro entrou antecipadamente como movimentação real');
+ if(Math.abs(calcularSaldoDisponivelAte(today())-600)>0.001)throw Error('Previsão não pode reduzir saldo antes da data');
+ el('rec-toggle').click();
+ if(!el('rec-body').hidden||el('rec-toggle').getAttribute('aria-expanded')!=='false')throw Error('Recolher não funciona');
+ el('rec-toggle').click();
+ if(el('rec-body').hidden)throw Error('Expandir não funciona');
+ if(!el('rec-list').querySelector('.rec-item-bottom .rec-inline-actions'))throw Error('Ações fora da linha do dia');
  el('rec-card-open').click();
  if(el('rec-form').parentElement.id!=='rec-cartao-area')throw Error('Assinatura não está na aba Cartão');
  if(el('rec-card-row').hidden||el('rec-method').value!=='cartao')throw Error('Assinatura sem seleção exclusiva de cartão');
