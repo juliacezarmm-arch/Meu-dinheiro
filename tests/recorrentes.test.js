@@ -1,6 +1,6 @@
 const assert=require('assert'),fs=require('fs'),vm=require('vm');
 const html=fs.readFileSync('index.html','utf8'),js=fs.readFileSync('js/recorrentes.js','utf8');
-assert(html.includes('<script src="js/recorrentes.js?v=20260920-compact1"></script>'),'Carregamento de recorrências ausente');
+assert(html.includes('<script src="js/recorrentes.js?v=20260920-totais1"></script>'),'Carregamento de recorrências ausente');
 assert(html.includes('id="ext-gasto-tipo" aria-hidden="true"'),'Tipo fixo/variável não deve aparecer no Extrato');
 assert(html.includes('id="cc-gasto-tipo" tabindex="-1"'),'Tipo fixo/variável não deve aparecer no Cartão');
 assert(!/(?<![\w.])(?:alert|confirm|prompt)\s*\(/.test(js),'Não chamar caixas nativas');
