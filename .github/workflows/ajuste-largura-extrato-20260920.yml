@@ -1,0 +1,54 @@
+name: Ajustar largura e valores do Extrato
+on:
+  push:
+    paths:
+      - .github/workflows/ajuste-largura-extrato-20260920.yml
+permissions:
+  contents: write
+jobs:
+  ajuste:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aumentar levemente o conteudo e reservar largura para os valores
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='.app{max-width:700px;margin:0 auto;padding:1rem 0}'
+          assert s.count(old)==1, 'Largura original nao encontrada exatamente uma vez'
+          s=s.replace(old,'.app{max-width:760px;margin:0 auto;padding:1rem 0}',1)
+          marker='/* Saldo de abertura: não se mistura com entradas nem com a projeção de faturas. */'
+          assert s.count(marker)==1,'Ancora da folha de estilo nao encontrada'
+          css='''/* Extrato: valor monetario completo sem alargar excessivamente a pagina. */
+          #ext-wrap table th:nth-child(5){width:122px!important}
+          #ext-wrap table td:nth-child(5){white-space:nowrap;overflow:visible;text-overflow:clip;font-variant-numeric:tabular-nums}
+          @media(max-width:560px){
+            #ext-wrap table th:nth-child(5){width:104px!important}
+            #ext-wrap table td:nth-child(5){font-size:11px}
+          }
+          '''
+          assert '#ext-wrap table th:nth-child(5){width:122px!important}' not in s,'Ajuste ja existe'
+          s=s.replace(marker,css+'\n'+marker,1)
+          p.write_text(s,encoding='utf-8')
+          print('PASS: area central 700 -> 760 px; coluna Valor 122 px; adaptacao mobile')
+          PY
+      - name: Validar sintaxe e regras financeiras
+        run: |
+          node --check js/recorrentes.js
+          node tests/autosave.test.js
+          node tests/finance.test.js
+          node tests/marco-zero.test.js
+          node tests/card-ux.test.js
+          node tests/recorrentes.test.js
+          python3 tests/recorrentes-browser-smoke.py
+      - name: Publicar ajuste visual validado
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Ampliar discretamente layout e mostrar valores completos no Extrato'
+          git push
