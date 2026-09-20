@@ -238,6 +238,14 @@ td:last-child{white-space:normal}
 .saldo-setup [hidden],[hidden].saldo-link{display:none!important}
 .saldo-note{margin:-.6rem 0 .8rem}
 .saldo-link{margin:-.25rem 0 .85rem;font-size:12px}
+.saldo-setup{padding:6px 10px;margin-bottom:10px}
+.saldo-setup .saldo-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;color:var(--color-text-primary);padding:9px 7px;text-align:left;font-size:13px;font-weight:750;cursor:pointer}
+.saldo-setup .saldo-toggle span{color:var(--color-text-secondary);font-size:18px;line-height:1}
+#saldo-content{padding:10px 7px 8px;border-top:1px solid #33332e}
+#saldo-start-saved{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--color-text-secondary)}
+#saldo-start-saved[hidden],#saldo-content[hidden]{display:none!important}
+.saldo-setup .saldo-corrigir{padding:6px 10px}
+
 @media(max-width:520px){.saldo-setup .row2{grid-template-columns:1fr}}
 /* Interface do site: não usar alert, confirm ou prompt do navegador. */
 .site-dialog[hidden],.site-toast[hidden]{display:none!important}
@@ -313,23 +321,23 @@ td:last-child{white-space:normal}
 
   <!-- EXTRATO -->
   <div id="page-extrato" class="page">
-    <section id="saldo-setup" class="saldo-setup" aria-label="Configurar saldo inicial">
-      <strong>Dinheiro disponível para começar</strong>
-      <p>Informe quanto você tem livre agora (sem incluir investimentos ou metas). Esse é o ponto de partida: não será contado como uma entrada. Abra seu arquivo de dados antes, se já utiliza o aplicativo.</p>
-      <div id="saldo-start-form">
-        <div class="row row2">
-          <label for="saldo-inicial-valor">Saldo inicial (R$)
-            <input id="saldo-inicial-valor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" />
-          </label>
-          <div class="saldo-data">Data de referência<strong id="saldo-data-referencia"></strong></div>
+    <section id="saldo-setup" class="saldo-setup" aria-label="Saldo inicial">
+      <button id="saldo-toggle" class="saldo-toggle" type="button" aria-expanded="false" aria-controls="saldo-content" onclick="toggleSaldoInicial()">Saldo inicial <span aria-hidden="true">⌄</span></button>
+      <div id="saldo-content" hidden>
+        <div id="saldo-start-form">
+          <div class="row row2">
+            <label for="saldo-inicial-valor">Valor inicial (R$)
+              <input id="saldo-inicial-valor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" />
+            </label>
+            <div class="saldo-data">Data de início<strong id="saldo-data-referencia"></strong></div>
+          </div>
+          <button id="saldo-submit" type="button" onclick="confirmarSaldoInicial()">Salvar saldo inicial</button>
         </div>
-        <button id="saldo-submit" type="button" onclick="confirmarSaldoInicial()">Começar a acompanhar</button>
+        <div id="saldo-start-saved" hidden>
+          <span id="saldo-start-descricao"></span>
+          <button type="button" class="saldo-corrigir" onclick="editarSaldoInicial()">Editar</button>
+        </div>
       </div>
-      <div id="saldo-start-saved" hidden>
-        <p id="saldo-start-descricao"></p>
-        <button type="button" class="saldo-corrigir" onclick="editarSaldoInicial()">Corrigir valor inicial</button>
-      </div>
-      <p style="margin:.65rem 0 0">Depois, lance entradas, despesas e transferências no extrato. O pagamento da fatura deve ser lançado como saída; compras no crédito, por si só, não diminuem o saldo real.</p>
     </section>
     <div class="add-form">
       <div class="row row2">
@@ -729,11 +737,20 @@ function renderSaldoInicial(){
   formulario.hidden=existente;
   gravado.hidden=!existente;
   data.textContent=existente?S.saldoInicial.data.split('-').reverse().join('/'):today().split('-').reverse().join('/');
-  if(existente)aviso.textContent='Saldo de partida: '+fmt(S.saldoInicial.valor)+' em '+S.saldoInicial.data.split('-').reverse().join('/')+'. Os registros anteriores foram preservados, mas não serão somados de novo.';
+  if(existente)aviso.textContent=fmt(S.saldoInicial.valor)+' · '+S.saldoInicial.data.split('-').reverse().join('/');
   document.getElementById('saldo-submit').textContent=existente?'Salvar correção':'Começar a acompanhar';
+}
+function toggleSaldoInicial(force){
+  const content=document.getElementById('saldo-content');
+  const button=document.getElementById('saldo-toggle');
+  if(!content||!button)return;
+  const aberto=typeof force==='boolean'?force:content.hidden;
+  content.hidden=!aberto;
+  button.setAttribute('aria-expanded',String(aberto));
 }
 function editarSaldoInicial(){
   if(!saldoInicialValido(S.saldoInicial))return;
+  toggleSaldoInicial(true);
   document.getElementById('saldo-inicial-valor').value=String(S.saldoInicial.valor);
   document.getElementById('saldo-start-form').hidden=false;
   document.getElementById('saldo-start-saved').hidden=true;
@@ -752,14 +769,15 @@ async function confirmarSaldoInicial(){
     S.saldoInicial={valor,data:today(),idsIgnorados:S.extrato.filter(x=>x.data<=today()).map(x=>String(x.id))};
   }
   saveData();
-  renderSaldoInicial();renderExtrato();updateResumo();
+  renderSaldoInicial();toggleSaldoInicial(false);renderExtrato();updateResumo();
   setSaveStatus('Saldo definido. Backup automático ativado; o JSON será sincronizado quando autorizado.');
 }
 function goToSaldoInicial(){
   const botao=document.querySelectorAll('.nav button')[1];
   showPage('extrato',botao);
+  toggleSaldoInicial(true);
   document.getElementById('saldo-setup').scrollIntoView({behavior:'smooth',block:'start'});
-  document.getElementById('saldo-inicial-valor').focus();
+  (saldoInicialValido(S.saldoInicial)?document.querySelector('#saldo-start-saved .saldo-corrigir'):document.getElementById('saldo-inicial-valor')).focus();
 }
 
 // Backup local permanente (IndexedDB). O site NUNCA pede acesso ao disco em temporizadores.
