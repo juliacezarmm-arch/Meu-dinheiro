@@ -22,6 +22,15 @@ jobs:
           python3 -m py_compile scripts/patch_recurring_accounts.py scripts/patch_recurring_tests.py
           python3 scripts/patch_recurring_accounts.py
           python3 scripts/patch_recurring_tests.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tests/recorrentes.test.js');s=p.read_text(encoding='utf-8')
+          lines=s.splitlines()
+          count=sum('Assinaturas precisam de área própria na aba Cartão' in line for line in lines)
+          assert count==1,count
+          lines=['assert(js.includes("cardSection.id=\'rec-cartao-area\'"),\'Assinaturas precisam de área própria na aba Cartão\');' if 'Assinaturas precisam de área própria na aba Cartão' in line else line for line in lines]
+          p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          PY
           git diff --check
       - name: Validar motor e interface
         run: |
