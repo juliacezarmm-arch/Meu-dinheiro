@@ -1,0 +1,59 @@
+name: Mostrar parcelas pagas e melhorar contraste da fatura
+on:
+  push:
+    paths:
+      - .github/workflows/patch-parcelas-pagas-20260920.yml
+permissions:
+  contents: write
+jobs:
+  validar-e-publicar:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar ajuste visual e progresso de parcelas
+        run: |
+          python3 tools/patch-parcelas-pagas-20260920.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          antigo="  const registro={id:editingCartaoId||novoIdGlobal(),data,desc,tipo,val,parcelas:n,vencDia,closeDay:card.closeDay,cardId:card.id,banco:card.bank,cardColor:card.color,categoria,subcategoria,gastoTipo};"
+          novo="  const registro={id:editingCartaoId||novoIdGlobal(),data,desc,tipo,val,parcelas:n,vencDia,closeDay:card.closeDay,cardId:card.id,banco:card.bank,cardColor:card.color,categoria,subcategoria,gastoTipo};\n  const anterior=editingCartaoId?S.cartao.find(x=>x.id===editingCartaoId):null;\n  if(anterior&&Number.isInteger(anterior.parcelasPagasInformadas))registro.parcelasPagasInformadas=Math.min(n,anterior.parcelasPagasInformadas);"
+          assert s.count(antigo)==1,'Criacao de compra mudou; nao modificar automaticamente'
+          p.write_text(s.replace(antigo,novo,1),encoding='utf-8')
+          print('PATCH OK: progresso preservado na edicao de compra')
+          PY
+      - name: Testar sintaxe, parcelas, faturamento, saldo e navegador
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          match=re.search(r'<script\s*>([\s\S]*?)</script>',html)
+          assert match
+          Path('/tmp/meu-dinheiro-pagas.js').write_text(match.group(1),encoding='utf-8')
+          assert 'const anterior=editingCartaoId?' in html
+          assert '#cc-mes{color:#f2b75e' in html
+          assert "function parcelasPagasConfirmadas(" in html
+          print('PASS: estrutura e preservacao do progresso ao editar')
+          PY
+          node --check /tmp/meu-dinheiro-pagas.js
+          node --check js/recorrentes.js
+          node tests/parcelas-pagas.test.js
+          node tests/ciclo-fatura.test.js
+          node tests/finance.test.js
+          node tests/marco-zero.test.js
+          node tests/card-ux.test.js
+          node tests/planejamento.test.js
+          node tests/autosave.test.js
+          node tests/recorrentes.test.js
+          python3 tests/recorrentes-browser-smoke.py
+      - name: Publicar somente se validado
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Exibir parcelas pagas com controle seguro e clarear fatura do mes'
+          git push
