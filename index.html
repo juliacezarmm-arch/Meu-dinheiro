@@ -85,6 +85,11 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #cc-wrap .cc-actions{white-space:nowrap;overflow:visible;text-align:right}
 #cc-wrap .cc-group-title th{background:#171716;color:#9FE1CB;font-size:11px;font-weight:800;letter-spacing:.02em;padding:10px 7px 6px;border-bottom:1px solid #363631}
 #cc-wrap .cc-group-title:not(:first-child) th{padding-top:16px}
+#cc-wrap .cc-group-subtotal td,#cc-wrap .cc-grand-total td{font-size:11px;overflow:visible;text-overflow:clip;white-space:normal;background:#171716;border-bottom:1px solid #3a3934;padding:8px 5px}
+#cc-wrap .cc-group-subtotal td:first-child,#cc-wrap .cc-grand-total td:first-child{text-align:right;padding-right:10px;color:#c5c3ba}
+#cc-wrap .cc-group-subtotal td.cc-money,#cc-wrap .cc-grand-total td.cc-money{white-space:nowrap;color:#9FE1CB;font-weight:800;text-align:left}
+#cc-wrap .cc-grand-total td{border-top:1px solid #7abfa6;background:#202a25}
+
 @media(max-width:580px){#ext-wrap table{font-size:11px}#ext-wrap th,#ext-wrap td{padding:6px 3px}#ext-wrap th:last-child{width:94px!important}#ext-wrap .extrato-pagar{font-size:9px;padding:5px 3px}#cc-wrap table{font-size:11px}#cc-wrap th,#cc-wrap td{padding:6px 3px}}
 th{text-align:left;padding:8px 6px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;font-size:12px}
 td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1767,6 +1772,11 @@ function salvarParcelasPagas(){
   renderCartao();
 }
 
+// Somatorio de valores integrais das compras visiveis, em centavos.
+// Nao e o valor devido na fatura (que utiliza somente as parcelas do mes).
+function somarValoresTotaisCartao(itens){
+  return itens.reduce((centavos,item)=>centavos+Math.round(Number(item.val||0)*100),0)/100;
+}
 function renderCartao(){
   const viewYear=cartaoMes.getFullYear();
   const viewMonth=cartaoMes.getMonth();
@@ -1826,8 +1836,12 @@ function renderCartao(){
         const actions=r.previsto?`<button class="del" type="button" onclick="editRecurringCardForecast(${Number(r.recorrenciaId)})" aria-label="Editar assinatura" title="Edita a programação desta assinatura">✎</button>`:`<button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button>`;
         return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado?qtdParcelas+'x':'—'}</td><td class="cc-paid">${parcelado&&!r.previsto?`<button type="button" class="cc-paid-button" onclick="editarParcelasPagas(${r.id})" title="Ajustar quantidade de parcelas pagas. Nao altera saldo nem registra pagamentos.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</button>`:'—'}</td><td class="cc-money">${valorDaParcela}</td><td class="cc-money">${label}</td><td class="cc-actions">${actions}</td></tr>`;
       }).join('');
-      return `<tr class="cc-group-title"><th colspan="9" scope="rowgroup">${titulo}</th></tr>`+linhas;
-    }).join('')+'</tbody></table></div>';
+      const subtotal=somarValoresTotaisCartao(itens);
+      return `<tr class="cc-group-title"><th colspan="9" scope="rowgroup">${titulo}</th></tr>`+linhas+
+        `<tr class="cc-group-subtotal"><td colspan="7">Subtotal ${titulo} · valor integral das compras</td><td class="cc-money">${fmt(subtotal)}</td><td></td></tr>`;
+    }).join('')+
+    `<tr class="cc-grand-total"><td colspan="7">Total dos valores integrais exibidos · não é a fatura do mês</td><td class="cc-money">${fmt(somarValoresTotaisCartao(rows))}</td><td></td></tr>`+
+    '</tbody></table></div>';
 
 }
 

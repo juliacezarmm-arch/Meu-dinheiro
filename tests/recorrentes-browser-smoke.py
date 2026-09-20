@@ -55,7 +55,7 @@ try{
  if(!el('rec-body').hidden||el('rec-toggle').getAttribute('aria-expanded')!=='false')throw Error('Recolher não funciona');
  el('rec-toggle').click();
  if(el('rec-body').hidden)throw Error('Expandir não funciona');
- if(!el('rec-list').querySelector('.rec-item-bottom .rec-inline-actions'))throw Error('Ações fora da linha do dia');
+ if(!el('rec-list').querySelector('.rec-item-head .rec-inline-actions'))throw Error('Ações fora do cabeçalho compacto');
  el('rec-card-open').click();
  if(el('rec-form').parentElement.id!=='rec-card-body')throw Error('Assinatura não está na aba Cartão');
  if(el('rec-card-row').hidden||el('rec-method').value!=='cartao')throw Error('Assinatura sem seleção exclusiva de cartão');
