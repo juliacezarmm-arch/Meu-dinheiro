@@ -12,7 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Aplicar alteracoes verificadas
-        run: python3 tools/patch-planejamento-cartao-20260920.py
+        run: |
+          python3 tools/patch-planejamento-cartao-20260920.py
+          sed -i "s/parentElement.id!=='rec-cartao-area'/parentElement.id!=='rec-card-body'/g" tests/recorrentes-browser-smoke.py
       - name: Validar sintaxe e regressao financeira
         run: |
           node --check js/recorrentes.js
@@ -21,6 +23,7 @@ jobs:
           node tests/marco-zero.test.js
           node tests/card-ux.test.js
           node tests/recorrentes.test.js
+          node tests/planejamento.test.js
           python3 tests/recorrentes-browser-smoke.py
       - name: Publicar somente aplicativo e testes
         run: |
