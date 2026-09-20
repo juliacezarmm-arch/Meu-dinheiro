@@ -1,27 +1,37 @@
 /* Recorrências: cadastro separado do movimento efetivo. Sem popups nativos. */
-function proximaDataRecorrente(inicio,frequencia,indice){
+function proximaDataRecorrente(inicio,frequencia,indice,diaDoMes=null){
   const d=new Date(inicio+'T12:00:00');
   if(frequencia==='semanal')d.setDate(d.getDate()+7*indice);
   else if(frequencia==='mensal'){
     const mes=new Date(d.getFullYear(),d.getMonth()+indice,1,12);
-    d.setFullYear(mes.getFullYear(),mes.getMonth(),Math.min(d.getDate(),new Date(mes.getFullYear(),mes.getMonth()+1,0).getDate()));
+    const dia=Number.isInteger(diaDoMes)&&diaDoMes>=1&&diaDoMes<=31?diaDoMes:d.getDate();
+    d.setFullYear(mes.getFullYear(),mes.getMonth(),Math.min(dia,new Date(mes.getFullYear(),mes.getMonth()+1,0).getDate()));
   }else if(frequencia==='anual'){
     const ano=d.getFullYear()+indice;
     d.setFullYear(ano,d.getMonth(),Math.min(d.getDate(),new Date(ano,d.getMonth()+1,0).getDate()));
   }else throw Error('Frequência inválida');
   return isoDate(d.getFullYear(),d.getMonth(),d.getDate());
 }
+// Dia do cartão é uma regra mensal, não uma data histórica arbitrária.
+function proximaCobrancaMensal(referencia,dia){
+  if(!dataISOValida(referencia)||!Number.isInteger(dia)||dia<1||dia>31)throw Error('Dia da cobrança inválido');
+  const base=new Date(referencia+'T12:00:00');
+  const candidata=isoDate(base.getFullYear(),base.getMonth(),Math.min(dia,new Date(base.getFullYear(),base.getMonth()+1,0).getDate()));
+  if(candidata>=referencia)return candidata;
+  const mes=new Date(base.getFullYear(),base.getMonth()+1,1,12);
+  return isoDate(mes.getFullYear(),mes.getMonth(),Math.min(dia,new Date(mes.getFullYear(),mes.getMonth()+1,0).getDate()));
+}
 function datasRecorrentes(r,ate){
   if(!r||!dataISOValida(r.inicio)||!dataISOValida(ate))return [];
   const saida=[];
   for(let i=0;i<1200;i++){
-    const data=proximaDataRecorrente(r.inicio,r.frequencia,i);
+    const data=proximaDataRecorrente(r.inicio,r.frequencia,i,r.metodo==='cartao'?r.diaCobranca:null);
     if(data>ate||r.fim&&data>=r.fim)break;
     if(data>=String(r.vigenteDesde||r.inicio))saida.push(data);
   }
   return saida;
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={proximaDataRecorrente,datasRecorrentes};
+if(typeof module!=='undefined'&&module.exports)module.exports={proximaDataRecorrente,proximaCobrancaMensal,datasRecorrentes};
 
 if(typeof document!=='undefined'){
 (function(){
@@ -40,7 +50,7 @@ section.innerHTML=`<div class="rec-top"><div><strong>Registros recorrentes</stro
 <div class="row row2"><label>Tipo<select id="rec-type"><option value="saida">Despesa</option><option value="entrada">Entrada / salário</option></select></label><label>Forma de movimentação<select id="rec-method"><option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="pix">Pix</option><option value="transferencia">Transferência</option></select></label></div>
 <div class="row row1" id="rec-card-row" hidden><label>Cartão<select id="rec-card"><option value="">Selecione o cartão</option></select></label></div>
 <div class="row row2"><label>Categoria<select id="rec-category"></select></label><label>Subcategoria<select id="rec-subcategory"></select></label></div>
-<div class="row row2"><label>Frequência<select id="rec-frequency"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="anual">Anual</option></select></label><label>Data da primeira ocorrência<input id="rec-start" type="date" required></label></div>
+<div class="row row2"><label>Frequência<select id="rec-frequency"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="anual">Anual</option></select></label><label id="rec-date-label">Data da primeira ocorrência<input id="rec-start" type="date" required></label><label id="rec-day-label" hidden>Dia da cobrança<input id="rec-day" type="number" min="1" max="31" step="1" inputmode="numeric" placeholder="10" aria-describedby="rec-guidance"></label></div>
 
 <p class="rec-caption" id="rec-guidance">A data da primeira ocorrência define quando a movimentação entra no Extrato. Antes do saldo inicial, nada é descontado. O aplicativo não consulta bancos: confira o valor e a data efetivos.</p>
 <div class="rec-actions"><button type="submit" class="rec-button primary" id="rec-submit">Salvar recorrência</button><button type="button" class="rec-button" id="rec-close">Cancelar edição</button></div></form>
@@ -94,7 +104,14 @@ function recurrenceType(){
  $('rec-type').closest('label').hidden=editingRecMode==='cartao';
  $('rec-method').closest('label').hidden=editingRecMode==='cartao';
  placeCardRow();
- recurrenceCategories();
+ recurrenceCategories();recurrenceTiming();
+}
+function recurrenceTiming(){
+ const mensalCartao=editingRecMode==='cartao'&&$('rec-frequency').value==='mensal';
+ $('rec-day-label').hidden=!mensalCartao;$('rec-date-label').hidden=mensalCartao;
+ $('rec-day').required=mensalCartao;$('rec-start').required=!mensalCartao;
+ $('rec-date-label').firstChild.textContent=editingRecMode==='cartao'?'Data da cobrança inicial':'Data da primeira ocorrência';
+ $('rec-guidance').textContent=mensalCartao?'Informe apenas o dia do mês (1 a 31). A próxima cobrança será programada a partir de hoje; meses curtos usam o último dia. O pagamento da fatura é separado.':editingRecMode==='cartao'?'Para frequência semanal ou anual, informe a data da próxima cobrança. O vencimento e o pagamento da fatura são separados.':'A data da primeira ocorrência define quando a movimentação entra no Extrato. Antes do saldo inicial, nada é descontado. O aplicativo não consulta bancos: confira o valor e a data efetivos.';
 }
 function openRecEditor(id=null,mode='conta'){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));editingRecId=r?r.id:null;
@@ -109,7 +126,8 @@ function openRecEditor(id=null,mode='conta'){
  placeCardRow();cardOptions();cardSelect.value=r&&r.cartaoId?String(r.cartaoId):'';
  $('rec-category').value=r?r.categoria:'';recurrenceSubcategories();$('rec-subcategory').value=r?r.subcategoria:'';
  $('rec-frequency').value=r?r.frequencia:'mensal';$('rec-start').value=r?r.inicio:today();
- $('rec-guidance').textContent=editingRecMode==='cartao'?'Data da primeira ocorrência = dia da cobrança no cartão. O vencimento da fatura é separado. Compras futuras são previsões e cobranças anteriores à abertura ficam só no histórico do cartão.':'A data da primeira ocorrência define quando a movimentação entra no Extrato. Antes do saldo inicial, nada é descontado. O aplicativo não consulta bancos: confira o valor e a data efetivos.';
+ $('rec-day').value=r&&r.metodo==='cartao'&&r.frequencia==='mensal'?String(r.diaCobranca||Number(r.inicio.slice(8))):'';
+ recurrenceTiming();
  $('rec-submit').textContent=r?'Salvar alterações':editingRecMode==='cartao'?'Salvar assinatura':'Salvar recorrência';$('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
 }
 function closeRecEditor(){$('rec-form').hidden=true;editingRecId=null;editingRecMode='conta';placeCardRow();$('recorrentes-area').appendChild($('rec-form'));}
@@ -163,7 +181,7 @@ function renderRecurring(){
    const freq={semanal:'Semanal',mensal:'Mensal',anual:'Anual'}[r.frequencia]||r.frequencia;
    const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));
    return `<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">${escHtml(r.nome)}</span><span class="rec-tag${ended?' inactive':''}">${ended?'Encerrado':r.tipo==='entrada'?'Entrada':'Saída'}</span></div>
-    <div class="rec-item-sub"><strong style="color:#f5f5f2">${r.tipo==='saida'?'−':'+'}${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo]||r.metodo)}${card?' ('+escHtml(card.bank)+')':''}<br>Início: ${displayDate(r.inicio)}${r.fim?' · Encerramento anterior: '+displayDate(r.fim):''}${next?' · Próxima: '+displayDate(next):''}</div>
+    <div class="rec-item-sub"><strong style="color:#f5f5f2">${r.tipo==='saida'?'−':'+'}${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo]||r.metodo)}${card?' ('+escHtml(card.bank)+')':''}<br>${r.metodo==='cartao'&&r.frequencia==='mensal'?'Dia da cobrança: '+(r.diaCobranca||Number(r.inicio.slice(8))):'Início: '+displayDate(r.inicio)}${r.fim?' · Encerramento anterior: '+displayDate(r.fim):''}${next?' · Próxima: '+displayDate(next):''}</div>
     <div class="rec-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir agora</button></div></div>`;
   }).join('');
  }
@@ -174,13 +192,19 @@ function saveRecEditor(event){
  event.preventDefault();
  const existing=S.recorrentes.find(x=>String(x.id)===String(editingRecId));
  const nome=$('rec-name').value.trim(),valor=Number($('rec-value').value),tipo=$('rec-type').value,metodo=$('rec-method').value,cartaoId=metodo==='cartao'?Number($('rec-card').value):null;
- const inicio=$('rec-start').value,fim=existing?existing.fim||null:null,frequencia=$('rec-frequency').value,categoria=$('rec-category').value,subcategoria=$('rec-subcategory').value;
+ let inicio=$('rec-start').value;const fim=existing?existing.fim||null:null,frequencia=$('rec-frequency').value,categoria=$('rec-category').value,subcategoria=$('rec-subcategory').value;
+ const mensalCartao=metodo==='cartao'&&frequencia==='mensal';
+ const diaCobranca=mensalCartao?Number($('rec-day').value):null;
+ if(mensalCartao){
+  if($('rec-day').value.trim()===''||!Number.isInteger(diaCobranca)||diaCobranca<1||diaCobranca>31){appAlert('Informe um dia da cobrança entre 1 e 31.');return;}
+  inicio=proximaCobrancaMensal(existing?datePlusOne(today()):today(),diaCobranca);
+ }
  if(!nome||!valorMonetarioValido(valor)||valor<=0||!dataISOValida(inicio)||fim&&!dataISOValida(fim)||fim&&fim<=inicio||!['semanal','mensal','anual'].includes(frequencia)||!['entrada','saida'].includes(tipo)||!categoria||!subcategoria){appAlert('Preencha descrição, valor, categoria e datas válidas.');return;}
  if(tipo==='entrada'&&!['recebimento','pix','transferencia'].includes(metodo)||tipo==='saida'&&!['cartao','debito_automatico','debito','pix','transferencia'].includes(metodo)){appAlert('Escolha uma forma de pagamento válida.');return;}
  if((editingRecMode==='cartao')!==(metodo==='cartao')){appAlert('Escolha a aba correspondente ao registro.');return;}
  if(metodo==='cartao'&&!S.cartoes.some(c=>String(c.id)===String(cartaoId))){appAlert('Cadastre e selecione um cartão antes de salvar.');return;}
  let novoId=novoIdGlobal();while(S.recorrentes.some(x=>String(x.id)===String(novoId)))novoId++;
- const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false};
+ const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,...(mensalCartao?{diaCobranca}:{})};
  if(existing){
   // Passado imutável: edição troca apenas ocorrências a partir de amanhã.
   newRecord.vigenteDesde=datePlusOne(today());
@@ -207,7 +231,7 @@ validarDadosImportados=function(file){
   if(!Array.isArray(dados.recorrentes)||dados.recorrentes.length>2000)throw Error('Cadastro de recorrências inválido.');
   const ids=new Set();
   for(const r of dados.recorrentes){
-   if(!r||typeof r!=='object'||!Number.isSafeInteger(Number(r.id))||Number(r.id)<=0||ids.has(String(r.id))||typeof r.nome!=='string'||!r.nome.trim()||r.nome.length>75||!valorMonetarioValido(r.valor)||r.valor<=0||!['entrada','saida'].includes(r.tipo)||!['cartao','debito_automatico','debito','pix','transferencia','recebimento'].includes(r.metodo)||!['semanal','mensal','anual'].includes(r.frequencia)||!dataISOValida(r.inicio)||r.fim!==null&&r.fim!==undefined&&!dataISOValida(r.fim)||r.vigenteDesde&&!dataISOValida(r.vigenteDesde))throw Error('Recorrência inválida no arquivo.');
+   if(!r||typeof r!=='object'||!Number.isSafeInteger(Number(r.id))||Number(r.id)<=0||ids.has(String(r.id))||typeof r.nome!=='string'||!r.nome.trim()||r.nome.length>75||!valorMonetarioValido(r.valor)||r.valor<=0||!['entrada','saida'].includes(r.tipo)||!['cartao','debito_automatico','debito','pix','transferencia','recebimento'].includes(r.metodo)||!['semanal','mensal','anual'].includes(r.frequencia)||!dataISOValida(r.inicio)||r.fim!==null&&r.fim!==undefined&&!dataISOValida(r.fim)||r.vigenteDesde&&!dataISOValida(r.vigenteDesde)||r.diaCobranca!==undefined&&r.diaCobranca!==null&&(!Number.isInteger(r.diaCobranca)||r.diaCobranca<1||r.diaCobranca>31||r.metodo!=='cartao'||r.frequencia!=='mensal'))throw Error('Recorrência inválida no arquivo.');
    ids.add(String(r.id));
   }
  }
@@ -267,6 +291,7 @@ $('rec-form').addEventListener('submit',saveRecEditor);
 $('rec-type').addEventListener('change',recurrenceType);
 $('rec-method').addEventListener('change',placeCardRow);
 $('rec-category').addEventListener('change',recurrenceSubcategories);
+$('rec-frequency').addEventListener('change',recurrenceTiming);
 for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('click',event=>{
  const btn=event.target.closest('button');if(!btn)return;
  if(btn.dataset.recedit)openRecEditor(btn.dataset.recedit);

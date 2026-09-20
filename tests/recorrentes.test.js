@@ -10,11 +10,16 @@ const isoDate=(y,m,d)=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(
 const dataISOValida=v=>{if(typeof v!=='string'||!/^\d{4}-\d\d-\d\d$/.test(v))return false;const d=new Date(v+'T12:00:00');return !Number.isNaN(d.getTime())&&isoDate(d.getFullYear(),d.getMonth(),d.getDate())===v;};
 const ctx={Date,Error,Number,String,Array,Math,console,module:{exports:{}},isoDate,dataISOValida};
 vm.runInNewContext(js,ctx);
-const {proximaDataRecorrente,datasRecorrentes}=ctx.module.exports;
+const {proximaDataRecorrente,proximaCobrancaMensal,datasRecorrentes}=ctx.module.exports;
 assert.strictEqual(proximaDataRecorrente('2026-01-31','mensal',1),'2026-02-28');
 assert.strictEqual(proximaDataRecorrente('2026-01-31','mensal',2),'2026-03-31');
 assert.strictEqual(proximaDataRecorrente('2026-09-18','semanal',1),'2026-09-25');
 assert.strictEqual(proximaDataRecorrente('2024-02-29','anual',1),'2025-02-28');
+assert.strictEqual(proximaCobrancaMensal('2026-09-20',10),'2026-10-10','Dia 10 após 20/09 deve começar em 10/10');
+assert.strictEqual(proximaCobrancaMensal('2026-09-10',10),'2026-09-10','Cobrança de hoje pode ocorrer hoje');
+assert.strictEqual(proximaCobrancaMensal('2026-02-15',31),'2026-02-28','Mês curto usa último dia');
+assert.deepStrictEqual(Array.from(datasRecorrentes({metodo:'cartao',inicio:'2026-02-28',diaCobranca:31,frequencia:'mensal'},'2026-04-30')),['2026-02-28','2026-03-31','2026-04-30'],'O dia 31 deve voltar no mês seguinte');
+assert(js.includes('id=\"rec-day\"')&&js.includes('recurrenceTiming()'),'Formulário mensal do cartão deve pedir somente dia');
 assert.deepStrictEqual(Array.from(datasRecorrentes({inicio:'2026-08-05',frequencia:'mensal',fim:'2026-11-01'},'2026-12-31')),['2026-08-05','2026-09-05','2026-10-05']);
 assert.deepStrictEqual(Array.from(datasRecorrentes({inicio:'2026-08-05',frequencia:'mensal',vigenteDesde:'2026-09-19'},'2026-11-30')),['2026-10-05','2026-11-05']);
 for(const token of ['recorrenciaData','recorrenciaIgnoradas','saldoInicial.data','originalJaRegistrado','syncRecurring','cardForecasts','cashForecastsForMonth','deleteRec','openRecEditor','appConfirm'])assert(js.includes(token),'Regra ausente: '+token);
