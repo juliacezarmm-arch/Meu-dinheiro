@@ -1,0 +1,32 @@
+name: Corrigir dia recorrente do cartao
+on:
+  push:
+    paths:
+      - .github/workflows/patch-rec-day-20260920.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  ajuste:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Corrigir agenda mensal de assinaturas
+        run: python3 tools/patch-rec-day-20260920.py
+      - name: Validar codigo e financas
+        run: |
+          node --check js/recorrentes.js
+          node tests/recorrentes.test.js
+          node tests/finance.test.js
+          node tests/marco-zero.test.js
+          node tests/card-ux.test.js
+          node tests/autosave.test.js
+      - name: Publicar correcao isolada
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/recorrentes.js tests/recorrentes.test.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Usar dia mensal da cobranca nas assinaturas do cartao'
+          git push
