@@ -18,7 +18,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-sans);color:var(--color-text-primary);background:var(--color-background-primary);min-height:100vh;color-scheme:dark}
-.app{max-width:760px;margin:0 auto;padding:1rem 0}
+.app{max-width:820px;margin:0 auto;padding:1rem 0}
 .header{display:flex;align-items:center;gap:10px;padding:1rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)}
 .header h1{font-size:20px;font-weight:500}
 .brand-logo{width:42px;height:42px;object-fit:contain;flex:none;border:0;background:transparent;padding:0;margin:0}
@@ -72,7 +72,15 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .extrato-pagar{font:700 10px var(--font-sans);padding:6px 5px;background:#1D9E75;border:1px solid #1D9E75;border-radius:7px;color:white;cursor:pointer;white-space:nowrap}
 #ext-wrap td:nth-child(5){font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
 #ext-wrap td:last-child{overflow:visible;white-space:nowrap;text-align:right}
-#cc-wrap td:nth-child(6){font-variant-numeric:tabular-nums;white-space:nowrap}
+#cc-wrap .cc-money{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip;font-size:11px;font-weight:700}
+#cc-wrap .cc-table-wrap{width:100%;overflow-x:auto}
+#cc-wrap .cc-launch-table{min-width:720px}
+#cc-wrap .cc-description{white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+#cc-wrap .cc-subcategory{font-size:11px;color:var(--color-text-secondary);margin-top:3px}
+#cc-wrap .cc-installments{text-align:center;font-weight:700}
+#cc-wrap .cc-actions{white-space:nowrap;overflow:visible;text-align:right}
+#cc-wrap .cc-group-title th{background:#171716;color:#9FE1CB;font-size:11px;font-weight:800;letter-spacing:.02em;padding:10px 7px 6px;border-bottom:1px solid #363631}
+#cc-wrap .cc-group-title:not(:first-child) th{padding-top:16px}
 @media(max-width:580px){#ext-wrap table{font-size:11px}#ext-wrap th,#ext-wrap td{padding:6px 3px}#ext-wrap th:last-child{width:94px!important}#ext-wrap .extrato-pagar{font-size:9px;padding:5px 3px}#cc-wrap table{font-size:11px}#cc-wrap th,#cc-wrap td{padding:6px 3px}}
 th{text-align:left;padding:8px 6px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;font-size:12px}
 td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -80,7 +88,7 @@ td:last-child{white-space:normal}
 #cc-wrap table{font-size:12px}
 #cc-wrap th{font-size:11px;padding:7px 5px}
 #cc-wrap td{padding:7px 5px}
-#cc-wrap td:nth-child(5){font-size:11px;white-space:normal;line-height:1.25;font-weight:700}
+#cc-wrap td.cc-installments{font-size:11px;white-space:nowrap;line-height:1.25;font-weight:700}
 .badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:10px}
 .b-compra{background:#FAEEDA;color:#633806}
 .b-pagamento{background:#E1F5EE;color:#085041}
@@ -468,8 +476,6 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       <button class="today-btn" onclick="goCartaoCurrentMonth()" title="Volta o cartão para o mês atual.">Mês atual</button>
     </div>
 
-    <div class="section-title">Faturas e pagamentos</div>
-    <div id="cc-faturas" class="chart-panel"><div class="hint">Cadastre um cartão para acompanhar o pagamento.</div></div>
     <div class="section-title" title="Lista de compras e parcelas do cartão no mês selecionado.">Lançamentos</div>
     <div id="cc-wrap"><div class="empty">Nenhuma compra ainda.</div></div>
 
@@ -1728,40 +1734,35 @@ function renderCartao(){
     }).join('')+'</div>';
   }
 
-  const faturas=document.getElementById('cc-faturas');
-  faturas.innerHTML=S.cartoes.length?S.cartoes.map(card=>{
-    const total=totalDaFatura(card.id,faturaKey);
-    const vigente=totalDaFaturaFinanceira(card.id,faturaKey);
-    const historico=total-vigente;
-    const pago=pagoNaFaturaFinanceira(card.id,faturaKey);
-    const aberto=Math.max(0,vigente-pago);
-    const historica=!!S.saldoInicial&&total>0&&vigente===0;
-    return `<div class="plain-card" style="margin:0 0 8px"><strong>${escHtml(card.bank)} · ${monthLabel}</strong>
-      ${historica?`<span>Histórico do cartão: ${fmt(total/100)}. Valor anterior à abertura; não gera saída nem saldo pendente.</span>`:`<span>Fatura no controle: ${fmt(vigente/100)} · Pago: ${fmt(pago/100)} · Em aberto: ${fmt(aberto/100)}</span>`}
-      ${historico>0&&!historica?`<span>Parcela(s) históricas fora do controle: ${fmt(historico/100)}.</span>`:''}
-
-      <span>Vencimento padrão: dia ${card.dueDay}${card.paymentDay?' · Pagamento habitual: dia '+card.paymentDay:''}.</span>
-      ${S.extrato.filter(x=>String(x.cardId)===String(card.id)&&x.faturaMes===faturaKey&&movimentoNoControleFinanceiro(x)).length?`<span>Pagamento(s) registrado(s) em: ${S.extrato.filter(x=>String(x.cardId)===String(card.id)&&x.faturaMes===faturaKey&&movimentoNoControleFinanceiro(x)).map(x=>x.data.split('-').reverse().join('/')).join(', ')}.</span>`:''}
-      ${aberto>0&&!historica?'<span>Fatura pendente: marque o pagamento diretamente no Extrato.</span>':(historica?'<span>Somente histórico; sem impacto no saldo.</span>':'<span>Pagamento registrado; sem valor pendente.</span>')}</div>`;
-  }).join(''):'<div class="hint">Cadastre um cartão para acompanhar faturas e pagamentos.</div>';
   const wrap=document.getElementById('cc-wrap');
   const forecasts=typeof window.cardRecurringForecasts==='function'?window.cardRecurringForecasts():[];
   const rows=S.cartao.concat(forecasts).filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
   const parcelasNesteMes=getParcelasCartao().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth));
   if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
-  wrap.innerHTML='<table><thead><tr><th style="width:62px">Data</th><th>Descrição</th><th style="width:74px">Tipo</th><th style="width:54px">Vence</th><th style="width:64px">Parcelas</th><th style="width:108px">Valor total</th><th style="width:54px"></th></tr></thead><tbody>'+
-    rows.map(r=>{
-      const d=new Date(r.data+'T12:00:00');
-      const label=fmt(r.val);
-      const qtdParcelas=Number(r.parcelas)||1;
-      const tipoLabel=r.tipo==='parcelado'?'Parcelado':'À vista';
-      const venc='dia '+(r.vencDia||10);
-      const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
-      const historico=S.saldoInicial&&parcelasNesteMes.some(x=>String(x.id).startsWith(String(r.id)+'-')&&x.data<S.saldoInicial.data);
-      const cat=`${r.subcategoria||'Sem categoria'}${historico?' · Histórico anterior à abertura':''}`;
-      const actions=r.previsto?`<button class="del" type="button" onclick="editRecurringCardForecast(${Number(r.recorrenciaId)})" aria-label="Editar assinatura" title="Edita a programação desta assinatura">✎</button>`:`<button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button>`;
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${escHtml(desc)}<div style="font-size:11px;color:var(--color-text-secondary)">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':tipoLabel}</span></td><td>${venc}</td><td style="text-align:center">${qtdParcelas}x</td><td style="white-space:nowrap;font-variant-numeric:tabular-nums">${label}</td><td>${actions}</td></tr>`;
-    }).join('')+'</tbody></table>';
+  // Separação somente visual: conserva as compras e todas as parcelas no JSON.
+  // O valor da parcela corresponde ao mês da fatura que está sendo visualizado.
+  const grupos=[['À vista',rows.filter(r=>r.tipo!=='parcelado')],['Parcelamentos',rows.filter(r=>r.tipo==='parcelado')]];
+  wrap.innerHTML='<div class="cc-table-wrap"><table class="cc-launch-table"><thead><tr><th style="width:55px">Data</th><th>Descrição</th><th style="width:73px">Tipo</th><th style="width:53px">Vence</th><th style="width:55px">Parcelas</th><th style="width:105px">Valor da parcela</th><th style="width:105px">Valor total</th><th style="width:55px"></th></tr></thead><tbody>'+
+    grupos.map(([titulo,itens])=>{
+      if(!itens.length)return '';
+      const linhas=itens.map(r=>{
+        const d=new Date(r.data+'T12:00:00');
+        const label=fmt(r.val);
+        const qtdParcelas=Number(r.parcelas)||1;
+        const parcelado=r.tipo==='parcelado';
+        const tipoLabel=parcelado?'Parcelado':'À vista';
+        const venc='dia '+(r.vencDia||10);
+        const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
+        const parcelaDoMes=parcelasNesteMes.find(x=>String(x.id).startsWith(String(r.id)+'-'));
+        const valorDaParcela=parcelado?fmt(parcelaDoMes?parcelaDoMes.val:valorParcela(r,0)):'—';
+        const historico=S.saldoInicial&&parcelaDoMes&&parcelaDoMes.data<S.saldoInicial.data;
+        const cat=`${r.subcategoria||'Sem categoria'}${historico?' · Histórico anterior à abertura':''}`;
+        const actions=r.previsto?`<button class="del" type="button" onclick="editRecurringCardForecast(${Number(r.recorrenciaId)})" aria-label="Editar assinatura" title="Edita a programação desta assinatura">✎</button>`:`<button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button>`;
+        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado?qtdParcelas+'x':'—'}</td><td class="cc-money">${valorDaParcela}</td><td class="cc-money">${label}</td><td class="cc-actions">${actions}</td></tr>`;
+      }).join('');
+      return `<tr class="cc-group-title"><th colspan="8" scope="rowgroup">${titulo}</th></tr>`+linhas;
+    }).join('')+'</tbody></table></div>';
+
 }
 
 function delCC(id){const item=S.cartao.find(x=>x.id===id);if(item&&S.extrato.some(x=>String(x.cardId)===String(item.cardId)&&x.faturaMes)){appAlert('Há pagamento vinculado a este cartão. Concilie a fatura antes de excluir compras.');return;}S.cartao=S.cartao.filter(x=>x.id!==id);saveData();renderCartao();renderExtrato();updateResumo();}

@@ -29,7 +29,7 @@ assert.strictEqual(run('movimentoNoControleFinanceiro(S.extrato[2])'),true);
 assert.strictEqual(run("pagoNaFaturaFinanceira(7,'2026-09')"),0,'Pagamento agendado não conta antes de ocorrer');
 run("hoje='2026-09-20'");
 assert.strictEqual(run("pagoNaFaturaFinanceira(7,'2026-09')"),8000,'Pagamento anterior à abertura já está incorporado no saldo de partida');
-assert(html.includes('const historica=!!S.saldoInicial&&total>0&&vigente===0;'),'Histórico da fatura deve considerar dia da abertura');
+assert(!html.includes('id="cc-faturas"')&&html.includes('function totalDaFaturaFinanceira('),'Remover somente painel visual; cálculo do histórico e fatura permanece');
 assert(html.includes('const parcelas=parcelasCartaoFinanceiras().filter('),'Extrato precisa filtrar parcelas pela data exata');
 assert(html.includes('const parcelas=parcelasCartaoFinanceiras();'),'Resumo anual não pode trazer histórico pré-abertura');
 console.log('PASS: marco zero, agosto apenas no Cartão, setembro parcial, outubro previsto, resumo/extrato e pagamentos sem duplicidade');
