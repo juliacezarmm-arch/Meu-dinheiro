@@ -8,7 +8,7 @@ function fn(name){
  const end=script[1].indexOf('\nfunction ',start+10);
  return script[1].slice(start,end<0?script[1].length:end);
 }
-const names=['isoDate','dataISOValida','valorParcela','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','getParcelasCartao','dueDateFor','totalDaFaturaFinanceira','pagoNaFaturaFinanceira','calcularSaldoDisponivelAte','faturasPendentesDoMes','calcularSobraPrevistaAte'];
+const names=['isoDate','dataISOValida','valorParcela','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','getParcelasCartao','dueDateFor','vencimentoDaCompra','totalDaFaturaFinanceira','pagoNaFaturaFinanceira','calcularSaldoDisponivelAte','faturasPendentesDoMes','calcularSobraPrevistaAte'];
 const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error});
 vm.runInContext(`const S={extrato:[],cartao:[],cartoes:[],invest:[],saldoInicial:{valor:1000,data:'2026-09-20',idsIgnorados:[]}};
 function today(){return '2026-09-20';}

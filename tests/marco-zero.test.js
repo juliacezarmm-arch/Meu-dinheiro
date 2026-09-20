@@ -8,7 +8,7 @@ function fn(name){
  const fim=script[1].indexOf('\nfunction ',ini+10);
  return script[1].slice(ini,fim<0?script[1].length:fim);
 }
-const names=['isoDate','monthKey','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','valorParcela','dueDateFor','getParcelasCartao','getMesMap','getResumoCartaoExtrato','isSameMonthDate','totalDaFaturaFinanceira','pagoNaFaturaFinanceira'];
+const names=['isoDate','monthKey','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','valorParcela','dueDateFor','vencimentoDaCompra','getParcelasCartao','getMesMap','getResumoCartaoExtrato','isSameMonthDate','totalDaFaturaFinanceira','pagoNaFaturaFinanceira'];
 const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error});
 vm.runInContext("let hoje='2026-09-18'; function today(){return hoje;} const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];"+names.map(fn).join('\n'),ctx);
 const run=s=>vm.runInContext(s,ctx);

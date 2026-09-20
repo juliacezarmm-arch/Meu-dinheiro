@@ -18,7 +18,7 @@ function get(name){
  const rest=source.slice(start+10),m=/\n(?:async )?function [A-Za-z]/.exec(rest);
  return source.slice(start,m?start+10+m.index:source.length);
 }
-const names=['isoDate','monthKey','dataISOValida','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','valorMonetarioValido','valorParcela','dueDateFor','getParcelasCartao','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','totalDaFaturaFinanceira','pagoNaFaturaFinanceira','diaDeCartaoValido','registrarPagamentoFatura','salvarPagamentoFatura'];
+const names=['isoDate','monthKey','dataISOValida','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','valorMonetarioValido','valorParcela','dueDateFor','vencimentoDaCompra','getParcelasCartao','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','totalDaFaturaFinanceira','pagoNaFaturaFinanceira','diaDeCartaoValido','registrarPagamentoFatura','salvarPagamentoFatura'];
 const elements={};
 function el(id){return elements[id]||(elements[id]={value:'',textContent:'',hidden:true,min:'',max:'',focus(){}});}
 const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error,document:{getElementById:el}});

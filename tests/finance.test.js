@@ -9,7 +9,7 @@ function get(name){
  const end=body[1].indexOf('\nfunction ',start+10);
  return body[1].slice(start,end<0?body[1].length:end);
 }
-const names=['isoDate','monthKey','valorMonetarioValido','valorParcela','novoIdExtrato','saldoInicialValido','calcularSaldoDisponivelAte','receitaReal','movimentoRealizado','dueDateFor','getMesMap','getParcelasCartao','pagoNaFatura','totalDaFatura','reservadoEmMetas','dataISOValida','validarDadosImportados','escHtml'];
+const names=['isoDate','monthKey','valorMonetarioValido','valorParcela','novoIdExtrato','saldoInicialValido','calcularSaldoDisponivelAte','receitaReal','movimentoRealizado','dueDateFor','vencimentoDaCompra','getMesMap','getParcelasCartao','pagoNaFatura','totalDaFatura','reservadoEmMetas','dataISOValida','validarDadosImportados','escHtml'];
 const env=vm.createContext({console,Date,Set,Number,Math,String,Array,Error});
 vm.runInContext("let hoje='2026-09-19';function today(){return hoje;} const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];"+names.map(get).join('\n'),env);
 const run=x=>vm.runInContext(x,env);
