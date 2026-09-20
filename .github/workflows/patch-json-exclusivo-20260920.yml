@@ -12,7 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Implementar JSON exclusivo e atualizacao protegida
-        run: python3 tools/patch-json-exclusivo-20260920.py
+        run: |
+          sed -i 's/20260920-conta2/20260920-dia2/g' tools/patch-json-exclusivo-20260920.py
+          python3 tools/patch-json-exclusivo-20260920.py
       - name: Testar codigo financeiro e interfaces
         run: |
           node --check js/recorrentes.js
