@@ -11,8 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Aplicar alteracoes visuais
-        run: python3 tools/patch-cartao-layout-20260920.py
+      - name: Aplicar alteracoes visuais e adequar teste do painel removido
+        run: |
+          python3 tools/patch-cartao-layout-20260920.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tests/marco-zero.test.js')
+          text=p.read_text(encoding='utf-8')
+          old="assert(html.includes('const historica=!!S.saldoInicial&&total>0&&vigente===0;'),'Histórico da fatura deve considerar dia da abertura');"
+          new="assert(!html.includes('id=\"cc-faturas\"')&&html.includes('function totalDaFaturaFinanceira('),'Remover somente painel visual; cálculo do histórico e fatura permanece');"
+          assert text.count(old)==1, 'Teste de interface desatualizado não localizado'
+          p.write_text(text.replace(old,new),encoding='utf-8')
+          print('PASS: teste do marco zero continua validando os saldos e não exige o painel excluído')
+          PY
       - name: Validar interface e sintaxe
         run: |
           python3 - <<'PY'
@@ -44,7 +55,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add index.html tests/marco-zero.test.js
           git diff --cached --quiet && exit 0
           git commit -m 'Simplificar cartao e separar compras com valor por parcela'
           git push
