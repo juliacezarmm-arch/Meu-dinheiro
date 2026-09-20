@@ -37,7 +37,7 @@ const section=document.createElement('section');section.id='recorrentes-area';se
 section.innerHTML=`<div class="rec-top"><div><strong>Registros recorrentes</strong><p>Cadastre salário, débito automático, Pix ou transferência. Exclua o cadastro quando quiser; os lançamentos anteriores permanecem.</p></div><button type="button" class="rec-button primary" id="rec-open">+ Novo registro</button></div>
 <form class="rec-form" id="rec-form" hidden novalidate><strong id="rec-form-title">Novo registro recorrente</strong>
 <div class="row row2" style="margin-top:12px"><label>Descrição<input id="rec-name" type="text" maxlength="75" placeholder="Ex.: Office, salário, academia" required></label><label>Valor (R$)<input id="rec-value" type="number" min="0.01" step="0.01" required placeholder="60,00"></label></div>
-<div class="row row2"><label>Tipo<select id="rec-type"><option value="saida">Despesa</option><option value="entrada">Entrada / salário</option></select></label><label>Onde acontece?<select id="rec-method"><option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="pix">Pix</option><option value="transferencia">Transferência</option></select></label></div>
+<div class="row row2"><label>Tipo<select id="rec-type"><option value="saida">Despesa</option><option value="entrada">Entrada / salário</option></select></label><label>Forma de movimentação<select id="rec-method"><option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="pix">Pix</option><option value="transferencia">Transferência</option></select></label></div>
 <div class="row row1" id="rec-card-row" hidden><label>Cartão<select id="rec-card"><option value="">Selecione o cartão</option></select></label></div>
 <div class="row row2"><label>Categoria<select id="rec-category"></select></label><label>Subcategoria<select id="rec-subcategory"></select></label></div>
 <div class="row row2"><label>Frequência<select id="rec-frequency"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="anual">Anual</option></select></label><label>Data da primeira ocorrência<input id="rec-start" type="date" required></label></div>
@@ -50,6 +50,15 @@ const cardSection=document.createElement('section');cardSection.id='rec-cartao-a
 cardSection.innerHTML='<div class="rec-top"><div><strong>Assinaturas recorrentes no cartão</strong><p>Cadastre cobranças periódicas do crédito aqui, separadas dos débitos da conta. Excluir interrompe o futuro, mas mantém as cobranças anteriores.</p></div><button type="button" class="rec-button primary" id="rec-card-open">+ Nova assinatura</button></div><div class="rec-list" id="rec-card-list"></div>';
 const cardAnchor=document.querySelector('#page-cartao .section-title:nth-of-type(2)')||document.querySelector('#page-cartao #cc-card').closest('.add-form');cardAnchor.parentNode.insertBefore(cardSection,cardAnchor);
 const $=id=>document.getElementById(id);
+const cardRow=$('rec-card-row');
+const cardSelect=$('rec-card');
+cardRow.hidden=true;cardRow.remove();
+function placeCardRow(){
+  if(editingRecMode==='cartao'){
+    $('rec-form').insertBefore(cardRow,$('rec-category').closest('.row'));
+    cardRow.hidden=false;cardRow.style.removeProperty('display');
+  }else{cardRow.hidden=true;cardRow.remove();}
+}
 const datePlusOne=v=>{const d=new Date(v+'T12:00:00');d.setDate(d.getDate()+1);return isoDate(d.getFullYear(),d.getMonth(),d.getDate());};
 const displayDate=v=>v?v.slice(8,10)+'/'+v.slice(5,7)+'/'+v.slice(0,4):'';
 const kindLabel={debito_automatico:'Débito automático',debito:'Débito',pix:'Pix',transferencia:'Transferência',cartao:'Cartão de crédito',recebimento:'Conta / salário'};
@@ -60,7 +69,7 @@ function originalJaRegistrado(r,data){
 }
 function ocorrencias(r,ate){return datasRecorrentes(r,ate).filter(data=>!S.recorrenciaIgnoradas.includes(key(r,data)));}
 function cardOptions(){
- const sel=$('rec-card');const previous=sel.value;
+ const sel=cardSelect;const previous=sel.value;
  sel.innerHTML='<option value="">Selecione o cartão</option>'+S.cartoes.map(c=>`<option value="${c.id}">${escHtml(c.bank)} · vence dia ${c.dueDay}</option>`).join('');
  if(S.cartoes.some(c=>String(c.id)===previous))sel.value=previous;
 }
@@ -80,11 +89,11 @@ function recurrenceType(){
  const entrada=editingRecMode==='conta'&&$('rec-type').value==='entrada',sel=$('rec-method');
  if(editingRecMode==='cartao'){
   $('rec-type').value='saida';sel.innerHTML='<option value="cartao">Cartão de crédito</option>';
- }else if(entrada)sel.innerHTML='<option value="recebimento">Conta / salário</option>';
+ }else if(entrada)sel.innerHTML='<option value="recebimento">Recebimento / salário</option><option value="pix">Pix recebido</option><option value="transferencia">Transferência recebida</option>';
  else sel.innerHTML='<option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="pix">Pix</option><option value="transferencia">Transferência</option>';
  $('rec-type').closest('label').hidden=editingRecMode==='cartao';
  $('rec-method').closest('label').hidden=editingRecMode==='cartao';
- $('rec-card-row').hidden=editingRecMode!=='cartao';
+ placeCardRow();
  recurrenceCategories();
 }
 function openRecEditor(id=null,mode='conta'){
@@ -97,13 +106,13 @@ function openRecEditor(id=null,mode='conta'){
  $('rec-name').value=r?r.nome:'';$('rec-value').value=r?r.valor:'';
  $('rec-type').value=r?r.tipo:'saida';recurrenceType();
  $('rec-method').value=editingRecMode==='cartao'?'cartao':r?r.metodo:'debito_automatico';
- $('rec-card-row').hidden=editingRecMode!=='cartao';cardOptions();$('rec-card').value=r&&r.cartaoId?String(r.cartaoId):'';
+ placeCardRow();cardOptions();cardSelect.value=r&&r.cartaoId?String(r.cartaoId):'';
  $('rec-category').value=r?r.categoria:'';recurrenceSubcategories();$('rec-subcategory').value=r?r.subcategoria:'';
  $('rec-frequency').value=r?r.frequencia:'mensal';$('rec-start').value=r?r.inicio:today();
  $('rec-guidance').textContent=editingRecMode==='cartao'?'Data da primeira ocorrência = dia da cobrança no cartão. O vencimento da fatura é separado. Compras futuras são previsões e cobranças anteriores à abertura ficam só no histórico do cartão.':'A data da primeira ocorrência define quando a movimentação entra no Extrato. Antes do saldo inicial, nada é descontado. O aplicativo não consulta bancos: confira o valor e a data efetivos.';
  $('rec-submit').textContent=r?'Salvar alterações':editingRecMode==='cartao'?'Salvar assinatura':'Salvar recorrência';$('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
 }
-function closeRecEditor(){$('rec-form').hidden=true;editingRecId=null;editingRecMode='conta';}
+function closeRecEditor(){$('rec-form').hidden=true;editingRecId=null;editingRecMode='conta';placeCardRow();$('recorrentes-area').appendChild($('rec-form'));}
 function cardForecasts(){
  const hoje=today(),horizon=new Date(hoje+'T12:00:00');horizon.setMonth(horizon.getMonth()+36);
  const selecionado=new Date(cartaoMes.getFullYear(),cartaoMes.getMonth()+13,1,12);
@@ -155,7 +164,7 @@ function renderRecurring(){
    const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));
    return `<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">${escHtml(r.nome)}</span><span class="rec-tag${ended?' inactive':''}">${ended?'Encerrado':r.tipo==='entrada'?'Entrada':'Saída'}</span></div>
     <div class="rec-item-sub"><strong style="color:#f5f5f2">${r.tipo==='saida'?'−':'+'}${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo]||r.metodo)}${card?' ('+escHtml(card.bank)+')':''}<br>Início: ${displayDate(r.inicio)}${r.fim?' · Encerramento anterior: '+displayDate(r.fim):''}${next?' · Próxima: '+displayDate(next):''}</div>
-    <div class="rec-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir</button></div></div>`;
+    <div class="rec-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir agora</button></div></div>`;
   }).join('');
  }
  $('rec-list').innerHTML=html(ativos.filter(r=>r.metodo!=='cartao'),'Nenhum registro recorrente da conta. Cadastre salário, Pix ou débito automático.');
@@ -167,7 +176,7 @@ function saveRecEditor(event){
  const nome=$('rec-name').value.trim(),valor=Number($('rec-value').value),tipo=$('rec-type').value,metodo=$('rec-method').value,cartaoId=metodo==='cartao'?Number($('rec-card').value):null;
  const inicio=$('rec-start').value,fim=existing?existing.fim||null:null,frequencia=$('rec-frequency').value,categoria=$('rec-category').value,subcategoria=$('rec-subcategory').value;
  if(!nome||!valorMonetarioValido(valor)||valor<=0||!dataISOValida(inicio)||fim&&!dataISOValida(fim)||fim&&fim<=inicio||!['semanal','mensal','anual'].includes(frequencia)||!['entrada','saida'].includes(tipo)||!categoria||!subcategoria){appAlert('Preencha descrição, valor, categoria e datas válidas.');return;}
- if(tipo==='entrada'&&metodo!=='recebimento'||tipo==='saida'&&!['cartao','debito_automatico','debito','pix','transferencia'].includes(metodo)){appAlert('Escolha uma forma de pagamento válida.');return;}
+ if(tipo==='entrada'&&!['recebimento','pix','transferencia'].includes(metodo)||tipo==='saida'&&!['cartao','debito_automatico','debito','pix','transferencia'].includes(metodo)){appAlert('Escolha uma forma de pagamento válida.');return;}
  if((editingRecMode==='cartao')!==(metodo==='cartao')){appAlert('Escolha a aba correspondente ao registro.');return;}
  if(metodo==='cartao'&&!S.cartoes.some(c=>String(c.id)===String(cartaoId))){appAlert('Cadastre e selecione um cartão antes de salvar.');return;}
  let novoId=novoIdGlobal();while(S.recorrentes.some(x=>String(x.id)===String(novoId)))novoId++;
@@ -182,7 +191,7 @@ function saveRecEditor(event){
 }
 async function deleteRec(id){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r)return;
- if(!await appConfirm('Excluir '+r.nome+' agora? Os lançamentos anteriores continuarão no histórico e nenhuma ocorrência futura será gerada.'))return;
+ if(!await appConfirm('Excluir agora o cadastro de '+r.nome+'? As movimentações já registradas ficam no histórico, mas todas as previsões futuras são removidas.'))return;
  r.excluida=true;r.fim=today();saveData();syncRecurring();renderCartao();renderExtrato();updateResumo();
 }
 function ignoreRecurring(row){
@@ -256,7 +265,7 @@ $('rec-open').addEventListener('click',()=>openRecEditor());$('rec-close').addEv
 $('rec-card-open').addEventListener('click',()=>openRecEditor(null,'cartao'));
 $('rec-form').addEventListener('submit',saveRecEditor);
 $('rec-type').addEventListener('change',recurrenceType);
-$('rec-method').addEventListener('change',()=>{$('rec-card-row').hidden=editingRecMode!=='cartao';});
+$('rec-method').addEventListener('change',placeCardRow);
 $('rec-category').addEventListener('change',recurrenceSubcategories);
 for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('click',event=>{
  const btn=event.target.closest('button');if(!btn)return;
@@ -265,7 +274,7 @@ for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('cli
 });
 const oldShowPage=showPage;
 showPage=function(id,btn){oldShowPage(id,btn);if(id==='extrato'||id==='cartao')renderRecurring();};
-$('rec-start').value=today();recurrenceType();renderRecurring();
+$('rec-start').value=today();recurrenceType();closeRecEditor();renderRecurring();
 const midnightPoll=setInterval(()=>{if(S.recorrentes.length)syncRecurring();},5*60*1000);
 })();
 }

@@ -1,6 +1,6 @@
 const assert=require('assert'),fs=require('fs'),vm=require('vm');
 const html=fs.readFileSync('index.html','utf8'),js=fs.readFileSync('js/recorrentes.js','utf8');
-assert(html.includes('<script src="js/recorrentes.js"></script>'),'Carregamento de recorrências ausente');
+assert(html.includes('<script src="js/recorrentes.js?v=20260920-conta2"></script>'),'Carregamento de recorrências ausente');
 assert(html.includes('id="ext-gasto-tipo" aria-hidden="true"'),'Tipo fixo/variável não deve aparecer no Extrato');
 assert(html.includes('id="cc-gasto-tipo" tabindex="-1"'),'Tipo fixo/variável não deve aparecer no Cartão');
 assert(!/(?<![\w.])(?:alert|confirm|prompt)\s*\(/.test(js),'Não chamar caixas nativas');
@@ -22,5 +22,7 @@ assert(js.includes("cardSection.id='rec-cartao-area'"),'Assinaturas precisam de 
 assert(js.includes('id=\"rec-card-open\"'),'Botão de assinatura ausente');
 assert(js.includes('r.excluida=true;r.fim=today()'),'Excluir deve suspender o futuro e preservar histórico');
 assert(!js.includes('id=\"rec-end\"')&&!js.includes('data-reccancel'),'Campos duplicados de encerramento não devem aparecer');
-assert(js.includes('.rec-form [hidden]{display:none!important}'),'Campos ocultos não podem aparecer pelo CSS');
+assert(js.includes('cardRow.hidden=true;cardRow.remove()'),'Campo de cartão precisa sair fisicamente do formulário da conta');
+assert(!js.includes('id=\"rec-end\"'),'Encerramento não pertence ao cadastro inicial');
+assert(js.includes('data-recdelete=\"${r.id}\">Excluir agora'),'Exclusão deve estar na lista dos registros criados');
 console.log('PASS: recorrências, separação conta/cartão, exclusão prospectiva, histórico e validação');

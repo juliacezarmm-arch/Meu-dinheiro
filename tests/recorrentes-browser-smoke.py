@@ -7,7 +7,7 @@ if not chrome:
  sys.exit(2)
 root=Path.cwd()
 html=(root/'index.html').read_text(encoding='utf-8')
-assert '<script src="js/recorrentes.js"></script>' in html
+assert '<script src="js/recorrentes.js?v=20260920-conta2"></script>' in html
 script=r'''<script>
 (function(){
 const report=(ok,msg)=>{document.body.insertAdjacentHTML('beforeend','<pre id="smoke-result">'+(ok?'PASS: ':'FAIL: ')+String(msg).replace(/</g,'&lt;')+'</pre>');};
@@ -21,7 +21,8 @@ try{
  document.getElementById('rec-open').click();
  if(document.getElementById('rec-form').parentElement.id!=='recorrentes-area')throw Error('Cadastro da conta fora do Extrato');
  if(Array.from(document.getElementById('rec-method').options).some(o=>o.value==='cartao'))throw Error('Opção cartão apareceu nos débitos da conta');
- if(!document.getElementById('rec-card-row').hidden)throw Error('Campo cartão visível no Extrato');
+ if(document.querySelector('#rec-form #rec-card-row'))throw Error('Campo cartão ainda está dentro do formulário da conta');
+ if(document.getElementById('rec-card-row'))throw Error('Campo cartão não deveria existir no Extrato');
  const el=id=>document.getElementById(id);
  el('rec-name').value='Salário smoke';el('rec-value').value='100';el('rec-type').value='entrada';el('rec-type').dispatchEvent(new Event('change'));
  el('rec-category').value='Trabalho';el('rec-category').dispatchEvent(new Event('change'));el('rec-subcategory').value='Salário';
@@ -37,6 +38,7 @@ try{
  if(el('rec-form').parentElement.id!=='rec-cartao-area')throw Error('Assinatura não está na aba Cartão');
  if(el('rec-card-row').hidden||el('rec-method').value!=='cartao')throw Error('Assinatura sem seleção exclusiva de cartão');
  if(!el('rec-method').closest('label').hidden)throw Error('Forma de pagamento redundante na assinatura');
+ if(el('rec-card-row').parentElement.id!=='rec-form')throw Error('Cartão exclusivo não inserido no formulário da assinatura');
  report(true,'Cadastro separado para conta e cartão, entrada automática, saldo e idempotência');
 }catch(e){report(false,e.stack||e.message);}
 },1200);
