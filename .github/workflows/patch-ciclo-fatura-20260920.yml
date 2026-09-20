@@ -11,8 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Aplicar correção no código existente
-        run: python3 tools/patch-ciclo-fatura-20260920.py
+      - name: Aplicar correção no código e adaptar testes existentes
+        run: |
+          python3 tools/patch-ciclo-fatura-20260920.py
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ('finance','marco-zero','card-ux','planejamento'):
+              p=Path('tests')/(name+'.test.js')
+              s=p.read_text(encoding='utf-8')
+              target="'dueDateFor'"
+              assert s.count(target)==1,(name,'citação esperada uma vez',s.count(target))
+              s=s.replace(target,"'dueDateFor','vencimentoDaCompra'",1)
+              p.write_text(s,encoding='utf-8')
+          print('Testes antigos adaptados para carregar a mesma função de parcelas do aplicativo.')
+          PY
       - name: Verificar sintaxe e regressões financeiras
         run: |
           python3 - <<'PY'
@@ -37,7 +49,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add index.html tests/finance.test.js tests/marco-zero.test.js tests/card-ux.test.js tests/planejamento.test.js
           git diff --cached --quiet && exit 0
           git commit -m 'Corrigir competência das faturas para o mês seguinte sem fechamento'
           git push
