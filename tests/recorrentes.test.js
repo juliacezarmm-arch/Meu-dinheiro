@@ -17,5 +17,10 @@ assert.strictEqual(proximaDataRecorrente('2026-09-18','semanal',1),'2026-09-25')
 assert.strictEqual(proximaDataRecorrente('2024-02-29','anual',1),'2025-02-28');
 assert.deepStrictEqual(Array.from(datasRecorrentes({inicio:'2026-08-05',frequencia:'mensal',fim:'2026-11-01'},'2026-12-31')),['2026-08-05','2026-09-05','2026-10-05']);
 assert.deepStrictEqual(Array.from(datasRecorrentes({inicio:'2026-08-05',frequencia:'mensal',vigenteDesde:'2026-09-19'},'2026-11-30')),['2026-10-05','2026-11-05']);
-for(const token of ['recorrenciaData','recorrenciaIgnoradas','saldoInicial.data','originalJaRegistrado','syncRecurring','cardForecasts','cashForecastsForMonth','cancelRec','deleteRec','openRecEditor','appConfirm'])assert(js.includes(token),'Regra ausente: '+token);
-console.log('PASS: recorrências mensais, semanais, anuais, fevereiro, cancelamento, edição futura, histórico, interface e validação');
+for(const token of ['recorrenciaData','recorrenciaIgnoradas','saldoInicial.data','originalJaRegistrado','syncRecurring','cardForecasts','cashForecastsForMonth','deleteRec','openRecEditor','appConfirm'])assert(js.includes(token),'Regra ausente: '+token);
+assert(js.includes("cardSection.id='rec-cartao-area'"),'Assinaturas precisam de área própria na aba Cartão');
+assert(js.includes('id=\"rec-card-open\"'),'Botão de assinatura ausente');
+assert(js.includes('r.excluida=true;r.fim=today()'),'Excluir deve suspender o futuro e preservar histórico');
+assert(!js.includes('id=\"rec-end\"')&&!js.includes('data-reccancel'),'Campos duplicados de encerramento não devem aparecer');
+assert(js.includes('.rec-form [hidden]{display:none!important}'),'Campos ocultos não podem aparecer pelo CSS');
+console.log('PASS: recorrências, separação conta/cartão, exclusão prospectiva, histórico e validação');
