@@ -15,6 +15,7 @@ jobs:
         run: |
           sed -i "s/if count != 1:/if count != (2 if label == 'texto inicial da conta' else 1):/" tools/patch-rec-extrato-dia-20260920.py
           python3 tools/patch-rec-extrato-dia-20260920.py
+          sed -i 's/Data da primeira ocorrência/Data da próxima cobrança/g' js/recorrentes.js
       - name: Validar scripts e regras financeiras
         run: |
           node --check js/recorrentes.js
