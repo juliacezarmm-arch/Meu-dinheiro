@@ -1041,9 +1041,12 @@ function salvarPagamentoFatura(){
 
 function dueDateFor(baseDate,dueDay,offset,closeDay){
   const fechamento=closeDay?Math.min(closeDay,new Date(baseDate.getFullYear(),baseDate.getMonth()+1,0).getDate()):0;
-  // Sem fechamento informado: regra de planejamento escolhida pela usuária.
-  // Todas as compras do mês entram na fatura do mês seguinte, inclusive dia 1 a 10.
-  const startOffset=closeDay?((baseDate.getDate()>fechamento?1:0)+(dueDay<=closeDay?1:0)):1;
+  // Regra de planejamento sem fechamento real cadastrado: compras ANTES do
+  // dia de vencimento integram a fatura deste mês; no próprio dia ou depois,
+  // a cobrança inicia no mês seguinte. Em meses curtos, ajuste o vencimento.
+  const ultimoDiaCompra=new Date(baseDate.getFullYear(),baseDate.getMonth()+1,0).getDate();
+  const vencimentoNesteMes=Math.min(dueDay,ultimoDiaCompra);
+  const startOffset=closeDay?((baseDate.getDate()>fechamento?1:0)+(dueDay<=closeDay?1:0)):(baseDate.getDate()>=vencimentoNesteMes?1:0);
   const dueBase=new Date(baseDate.getFullYear(),baseDate.getMonth()+startOffset+offset,1);
   const lastDay=new Date(dueBase.getFullYear(),dueBase.getMonth()+1,0).getDate();
   return new Date(dueBase.getFullYear(),dueBase.getMonth(),Math.min(dueDay,lastDay),12);
