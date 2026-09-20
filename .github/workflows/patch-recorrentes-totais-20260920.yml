@@ -12,6 +12,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Aplicar alteracoes pontuais e seguras
         run: python3 tools/patch-recorrentes-totais-20260920.py
+      - name: Adequar verificacao do navegador ao novo cabecalho
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tests/recorrentes-browser-smoke.py')
+          s=p.read_text(encoding='utf-8')
+          old="if(!el('rec-list').querySelector('.rec-item-bottom .rec-inline-actions'))throw Error('Ações fora da linha do dia');"
+          new="if(!el('rec-list').querySelector('.rec-item-head .rec-inline-actions'))throw Error('Ações fora do cabeçalho compacto');"
+          assert s.count(old)==1,'Teste de navegador inesperado; abortar'
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
       - name: Testar totais, sintaxe, calculos e navegador
         run: |
           python3 - <<'PY'
@@ -38,7 +49,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html js/recorrentes.js
+          git add index.html js/recorrentes.js tests/recorrentes-browser-smoke.py
           git diff --cached --quiet && exit 0
           git commit -m 'Compactar recorrentes no Extrato e incluir totais de compras no Cartao'
           git push
