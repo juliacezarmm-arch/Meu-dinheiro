@@ -313,6 +313,23 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 .meta-mode-help{background:#15231b;border:1px solid #315743;border-radius:9px;padding:10px;color:#c3ebd6;font-size:12px;line-height:1.5;margin-bottom:10px}
 .meta-mode-help[hidden]{display:none!important}
 @media(max-width:520px){.inv-meta-row{align-items:flex-start}.inv-meta-row b{font-size:11px}}
+/* Ações de investimentos em janela flutuante, sem esticar cartões vizinhos. */
+.inv-rend-summary{display:flex;justify-content:center;align-items:baseline;gap:9px;flex-wrap:wrap}
+.inv-rend-percent{font-size:14px;font-weight:800;white-space:nowrap;color:#9FE1CB;background:#17392e;border:1px solid #285d4b;border-radius:99px;padding:4px 9px}
+.invest-modal-open{overflow:hidden}
+.invest-dialog{z-index:17000}
+.invest-modal-panel{width:min(100%,680px);max-height:min(90dvh,760px);overflow-y:auto;overscroll-behavior:contain;padding:21px}
+.invest-modal-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:18px;padding-bottom:13px;border-bottom:1px solid #393932}
+.invest-modal-heading h2{font-size:20px;line-height:1.25;margin:4px 0 0;overflow-wrap:anywhere}
+.invest-modal-eyebrow{font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:800;color:#9FE1CB}
+.invest-modal-close{flex:none;width:36px;height:36px;border-radius:9px;border:1px solid #4a4944;background:#282825;color:#f5f5f2;font-size:25px;cursor:pointer;line-height:1}
+.invest-modal-close:hover,.invest-modal-close:focus-visible{border-color:#9FE1CB}
+#invest-modal-content .goal-panel{margin:0;background:transparent;border:0;box-shadow:none;padding:0}
+#invest-modal-content .goal-panel-title{font-size:15px;margin-bottom:12px}
+#invest-modal-content input,#invest-modal-content select{max-width:100%;min-width:0;box-sizing:border-box}
+#invest-modal-content .history-row{grid-template-columns:64px minmax(0,1fr) 110px 24px}
+#invest-modal-content .stock-chart{max-width:100%;overflow-x:auto}
+@media(max-width:580px){.invest-dialog{padding:10px}.invest-modal-panel{padding:16px;max-height:calc(100dvh - 20px)}#invest-modal-content .row2{grid-template-columns:1fr}#invest-modal-content .history-row{grid-template-columns:52px minmax(0,1fr) 80px 24px;gap:5px;font-size:11px}#invest-modal-content .history-value{font-size:11px}.invest-modal-heading h2{font-size:17px}.inv-rend-percent{font-size:12px}}
 </style>
 </head>
 <body>
@@ -549,7 +566,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     </div>
     <div class="cards">
       <div class="card" title="Valor atual somado dos investimentos cadastrados."><div class="label">Total investido</div><div class="value blue" id="inv-total">R$ 0</div></div>
-      <div class="card" title="Quanto os investimentos renderam em relação ao valor colocado."><div class="label">Rendimento</div><div class="value green" id="inv-rend">R$ 0</div></div>
+      <div class="card" title="Quanto os investimentos renderam em relação ao valor colocado."><div class="label">Rendimento</div><div class="inv-rend-summary"><span class="value green" id="inv-rend">R$ 0</span><span class="inv-rend-percent" id="inv-rend-pct" title="Rendimento acumulado dividido pelos aportes líquidos (aportes menos resgates). Indicador aproximado, não é taxa anual nem retorno ponderado pelo tempo.">—</span></div></div>
       <div class="card" title="Quantidade de investimentos cadastrados."><div class="label">Investimentos</div><div class="value" id="inv-qtd">0</div></div>
     </div>
     <div class="month-switch" aria-label="Escolher mês dos investimentos" title="Filtra histórico e rendimento de todos os investimentos pelo mesmo mês.">
@@ -621,6 +638,12 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <p class="site-dialog-copy">Essa data será a saída no Extrato. O vencimento permanece como referência da fatura, sem duplicar a despesa.</p>
   <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('card-payment-editor')">Cancelar</button><button class="site-button primary" type="submit">Confirmar pagamento</button></div></form>
 </div></div>
+<div id="invest-modal" class="site-dialog invest-dialog" role="dialog" aria-modal="true" aria-labelledby="invest-modal-title" hidden onclick="if(event.target===this)fecharPainelInvestimento()">
+  <div class="site-dialog-panel invest-modal-panel">
+    <div class="invest-modal-heading"><div><span class="invest-modal-eyebrow">Investimentos e metas</span><h2 id="invest-modal-title">Detalhes</h2></div><button class="invest-modal-close" type="button" onclick="fecharPainelInvestimento()" aria-label="Fechar janela">×</button></div>
+    <div id="invest-modal-content"></div>
+  </div>
+</div>
 <script>
 const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};
 let dataFileHandle=null;
@@ -673,6 +696,7 @@ let parcelasPagasEmEdicao=null;
 let extratoResumoAberto=false;
 const resumoCharts={annual:false,extrato:false,cartao:false,invest:false,metas:false};
 const investUi={acao:{},historico:{},grafico:{},mes:{},periodo:{}};
+let investModalAtivo=null;
 function fecharAviso(){clearTimeout(appAlert.timer);document.getElementById('app-toast').hidden=true;}
 function appAlert(message){const toast=document.getElementById('app-toast');document.getElementById('app-toast-message').textContent=String(message);toast.hidden=false;clearTimeout(appAlert.timer);appAlert.timer=setTimeout(fecharAviso,6500);}
 function abrirJanela(id){const e=document.getElementById(id);if(!e)return;e.hidden=false;const first=e.querySelector('input,select,button');if(first)first.focus();}
@@ -2133,22 +2157,69 @@ function refreshInvestViews(){
   const newMetaList=document.querySelector('#meta-wrap .goal-list');
   if(newInvestList)newInvestList.scrollTop=investScroll;
   if(newMetaList)newMetaList.scrollTop=metaScroll;
+  sincronizarPainelInvestimento();
 }
 
-function toggleInvestAction(id,acao){
-  investUi.acao[id]=investUi.acao[id]===acao?'':acao;
+// O formulário/histórico/gráfico é gerado pelas funções existentes, mas movido
+// para o modal. Não são criadas cópias dos campos, nem dados financeiros paralelos.
+function fecharPainelInvestimento(devolverFoco=true){
+  const anterior=investModalAtivo;
+  if(anterior){
+    investUi.acao[anterior.id]='';
+    investUi.historico[anterior.id]=false;
+    investUi.grafico[anterior.id]=false;
+  }
+  investModalAtivo=null;
+  const overlay=document.getElementById('invest-modal');
+  if(overlay)overlay.hidden=true;
+  const content=document.getElementById('invest-modal-content');
+  if(content)content.replaceChildren();
+  document.body.classList.remove('invest-modal-open');
+  if(devolverFoco&&anterior){
+    const cartao=document.querySelector('.goal-card[data-invest-id="'+anterior.id+'"]');
+    const botao=cartao&&cartao.querySelector('.goal-actions button');
+    if(botao)botao.focus();
+  }
+}
+function sincronizarPainelInvestimento(){
+  if(!investModalAtivo)return;
+  const {id,tipo}=investModalAtivo;
+  const ativo=tipo==='historico'?investUi.historico[id]:tipo==='grafico'?investUi.grafico[id]:investUi.acao[id]===tipo;
+  const card=document.querySelector('.goal-card[data-invest-id="'+id+'"]');
+  const panel=card&&card.querySelector('.goal-panel');
+  if(!ativo||!panel){fecharPainelInvestimento(false);return;}
+  const item=S.invest.find(x=>String(x.id)===String(id));
+  const overlay=document.getElementById('invest-modal');
+  const content=document.getElementById('invest-modal-content');
+  const titulo=document.getElementById('invest-modal-title');
+  const novo=!overlay.hidden;
+  titulo.textContent=(item?item.nome:'Investimento')+' · '+({dados:'Editar dados','editar-meta':'Editar meta',atualizar:'Atualizar valor',resgatar:'Resgatar',reservar:'Reservar saldo',liberar:'Liberar reserva',aportar:'Aportar',historico:'Histórico',grafico:'Gráfico'}[tipo]||'Detalhes');
+  content.replaceChildren(panel);
+  overlay.hidden=false;
+  document.body.classList.add('invest-modal-open');
+  if(!novo)overlay.querySelector('.invest-modal-close').focus();
+}
+function abrirPainelInvestimento(id,tipo){
+  if(!S.invest.some(x=>String(x.id)===String(id)))return;
+  fecharPainelInvestimento(false);
+  investModalAtivo={id,tipo};
+  investUi.acao[id]='';
+  investUi.historico[id]=false;
+  investUi.grafico[id]=false;
+  if(tipo==='historico')investUi.historico[id]=true;
+  else if(tipo==='grafico')investUi.grafico[id]=true;
+  else investUi.acao[id]=tipo;
   refreshInvestViews();
 }
-
-function toggleInvestHistory(id){
-  investUi.historico[id]=!investUi.historico[id];
-  refreshInvestViews();
-}
-
-function toggleInvestChart(id){
-  investUi.grafico[id]=!investUi.grafico[id];
-  refreshInvestViews();
-}
+function toggleInvestAction(id,acao){abrirPainelInvestimento(id,acao);}
+function toggleInvestHistory(id){abrirPainelInvestimento(id,'historico');}
+function toggleInvestChart(id){abrirPainelInvestimento(id,'grafico');}
+document.addEventListener('keydown',event=>{
+  if(event.key!=='Escape'||!investModalAtivo)return;
+  const confirmacao=document.getElementById('app-confirm-overlay');
+  if(confirmacao&&!confirmacao.hidden)return;
+  event.preventDefault();fecharPainelInvestimento();
+});
 
 function changeInvestMonth(delta){
   investMes=new Date(investMes.getFullYear(),investMes.getMonth()+delta,1);
@@ -2462,6 +2533,7 @@ function renderInvest(){
   const rendimento=total-base;
   document.getElementById('inv-total').textContent=fmt(total);
   document.getElementById('inv-rend').textContent=fmt(rendimento);
+  document.getElementById('inv-rend-pct').textContent=base>0?(rendimento/base*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%':'—';
   document.getElementById('inv-qtd').textContent=investimentos.length;
   const wrap=document.getElementById('inv-wrap');
   if(!investimentos.length){wrap.innerHTML='<div class="empty">Cadastre um investimento e depois registre o dinheiro pelo Extrato.</div>';return;}
@@ -2612,7 +2684,7 @@ function renderDestinoCard(item){
       <div class="month-track"><div class="month-fill" style="width:${metaPct.toFixed(1)}%;background:#2378D4"></div></div>
       <div class="month-value">${metaPct.toFixed(0)}%</div>
     </div>`:'';
-  return `<div class="goal-card">
+  return `<div class="goal-card" data-invest-id="${item.id}">
     <button class="goal-delete" onclick="delInv(${item.id})" aria-label="Excluir" title="Exclui este investimento ou meta. Se já tiver histórico, o app pede confirmação.">×</button>
     <div class="goal-top">
       <div>
