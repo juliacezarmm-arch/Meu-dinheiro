@@ -11,7 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Mover totais para os titulos e remover faixas extras
-        run: python3 tools/patch-cartao-totais-nas-secoes-20260920.py
+        run: |
+          python3 tools/patch-cartao-totais-nas-secoes-20260920.py
+          python3 tools/patch-test-cartao-titulo-20260920.py
       - name: Validar sintaxe, faturas, valores mensais e interface
         run: |
           python3 -c "import re,pathlib; s=pathlib.Path('index.html').read_text(); m=re.search(r'<script\s*>([\s\S]*?)</script>',s); assert m; pathlib.Path('/tmp/cartao-validar.js').write_text(m.group(1))"
