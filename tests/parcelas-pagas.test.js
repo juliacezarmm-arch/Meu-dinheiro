@@ -13,7 +13,7 @@ const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error});
 vm.runInContext("const S={cartao:[],cartoes:[],extrato:[],invest:[],saldoInicial:{valor:1000,data:'2026-09-18',idsIgnorados:[]}};let hoje='2026-09-20';function today(){return hoje;};"+names.map(fn).join('\n'),ctx);
 const run=code=>vm.runInContext(code,ctx);
 assert(html.includes('id="cc-mes"')&&html.includes('#cc-mes{color:#f2b75e'),'Fatura do mes precisa de contraste mais claro');
-assert(html.includes('>Pagas</th>')&&html.includes('class="cc-paid-status"')&&!html.includes('onclick="editarParcelasPagas(${r.id})"')&&html.includes('colspan="9"'),'Pagas deve ser texto nao clicavel, com agrupamento sincronizado');
+assert(html.includes('>Parcelas</th>')&&!html.includes('>Pagas</th>')&&html.includes('class="cc-paid-status"')&&!html.includes('onclick="editarParcelasPagas(${r.id})"')&&html.includes('colspan="7"'),'Progresso exibido na unica coluna Parcelas, sem clique');
 for(const id of ['card-paid-editor','card-paid-count','card-paid-form'])assert(html.includes('id="'+id+'"'),'Dialogo ausente: '+id);
 run("S.cartoes=[{id:1,bank:'Itaú',dueDay:10}];S.cartao=[{id:101,cardId:1,data:'2026-09-02',desc:'Hotel',val:1348.38,parcelas:6,vencDia:10,closeDay:null,tipo:'parcelado'}]");
 assert.strictEqual(run('parcelasPagasConfirmadas(S.cartao[0])'),1,'Hotel pago antes da abertura: 1 de 6, sem clique');

@@ -34,7 +34,7 @@ assert(!js.includes('id=\"rec-end\"')&&!js.includes('data-reccancel'),'Campos du
 assert(js.includes('cardRow.hidden=true;cardRow.remove()'),'Campo de cartão precisa sair fisicamente do formulário da conta');
 assert(js.includes('id=\"rec-card-toggle\"')&&js.includes('setCardRecAreaExpanded'),'Assinaturas precisam ser minimizáveis');
 assert(!js.includes('Assinaturas programadas (ainda não cobradas)'),'Não separar as assinaturas da lista de lançamentos');
-assert(html.includes('Valor total</th>')&&html.includes('Parcelas</th>'),'Quantidade de parcelas e preço devem ser colunas distintas');
+assert(html.includes('>Valor</th>')&&html.includes('>Parcelas</th>')&&!html.includes('Valor total</th>'),'Uma coluna Valor mensal e indicador de parcelas em coluna separada');
 assert(html.includes('calcularSobraPrevistaAte')&&html.includes('faturasPendentesDoMes'),'Sobra prevista deve considerar faturas sem contaminar saldo de hoje');
 assert(!html.includes('onclick=\"registrarPagamentoFatura(${card.id}'),'Pagamento não deve ficar na aba Cartão');
 assert(html.includes('Marcar como pago</button>'),'Extrato deve ter ação de pagamento da fatura');

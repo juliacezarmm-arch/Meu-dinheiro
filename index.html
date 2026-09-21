@@ -75,7 +75,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #ext-wrap td:last-child{overflow:visible;white-space:nowrap;text-align:right}
 #cc-wrap .cc-money{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip;font-size:11px;font-weight:700}
 #cc-wrap .cc-table-wrap{width:100%;overflow-x:auto}
-#cc-wrap .cc-launch-table{min-width:820px}
+#cc-wrap .cc-launch-table{min-width:690px}
 #cc-wrap .cc-description{white-space:normal;overflow-wrap:anywhere;line-height:1.25}
 #cc-wrap .cc-subcategory{font-size:11px;color:var(--color-text-secondary);margin-top:3px}
 #cc-wrap .cc-installments{text-align:center;font-weight:700}
@@ -1798,10 +1798,17 @@ function salvarParcelasPagas(){
   renderCartao();
 }
 
-// Somatorio de valores integrais das compras visiveis, em centavos.
-// Nao e o valor devido na fatura (que utiliza somente as parcelas do mes).
-function somarValoresTotaisCartao(itens){
-  return itens.reduce((centavos,item)=>centavos+Math.round(Number(item.val||0)*100),0)/100;
+// A tabela mostra apenas o valor que pertence ao mes da fatura selecionada.
+// O valor total da compra permanece no JSON e o historico pode aparecer na lista.
+function valorCartaoNoMes(item,parcelasNesteMes){
+  const parcela=parcelasNesteMes.find(x=>String(x.id).startsWith(String(item.id)+'-'));
+  return parcela?Number(parcela.val):null;
+}
+function somarValoresCartaoNoMes(itens,parcelasNesteMes){
+  return itens.reduce((centavos,item)=>{
+    const valor=valorCartaoNoMes(item,parcelasNesteMes);
+    return centavos+(valor===null?0:Math.round(valor*100));
+  },0)/100;
 }
 function renderCartao(){
   const viewYear=cartaoMes.getFullYear();
@@ -1844,29 +1851,28 @@ function renderCartao(){
   // Separação somente visual: conserva as compras e todas as parcelas no JSON.
   // O valor da parcela corresponde ao mês da fatura que está sendo visualizado.
   const grupos=[['À vista',rows.filter(r=>r.tipo!=='parcelado')],['Parcelamentos',rows.filter(r=>r.tipo==='parcelado')]];
-  wrap.innerHTML='<div class="cc-table-wrap"><table class="cc-launch-table"><thead><tr><th style="width:55px">Data</th><th>Descrição</th><th style="width:73px">Tipo</th><th style="width:53px">Vence</th><th style="width:55px">Parcelas</th><th style="width:60px">Pagas</th><th style="width:105px">Valor da parcela</th><th style="width:105px">Valor total</th><th style="width:55px"></th></tr></thead><tbody>'+
+  wrap.innerHTML='<div class="cc-table-wrap"><table class="cc-launch-table"><thead><tr><th style="width:55px">Data</th><th>Descrição</th><th style="width:73px">Tipo</th><th style="width:53px">Vence</th><th style="width:75px">Parcelas</th><th style="width:110px">Valor</th><th style="width:55px"></th></tr></thead><tbody>'+
     grupos.map(([titulo,itens])=>{
       if(!itens.length)return '';
       const linhas=itens.map(r=>{
         const d=new Date(r.data+'T12:00:00');
-        const label=fmt(r.val);
         const qtdParcelas=Number(r.parcelas)||1;
         const parcelado=r.tipo==='parcelado';
         const tipoLabel=parcelado?'Parcelado':'À vista';
         const venc='dia '+(r.vencDia||10);
         const desc=r.banco?`${r.desc} (${r.banco})`:r.desc;
         const parcelaDoMes=parcelasNesteMes.find(x=>String(x.id).startsWith(String(r.id)+'-'));
-        const valorDaParcela=parcelado?fmt(parcelaDoMes?parcelaDoMes.val:valorParcela(r,0)):'—';
+        const valorDoMes=parcelaDoMes?fmt(parcelaDoMes.val):'—';
         const historico=S.saldoInicial&&parcelaDoMes&&parcelaDoMes.data<S.saldoInicial.data;
         const cat=`${r.subcategoria||'Sem categoria'}${historico?' · Histórico anterior à abertura':''}`;
         const actions=r.previsto?`<button class="del" type="button" onclick="editRecurringCardForecast(${Number(r.recorrenciaId)})" aria-label="Editar assinatura" title="Edita a programação desta assinatura">✎</button>`:`<button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button>`;
-        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado?qtdParcelas+'x':'—'}</td><td class="cc-paid">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Historico de parcelas ja pagas e faturas quitadas; nao altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money">${valorDaParcela}</td><td class="cc-money">${label}</td><td class="cc-actions">${actions}</td></tr>`;
+        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
       }).join('');
-      const subtotal=somarValoresTotaisCartao(itens);
-      return `<tr class="cc-group-title"><th colspan="9" scope="rowgroup">${titulo}</th></tr>`+linhas+
-        `<tr class="cc-group-subtotal"><td colspan="7">Subtotal ${titulo} · valor integral das compras</td><td class="cc-money">${fmt(subtotal)}</td><td></td></tr>`;
+      const subtotal=somarValoresCartaoNoMes(itens,parcelasNesteMes);
+      return `<tr class="cc-group-title"><th colspan="7" scope="rowgroup">${titulo}</th></tr>`+linhas+
+        `<tr class="cc-group-subtotal"><td colspan="5">Subtotal ${titulo} · valores do mês</td><td class="cc-money">${fmt(subtotal)}</td><td></td></tr>`;
     }).join('')+
-    `<tr class="cc-grand-total"><td colspan="7">Total dos valores integrais exibidos · não é a fatura do mês</td><td class="cc-money">${fmt(somarValoresTotaisCartao(rows))}</td><td></td></tr>`+
+    `<tr class="cc-grand-total"><td colspan="5">Total exibido neste mês · pode incluir histórico</td><td class="cc-money">${fmt(somarValoresCartaoNoMes(rows,parcelasNesteMes))}</td><td></td></tr>`+
     '</tbody></table></div>';
 
 }
