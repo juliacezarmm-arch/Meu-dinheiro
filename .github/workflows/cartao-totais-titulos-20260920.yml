@@ -1,0 +1,37 @@
+name: Cartao totais na linha dos grupos
+on:
+  push:
+    paths:
+      - .github/workflows/cartao-totais-titulos-20260920.yml
+permissions:
+  contents: write
+jobs:
+  validar-e-publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mover totais para os titulos e remover faixas extras
+        run: python3 tools/patch-cartao-totais-nas-secoes-20260920.py
+      - name: Validar sintaxe, faturas, valores mensais e interface
+        run: |
+          python3 -c "import re,pathlib; s=pathlib.Path('index.html').read_text(); m=re.search(r'<script\s*>([\s\S]*?)</script>',s); assert m; pathlib.Path('/tmp/cartao-validar.js').write_text(m.group(1))"
+          node --check /tmp/cartao-validar.js
+          node --check js/recorrentes.js
+          node tests/layout-totais.test.js
+          node tests/parcelas-pagas.test.js
+          node tests/finance.test.js
+          node tests/ciclo-fatura.test.js
+          node tests/marco-zero.test.js
+          node tests/card-ux.test.js
+          node tests/planejamento.test.js
+          node tests/autosave.test.js
+          node tests/recorrentes.test.js
+          python3 tests/recorrentes-browser-smoke.py
+      - name: Publicar somente codigo validado
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html tests/layout-totais.test.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Mostrar totais de cada grupo no titulo e retirar linhas extras'
+          git push
