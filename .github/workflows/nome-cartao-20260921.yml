@@ -11,7 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Aplicar campo opcional e identificacao consistente dos cartoes
-        run: python3 tools/patch-nome-cartao-20260921.py
+        run: |
+          python3 tools/patch-nome-cartao-20260921.py
+          python3 tools/patch-test-cache-cartao-20260921.py
       - name: Validar sintaxe, nomes, JSON antigo e regras financeiras
         run: |
           python3 -c "import re,pathlib; s=pathlib.Path('index.html').read_text(); m=re.search(r'<script\s*>([\s\S]*?)</script>',s); assert m; pathlib.Path('/tmp/nome-cartao-validar.js').write_text(m.group(1))"
@@ -32,7 +34,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html js/recorrentes.js
+          git add index.html js/recorrentes.js tests/recorrentes.test.js tests/recorrentes-browser-smoke.py
           git diff --cached --quiet && exit 0
           git commit -m 'Permitir nome opcional de cartao e identificar faturas e compras'
           git push
