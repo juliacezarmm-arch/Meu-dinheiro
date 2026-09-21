@@ -1223,7 +1223,8 @@ function updateSubcategorias(){
   const subcategoriaSelect=document.getElementById('ext-subcategoria');
   if(!categoria){subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>';return;}
   const cadastradas=(CATEGORIAS[tipo]&&CATEGORIAS[tipo][categoria])||[];
-  const subcategorias=S.saldoInicial&&tipo==='entrada'?cadastradas.filter(x=>x!=='Dinheiro do mês passado'):cadastradas;
+  const permitidas=S.saldoInicial&&tipo==='entrada'?cadastradas.filter(x=>x!=='Dinheiro do mês passado'):cadastradas;
+  const subcategorias=permitidas.includes('Outros')?permitidas:[...permitidas,'Outros'];
   subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>'+subcategorias.map(sub=>`<option value="${sub}">${sub}</option>`).join('');
 }
 
@@ -1239,7 +1240,8 @@ function updateCartaoSubcategorias(){
   const categoria=document.getElementById('cc-categoria').value;
   const subcategoriaSelect=document.getElementById('cc-subcategoria');
   if(!categoria){subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>';return;}
-  const subcategorias=(CATEGORIAS.saida&&CATEGORIAS.saida[categoria])||[];
+  const cadastradas=(CATEGORIAS.saida&&CATEGORIAS.saida[categoria])||[];
+  const subcategorias=cadastradas.includes('Outros')?cadastradas:[...cadastradas,'Outros'];
   subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>'+subcategorias.map(sub=>`<option value="${sub}">${sub}</option>`).join('');
 }
 

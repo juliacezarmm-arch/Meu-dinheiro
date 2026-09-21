@@ -110,8 +110,10 @@ function recurrenceCategories(){
 function recurrenceSubcategories(){
  const subs=$('rec-subcategory'),prev=subs.value;
  const arr=(CATEGORIAS[$('rec-type').value]||{})[$('rec-category').value]||[];
- subs.innerHTML='<option value="">Escolha a subcategoria</option>'+arr.filter(s=>s!=='Dinheiro do mês passado').map(s=>`<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
- if(arr.includes(prev))subs.value=prev;
+ const permitidas=arr.filter(s=>s!=='Dinheiro do mês passado');
+ const opcoes=permitidas.includes('Outros')?permitidas:[...permitidas,'Outros'];
+ subs.innerHTML='<option value="">Escolha a subcategoria</option>'+opcoes.map(s=>`<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
+ if(opcoes.includes(prev))subs.value=prev;
 }
 function recurrenceType(){
  const entrada=editingRecMode==='conta'&&$('rec-type').value==='entrada',sel=$('rec-method');
