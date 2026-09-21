@@ -1,0 +1,54 @@
+name: Atualizar carregamento do layout compacto do Extrato
+on:
+  push:
+    paths:
+      - .github/workflows/version-three-buttons-20260920.yml
+permissions:
+  contents: write
+jobs:
+  validar-e-publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Atualizar versao de recorrencias em HTML e testes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for file in ('index.html','tests/recorrentes.test.js','tests/recorrentes-browser-smoke.py'):
+              p=Path(file)
+              s=p.read_text(encoding='utf-8')
+              old='js/recorrentes.js?v=20260920-totais1'
+              new='js/recorrentes.js?v=20260920-trio1'
+              assert s.count(old)==1,(file,s.count(old))
+              p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+      - name: Testar sintaxe e requisitos financeiros no Chrome
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          m=re.search(r'<script\s*>([\s\S]*?)</script>',html)
+          assert m
+          Path('/tmp/check-layout-trio.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/check-layout-trio.js
+          node --check js/recorrentes.js
+          node tests/layout-totais.test.js
+          node tests/parcelas-pagas.test.js
+          node tests/finance.test.js
+          node tests/ciclo-fatura.test.js
+          node tests/marco-zero.test.js
+          node tests/planejamento.test.js
+          node tests/autosave.test.js
+          node tests/recorrentes.test.js
+          node tests/card-ux.test.js
+          python3 tests/recorrentes-browser-smoke.py
+      - name: Publicar codigo validado
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html tests/recorrentes.test.js tests/recorrentes-browser-smoke.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'Atualizar versao do script para liberar os tres botoes compactos'
+          git push
