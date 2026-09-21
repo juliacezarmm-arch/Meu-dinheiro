@@ -13,6 +13,7 @@ jobs:
       - name: Aplicar campo opcional e identificacao consistente dos cartoes
         run: |
           python3 tools/patch-nome-cartao-20260921.py
+          python3 tools/patch-linha-cartao-20260921.py
           python3 tools/patch-test-cache-cartao-20260921.py
       - name: Validar sintaxe, nomes, JSON antigo e regras financeiras
         run: |
