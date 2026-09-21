@@ -11,7 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Corrigir colunas e calculo dos valores exibidos
-        run: python3 tools/patch-cartao-valores-mensais-20260920.py
+        run: |
+          python3 tools/patch-cartao-valores-mensais-20260920.py
+          python3 tools/patch-test-cartao-mensal-20260920.py
       - name: Validar sintaxe, faturas, recorrencias, historico e interface
         run: |
           python3 -c "import re,pathlib; s=pathlib.Path('index.html').read_text(); m=re.search(r'<script\s*>([\s\S]*?)</script>',s); assert m; pathlib.Path('/tmp/cartao-validar.js').write_text(m.group(1))"
@@ -31,7 +33,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html tests/layout-totais.test.js tests/parcelas-pagas.test.js
+          git add index.html tests/layout-totais.test.js tests/parcelas-pagas.test.js tests/recorrentes.test.js
           git diff --cached --quiet && exit 0
           git commit -m 'Somar apenas parcelas e compras do mes e unir progresso em Parcelas'
           git push
