@@ -10,25 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Corrigir exibicao do painel e adicionar teste de interacao
+      - name: Corrigir exibicao do painel e testar interacao
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('index.html');s=p.read_text(encoding='utf-8')
           old="  content.hidden=!aberto;\n  button.setAttribute('aria-expanded',String(aberto));\n}\nfunction editarSaldoInicial()"
           new="  content.hidden=!aberto;\n  const panel=document.getElementById('saldo-setup');\n  if(panel&&document.getElementById('extrato-action-buttons'))panel.hidden=!aberto;\n  button.setAttribute('aria-expanded',String(aberto));\n}\nfunction editarSaldoInicial()"
-          assert s.count(old)==1,'Alteracao inesperada em saldo inicial'
+          assert s.count(old)==1,'Alteracao inesperada no saldo inicial'
           p.write_text(s.replace(old,new,1),encoding='utf-8')
           p=Path('tests/recorrentes-browser-smoke.py');s=p.read_text(encoding='utf-8')
           old=" document.getElementById('rec-open').click();"
-          new=""" const controles=document.getElementById('extrato-action-buttons');
- if(!controles||controles.children.length!==3||!controles.querySelector('#saldo-toggle')||!controles.querySelector('.form-toggle')||!controles.querySelector('#rec-toggle'))throw Error('Tres botoes fora da mesma linha');
- if(!document.getElementById('saldo-setup').hidden)throw Error('Painel de saldo deve comecar recolhido');
- document.getElementById('saldo-toggle').click();
- if(document.getElementById('saldo-setup').hidden||document.getElementById('saldo-content').hidden)throw Error('Botao nao abriu o saldo inicial');
- document.getElementById('saldo-toggle').click();
- if(!document.getElementById('saldo-setup').hidden)throw Error('Botao nao fechou o saldo inicial');
- document.getElementById('rec-open').click();"""
+          new=" const controles=document.getElementById('extrato-action-buttons');\n if(!controles||controles.children.length!==3||!controles.querySelector('#saldo-toggle')||!controles.querySelector('.form-toggle')||!controles.querySelector('#rec-toggle'))throw Error('Tres botoes fora da mesma linha');\n if(!document.getElementById('saldo-setup').hidden)throw Error('Painel de saldo deve comecar recolhido');\n document.getElementById('saldo-toggle').click();\n if(document.getElementById('saldo-setup').hidden||document.getElementById('saldo-content').hidden)throw Error('Botao nao abriu o saldo inicial');\n document.getElementById('saldo-toggle').click();\n if(!document.getElementById('saldo-setup').hidden)throw Error('Botao nao fechou o saldo inicial');\n document.getElementById('rec-open').click();"
           assert s.count(old)==1,'Teste de navegador mudou'
           p.write_text(s.replace(old,new,1),encoding='utf-8')
           PY
