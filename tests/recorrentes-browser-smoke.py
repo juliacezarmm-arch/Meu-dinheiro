@@ -1,13 +1,13 @@
 """Teste de integração via Chrome headless em HTML descartável (não grava dados do usuário)."""
 from pathlib import Path
-import os,shutil,subprocess,sys,tempfile
+import os,re,shutil,subprocess,sys,tempfile
 chrome=shutil.which('google-chrome') or shutil.which('chromium') or shutil.which('chromium-browser')
 if not chrome:
  print('Chrome ausente no runner: smoke não pode ser executado',file=sys.stderr)
  sys.exit(2)
 root=Path.cwd()
 html=(root/'index.html').read_text(encoding='utf-8')
-assert '<script src="js/recorrentes.js?v=20260920-trio1"></script>' in html
+assert re.search(r'<script src="js/recorrentes\.js\?v=[^"]+"></script>',html)
 script=r'''<script>
 (function(){
 const report=(ok,msg)=>{document.body.insertAdjacentHTML('beforeend','<pre id="smoke-result">'+(ok?'PASS: ':'FAIL: ')+String(msg).replace(/</g,'&lt;')+'</pre>');};

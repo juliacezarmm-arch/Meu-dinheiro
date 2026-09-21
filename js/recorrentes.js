@@ -98,7 +98,7 @@ function originalJaRegistrado(r,data){
 function ocorrencias(r,ate){return datasRecorrentes(r,ate).filter(data=>!S.recorrenciaIgnoradas.includes(key(r,data)));}
 function cardOptions(){
  const sel=cardSelect;const previous=sel.value;
- sel.innerHTML='<option value="">Selecione o cartão</option>'+S.cartoes.map(c=>`<option value="${c.id}">${escHtml(c.bank)} · vence dia ${c.dueDay}</option>`).join('');
+ sel.innerHTML='<option value="">Selecione o cartão</option>'+S.cartoes.map(c=>`<option value="${c.id}">${escHtml(c.bank)}${c.nome?' · '+escHtml(c.nome):''} · vence dia ${c.dueDay}</option>`).join('');
  if(S.cartoes.some(c=>String(c.id)===previous))sel.value=previous;
 }
 function recurrenceCategories(){
@@ -173,7 +173,7 @@ function cardForecasts(){
  const fim=isoDate(horizon.getFullYear(),horizon.getMonth(),horizon.getDate());
  return S.recorrentes.filter(r=>r.metodo==='cartao'&&!r.excluida).flatMap(r=>ocorrencias(r,fim).filter(d=>d>hoje&&!originalJaRegistrado(r,d)).map(data=>{
   const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));if(!card)return null;
-  return {id:'rec-prev-'+r.id+'-'+data,data,desc:r.nome,tipo:'compra',val:r.valor,parcelas:1,vencDia:card.dueDay,closeDay:card.closeDay,cardId:card.id,banco:card.bank,cardColor:card.color,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',recorrenciaId:r.id,recorrenciaData:data,previsto:true};
+  return {id:'rec-prev-'+r.id+'-'+data,data,desc:r.nome,tipo:'compra',val:r.valor,parcelas:1,vencDia:card.dueDay,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',recorrenciaId:r.id,recorrenciaData:data,previsto:true};
  }).filter(Boolean));
 }
 function cashForecastsForMonth(y,m){
@@ -194,7 +194,7 @@ function syncRecurring(){
    if(originalJaRegistrado(r,data))continue;
    if(r.metodo==='cartao'){
     if(!card)continue;
-    S.cartao.push({id:novoIdGlobal(),data,desc:r.nome,tipo:'compra',val:r.valor,parcelas:1,vencDia:card.dueDay,closeDay:card.closeDay,cardId:card.id,banco:card.bank,cardColor:card.color,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',recorrenciaId:r.id,recorrenciaData:data});changed=true;
+    S.cartao.push({id:novoIdGlobal(),data,desc:r.nome,tipo:'compra',val:r.valor,parcelas:1,vencDia:card.dueDay,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',recorrenciaId:r.id,recorrenciaData:data});changed=true;
    }else{
     if(saldoInicialValido(S.saldoInicial)&&data<=S.saldoInicial.data)continue;
     S.extrato.push({id:novoIdExtrato(),data,desc:r.nome,tipo:r.tipo,val:r.valor,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',pagamento:r.metodo,recorrenciaId:r.id,recorrenciaData:data,geradoAutomaticamente:true});changed=true;
@@ -221,7 +221,7 @@ function renderRecurring(){
    if(r.metodo==='cartao'){
     const cobranca=r.frequencia==='mensal'?'Dia da cobrança: '+(r.diaCobranca||Number(r.inicio.slice(8))):'Desde: '+displayDate(r.inicio);
     return `<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">${escHtml(r.nome)}</span><span class="rec-tag${ended?' inactive':''}">${ended?'Encerrado':'Saída'}</span><span class="rec-inline-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir agora</button></span></div>
-    <div class="rec-item-sub"><strong style="color:#f5f5f2">−${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo])}${card?' ('+escHtml(card.bank)+')':''} · <span class="rec-item-date-inline">${cobranca}${next?' · Próxima: '+displayDate(next):''}</span></div></div>`;
+    <div class="rec-item-sub"><strong style="color:#f5f5f2">−${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo])}${card?' ('+escHtml(card.bank)+(card.nome?' · '+escHtml(card.nome):'')+')':''} · <span class="rec-item-date-inline">${cobranca}${next?' · Próxima: '+displayDate(next):''}</span></div></div>`;
    }
    const dia=r.frequencia==='mensal'?(r.tipo==='entrada'?'Dia do recebimento: ':'Dia da cobrança: ')+(r.diaCobranca||Number(r.inicio.slice(8))):'Desde: '+displayDate(r.inicio);
    return `<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">${escHtml(r.nome)}</span><span class="rec-tag${ended?' inactive':''}">${ended?'Encerrado':r.tipo==='entrada'?'Entrada':'Saída'}</span><span class="rec-inline-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir agora</button></span></div>
