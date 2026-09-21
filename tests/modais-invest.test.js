@@ -1,0 +1,13 @@
+const fs=require('fs'),assert=require('assert');
+const html=fs.readFileSync('index.html','utf8');
+const script=html.match(/<script\s*>([\s\S]*?)<\/script>/);
+assert(script,'Script principal ausente');
+for(const id of ['invest-modal','invest-modal-content','invest-modal-title','inv-rend-pct'])assert(html.includes('id="'+id+'"'),'Campo ausente: '+id);
+for(const fn of ['abrirPainelInvestimento','fecharPainelInvestimento','sincronizarPainelInvestimento','toggleInvestAction','toggleInvestHistory','toggleInvestChart'])assert(script[1].includes('function '+fn+'('),'Função ausente: '+fn);
+assert(script[1].includes('content.replaceChildren(panel);'),'Painel deve ser movido para modal sem duplicar IDs');
+assert(script[1].includes('sincronizarPainelInvestimento();'),'Modal deve permanecer íntegro após atualização da tela');
+assert(script[1].includes('rendimento/base*100'),'Percentual tem de usar rendimento dividido pela base de aportes líquidos');
+assert(script[1].includes("base>0?"),'Base zero precisa ser tratada');
+assert(script[1].includes('data-invest-id="${item.id}"'),'Cartão deve estar identificável para mover o painel');
+assert(!script[1].includes('localStorage'),'Nenhum armazenamento paralelo ao JSON');
+console.log('PASS: modais e percentual de rendimento presentes; painéis sem IDs duplicados; base zero tratada');
