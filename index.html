@@ -106,6 +106,10 @@ td:last-child{white-space:normal}
 .b-cartao{background:#FAEEDA;color:#633806}
 .del{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:14px;padding:1px 4px;border-radius:4px}
 .del:hover{color:#A32D2D}
+.extrato-edit-btn{color:#9FE1CB;min-width:27px;min-height:30px;font-size:17px;font-weight:800}
+.extrato-edit-btn:hover,.extrato-edit-btn:focus-visible{color:#fff;background:#224336;outline:1px solid #9FE1CB}
+#extrato-editor [hidden]{display:none!important}
+#extrato-edit-regular{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
 .empty{text-align:center;color:var(--color-text-secondary);padding:2rem;font-size:14px}
 .timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px}
 .tl-row{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:.65rem .75rem;display:grid;grid-template-columns:70px 1fr 78px;align-items:center;gap:8px}
@@ -611,6 +615,22 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <p id="refresh-file-name"></p><p id="refresh-error" role="alert" hidden></p>
   <div class="site-dialog-actions"><button type="button" class="site-button quiet" id="refresh-cancel" onclick="cancelarAtualizacao()">Cancelar</button><button type="button" class="site-button quiet" id="refresh-discard" onclick="atualizarSemSalvar()">Atualizar sem salvar</button><button type="button" class="site-button primary" id="refresh-save" onclick="salvarEAtualizar()">Salvar e atualizar</button></div>
 </div></div>
+<div id="extrato-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="extrato-editor-title" hidden><div class="site-dialog-panel">
+  <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">✎</span><h2 id="extrato-editor-title">Editar lançamento</h2></div>
+  <p class="site-dialog-copy" id="extrato-edit-note">Corrija os dados do lançamento sem criar uma cópia.</p>
+  <form id="extrato-edit-form" novalidate onsubmit="event.preventDefault();salvarEdicaoExtrato()">
+    <label class="site-field" for="extrato-edit-date">Data<input type="date" id="extrato-edit-date" required></label>
+    <div id="extrato-edit-regular">
+      <label class="site-field" for="extrato-edit-type">Tipo<select id="extrato-edit-type" onchange="atualizarCategoriasEdicaoExtrato()"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></label>
+      <label class="site-field" for="extrato-edit-category">Categoria<select id="extrato-edit-category" onchange="atualizarSubcategoriasEdicaoExtrato()" required></select></label>
+      <label class="site-field" for="extrato-edit-subcategory">Subcategoria<select id="extrato-edit-subcategory" required></select></label>
+      <label class="site-field" for="extrato-edit-description">Descrição<input id="extrato-edit-description" type="text" maxlength="40" placeholder="Descrição (opcional)"></label>
+      <label class="site-field" for="extrato-edit-payment" id="extrato-edit-payment-row">Forma de pagamento<select id="extrato-edit-payment"></select></label>
+    </div>
+    <label class="site-field" for="extrato-edit-value">Valor (R$)<input type="number" id="extrato-edit-value" min="0.01" step="0.01" inputmode="decimal" required></label>
+    <div class="site-dialog-actions"><button type="button" class="site-button quiet" onclick="fecharJanela('extrato-editor')">Cancelar</button><button type="submit" class="site-button primary">Salvar alteração</button></div>
+  </form>
+</div></div>
 <div id="card-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-editor-title" hidden><div class="site-dialog-panel">
   <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">✎</span><h2 id="card-editor-title">Editar cartão</h2></div>
   <p class="site-dialog-copy">Ajuste os dados do cartão. Vencimento e pagamento são datas diferentes.</p>
@@ -690,6 +710,7 @@ let extratoMes=new Date();
 let cartaoMes=new Date();
 let investMes=new Date();
 let editingCartaoId=null;
+let editingExtratoId=null;
 let editingRegisteredCardId=null;
 let pagamentoEmEdicao=null;
 let parcelasPagasEmEdicao=null;
@@ -700,7 +721,7 @@ let investModalAtivo=null;
 function fecharAviso(){clearTimeout(appAlert.timer);document.getElementById('app-toast').hidden=true;}
 function appAlert(message){const toast=document.getElementById('app-toast');document.getElementById('app-toast-message').textContent=String(message);toast.hidden=false;clearTimeout(appAlert.timer);appAlert.timer=setTimeout(fecharAviso,6500);}
 function abrirJanela(id){const e=document.getElementById(id);if(!e)return;e.hidden=false;const first=e.querySelector('input,select,button');if(first)first.focus();}
-function fecharJanela(id){const e=document.getElementById(id);if(e)e.hidden=true;if(id==='card-editor')editingRegisteredCardId=null;if(id==='card-payment-editor')pagamentoEmEdicao=null;if(id==='card-paid-editor')parcelasPagasEmEdicao=null;}
+function fecharJanela(id){const e=document.getElementById(id);if(e)e.hidden=true;if(id==='card-editor')editingRegisteredCardId=null;if(id==='extrato-editor')editingExtratoId=null;if(id==='card-payment-editor')pagamentoEmEdicao=null;if(id==='card-paid-editor')parcelasPagasEmEdicao=null;}
 function appConfirm(message){
  return new Promise(resolve=>{
   const overlay=document.getElementById('app-confirm-overlay'),ok=document.getElementById('app-confirm-accept'),cancel=document.getElementById('app-confirm-cancel'),previous=document.activeElement;
@@ -710,7 +731,7 @@ function appConfirm(message){
   ok.addEventListener('click',accept);cancel.addEventListener('click',reject);document.addEventListener('keydown',escape);overlay.hidden=false;cancel.focus();
  });
 }
-document.addEventListener('keydown',event=>{if(event.key!=='Escape'||!document.getElementById('app-confirm-overlay').hidden)return;for(const id of ['card-editor','card-payment-editor','card-paid-editor'])if(!document.getElementById(id).hidden){fecharJanela(id);break;}});
+document.addEventListener('keydown',event=>{if(event.key!=='Escape'||!document.getElementById('app-confirm-overlay').hidden)return;for(const id of ['extrato-editor','card-editor','card-payment-editor','card-paid-editor'])if(!document.getElementById(id).hidden){fecharJanela(id);break;}});
 function fmt(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function today(){const d=new Date();return isoDate(d.getFullYear(),d.getMonth(),d.getDate());}
 function todayText(){return new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}).replace('.', '');}
@@ -1637,6 +1658,153 @@ function addExtrato(){
   saveData();renderExtrato();updateResumo();
 }
 
+// Editar nao exclui nem recria o registro: conserva ID e vinculos no JSON.
+function atualizarCategoriasEdicaoExtrato(){
+  const tipo=document.getElementById('extrato-edit-type').value;
+  const select=document.getElementById('extrato-edit-category');
+  const anterior=select.value;
+  select.replaceChildren(new Option('Selecione categoria',''),...Object.keys(CATEGORIAS[tipo]||{}).map(c=>new Option(c,c)));
+  if([...select.options].some(o=>o.value===anterior))select.value=anterior;
+  atualizarSubcategoriasEdicaoExtrato();
+  document.getElementById('extrato-edit-payment-row').hidden=tipo!=='saida';
+}
+function atualizarSubcategoriasEdicaoExtrato(){
+  const tipo=document.getElementById('extrato-edit-type').value;
+  const categoria=document.getElementById('extrato-edit-category').value;
+  const select=document.getElementById('extrato-edit-subcategory');
+  const anterior=select.value;
+  const cadastradas=(CATEGORIAS[tipo]&&CATEGORIAS[tipo][categoria])||[];
+  const permitidas=S.saldoInicial&&tipo==='entrada'?cadastradas.filter(x=>x!=='Dinheiro do mês passado'):cadastradas;
+  const opcoes=categoria?[...permitidas.filter(x=>x!=='Outros'),'Outros']:[];
+  select.replaceChildren(new Option('Selecione subcategoria',''),...opcoes.map(s=>new Option(s,s)));
+  if([...select.options].some(o=>o.value===anterior))select.value=anterior;
+}
+function opcaoHistoricaEdicao(select,valor){
+  if(valor&&!Array.from(select.options).some(o=>o.value===valor))select.add(new Option(valor,valor));
+  select.value=valor||'';
+}
+function editarLancamentoExtrato(id){
+  const item=S.extrato.find(x=>String(x.id)===String(id));
+  if(!item)return;
+  editingExtratoId=item.id;
+  const vinculado=!!(item.destId||item.faturaMes||item.tipo==='investimento'||item.tipo==='meta');
+  document.getElementById('extrato-edit-date').value=item.data;
+  document.getElementById('extrato-edit-value').value=String(item.val);
+  document.getElementById('extrato-edit-regular').hidden=vinculado;
+  document.getElementById('extrato-edit-note').textContent=item.faturaMes
+    ?'Pagamento da fatura '+item.faturaMes+': corrija a data e o valor. O vínculo com o cartão permanece.'
+    :item.destId||['investimento','meta'].includes(item.tipo)
+      ?'Movimentação vinculada a investimento ou meta: corrija a data e o valor. O destino e o histórico permanecem vinculados.'
+      :'Corrija data, tipo, categoria, subcategoria, descrição ou valor. O registro original será atualizado.';
+  if(!vinculado){
+    document.getElementById('extrato-edit-type').value=item.tipo==='saida'?'saida':'entrada';
+    atualizarCategoriasEdicaoExtrato();
+    const categoria=document.getElementById('extrato-edit-category');
+    opcaoHistoricaEdicao(categoria,item.categoria);
+    atualizarSubcategoriasEdicaoExtrato();
+    opcaoHistoricaEdicao(document.getElementById('extrato-edit-subcategory'),item.subcategoria);
+    document.getElementById('extrato-edit-description').value=item.desc||'';
+    const pagamento=document.getElementById('extrato-edit-payment');
+    pagamento.innerHTML=document.getElementById('ext-pagamento').innerHTML;
+    opcaoHistoricaEdicao(pagamento,item.pagamento);
+    document.getElementById('extrato-edit-payment-row').hidden=item.tipo!=='saida';
+  }
+  abrirJanela('extrato-editor');
+}
+// Calcula primeiro em uma copia para impedir resgates acima do saldo apos corrigir um aporte.
+function simularSaldoHistoricoExtrato(historico,id,data,valor){
+  let saldo=0;
+  const ordenado=historico.map(h=>String(h.extId)===String(id)?{...h,data,valor}:{...h})
+    .sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
+  for(const h of ordenado){
+    const n=Number(h.valor||0);
+    if(!Number.isFinite(n)||n<0)return null;
+    if(h.tipo==='aporte')saldo+=n;
+    else if(h.tipo==='resgate'){
+      if(n>saldo+0.000001)return null;
+      saldo-=n;
+    }else if(h.tipo==='atualizacao')saldo=n;
+  }
+  return Math.round(saldo*100)/100;
+}
+function salvarEdicaoExtrato(){
+  const item=S.extrato.find(x=>String(x.id)===String(editingExtratoId));
+  if(!item){fecharJanela('extrato-editor');return;}
+  const data=document.getElementById('extrato-edit-date').value;
+  const campo=document.getElementById('extrato-edit-value').value.trim();
+  const numero=Number(campo);
+  if(!dataISOValida(data)||!campo||!valorMonetarioValido(numero)||numero<=0){
+    appAlert('Informe uma data válida e um valor positivo, com até duas casas decimais.');return;
+  }
+  const valor=Math.round(numero*100)/100;
+  const vinculados=!!item.destId;
+  const pagamentoFatura=!!item.faturaMes;
+  if(vinculados){
+    if(data>today()){appAlert('Movimentações de investimentos e metas não podem ter data futura.');return;}
+    const historicos=S.invest.map(dest=>({dest,registros:ensureInvestHistory(dest).filter(h=>String(h.extId)===String(item.id))})).filter(x=>x.registros.length);
+    const destino=S.invest.find(x=>String(x.id)===String(item.destId));
+    if(!destino||!historicos.length||historicos.some(x=>x.registros.some(h=>!['aporte','resgate'].includes(h.tipo)))){
+      appAlert('Vínculo do histórico não encontrado. Nenhum dado foi alterado.');return;
+    }
+    const saldos=new Map();
+    for(const {dest} of historicos){
+      const saldo=simularSaldoHistoricoExtrato(ensureInvestHistory(dest),item.id,data,valor);
+      if(saldo===null){appAlert('A alteração deixaria um resgate maior que o saldo disponível no histórico.');return;}
+      saldos.set(String(dest.id),saldo);
+    }
+    const storageId=destino.kind==='meta'?destino.storageId:destino.id;
+    if(storageId){
+      const storage=S.invest.find(x=>String(x.id)===String(storageId)&&x.kind==='investimento');
+      if(storage){
+        const saldoStorage=saldos.has(String(storage.id))?saldos.get(String(storage.id)):Number(storage.valorAtual||0);
+        const reservado=metasReservadasNoInvestimento(storage.id).reduce((total,meta)=>total+(saldos.has(String(meta.id))?saldos.get(String(meta.id)):Number(meta.valorAtual||0)),0);
+        if(reservado>saldoStorage+0.000001){appAlert('A correção deixaria metas reservadas acima do saldo do investimento.');return;}
+      }
+    }
+    for(const {dest,registros} of historicos){
+      for(const h of registros){h.data=data;h.valor=valor;}
+      recalcInvestFromHistory(dest);
+    }
+  }else if(['investimento','meta'].includes(item.tipo)){
+    appAlert('Este lançamento não possui vínculo com o investimento. Nenhum dado foi alterado.');return;
+  }
+  if(pagamentoFatura){
+    if(!item.cardId||!S.saldoInicial||data<S.saldoInicial.data||data>today()){
+      appAlert('A data do pagamento deve estar entre o início do controle e hoje.');return;
+    }
+    const total=totalDaFaturaFinanceira(item.cardId,item.faturaMes);
+    const outros=S.extrato.filter(x=>String(x.id)!==String(item.id)&&x.tipo==='saida'&&String(x.cardId)===String(item.cardId)&&x.faturaMes===item.faturaMes)
+      .reduce((s,x)=>s+Math.round(Number(x.val||0)*100),0);
+    if(Math.round(valor*100)+outros>total||total<=0){
+      appAlert('O valor corrigido não pode ultrapassar o total da fatura, descontados os outros pagamentos.');return;
+    }
+  }else if(!vinculados){
+    const tipo=document.getElementById('extrato-edit-type').value;
+    const categoria=document.getElementById('extrato-edit-category').value;
+    const subcategoria=document.getElementById('extrato-edit-subcategory').value;
+    const desc=document.getElementById('extrato-edit-description').value.trim();
+    const pagamento=document.getElementById('extrato-edit-payment').value;
+    if(!['entrada','saida'].includes(tipo)||!categoria||!subcategoria||desc.length>40){appAlert('Confira o tipo, a categoria, a subcategoria e a descrição.');return;}
+    if(tipo==='saida'&&!pagamento){appAlert('Para saídas, escolha a forma de pagamento.');return;}
+    if(S.saldoInicial&&tipo==='saida'&&categoria==='Cartão de crédito'&&subcategoria==='Pagamento de fatura'){
+      appAlert('Registre pagamentos de fatura na aba Cartão para evitar duplicidade.');return;
+    }
+    if(S.saldoInicial&&tipo==='entrada'&&subcategoria==='Dinheiro do mês passado'){
+      appAlert('O saldo anterior já é transportado automaticamente.');return;
+    }
+    item.tipo=tipo;item.categoria=categoria;item.subcategoria=subcategoria;item.desc=desc;
+    item.pagamento=tipo==='saida'?pagamento:'';
+    item.gastoTipo=tipo==='saida'?(item.gastoTipo||'variavel'):'';
+  }
+  item.data=data;
+  item.val=valor;
+  fecharJanela('extrato-editor');
+  extratoMes=new Date(data+'T12:00:00');
+  saveData();
+  renderInvest();renderMetas();renderCartao();renderExtrato();updateResumo();
+  appAlert('Lançamento corrigido. O mesmo registro foi atualizado, sem duplicar.');
+}
+
 function resetCartaoForm(){
   editingCartaoId=null;
   document.getElementById('cc-desc').value='';
@@ -2518,7 +2686,7 @@ function renderExtrato(){
       const futuro=d>hoje;
       const tipoLabel=r.faturaPendente?'a pagar':r.previsto||futuro?'previsto':r.tipo==='saldo_inicial'?'saldo':r.tipo==='cartao'?'cartão':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
       const color=r.tipo==='saldo_inicial'?'#9FE1CB':r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#A32D2D':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
-      const action=r.faturaPendente?`<button class="extrato-pagar" type="button" onclick="registrarPagamentoFatura(${Number(r.cardId)},'${r.faturaMes}')" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button>`:r.auto?'':`<button class="del" onclick="delExt(${r.id})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
+      const action=r.faturaPendente?`<button class="extrato-pagar" type="button" onclick="registrarPagamentoFatura(${Number(r.cardId)},'${r.faturaMes}')" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button>`:r.auto?'':`<button class="del extrato-edit-btn" type="button" onclick="editarLancamentoExtrato(${Number(r.id)})" aria-label="Editar lançamento" title="Corrige os dados deste lançamento sem duplicar.">✎</button><button class="del" type="button" onclick="delExt(${Number(r.id)})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
       const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.faturaPendente?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento da fatura; ainda não pago.</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes na aba Cartão.</div>`:'';
       return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.desc||'-')}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${escHtml(categoria)}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td>${action}</td></tr>`;
