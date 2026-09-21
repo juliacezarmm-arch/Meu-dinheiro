@@ -1,0 +1,32 @@
+name: Aplicar edicao de lancamentos do extrato
+on:
+  push:
+    paths:
+      - 'tools/patch-extrato-edit.py'
+permissions:
+  contents: write
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Aplicar alteracoes e criar testes
+        run: python3 tools/patch-extrato-edit.py
+      - name: Verificar sintaxe JavaScript
+        run: node -e "const fs=require('fs'); const t=fs.readFileSync('index.html','utf8');const m=t.match(/<script\\s*>([\\s\\S]*?)<\\/script>/);if(!m)throw Error('script');new Function(m[1]);console.log('Sintaxe OK')"
+      - name: Executar testes JavaScript
+        run: for f in tests/*.test.js; do echo "TESTE $f"; node "$f" || exit 1; done
+      - name: Publicar somente codigo e testes verificados
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html tests/extrato-edicao.test.js
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m "Permitir editar lancamentos do extrato sem duplicar dados"
+          git push
