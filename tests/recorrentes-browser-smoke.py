@@ -23,6 +23,13 @@ try{
  dataFileHandle={kind:'file',name:'teste.json',getFile:async()=>({size:1,lastModified:1}),queryPermission:async()=> 'granted',createWritable:async()=>({write:async()=>{},close:async()=>{}})};
  knownFileSignature='1:1';setFileAccessState(true);
  S.saldoInicial={valor:500,data:isoDate(d.getFullYear(),d.getMonth(),d.getDate()),idsIgnorados:[]};
+ const controles=document.getElementById('extrato-action-buttons');
+ if(!controles||controles.children.length!==3||!controles.querySelector('#saldo-toggle')||!controles.querySelector('.form-toggle')||!controles.querySelector('#rec-toggle'))throw Error('Tres botoes fora da mesma linha');
+ if(!document.getElementById('saldo-setup').hidden)throw Error('Painel de saldo deve comecar recolhido');
+ document.getElementById('saldo-toggle').click();
+ if(document.getElementById('saldo-setup').hidden||document.getElementById('saldo-content').hidden)throw Error('Botao nao abriu o saldo inicial');
+ document.getElementById('saldo-toggle').click();
+ if(!document.getElementById('saldo-setup').hidden)throw Error('Botao nao fechou o saldo inicial');
  document.getElementById('rec-open').click();
  if(document.getElementById('rec-form').parentElement.id!=='rec-body')throw Error('Cadastro da conta fora do Extrato');
  elToggle=document.getElementById('rec-toggle');

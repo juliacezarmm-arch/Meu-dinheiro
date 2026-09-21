@@ -798,6 +798,8 @@ function toggleSaldoInicial(force){
   if(!content||!button)return;
   const aberto=typeof force==='boolean'?force:content.hidden;
   content.hidden=!aberto;
+  const panel=document.getElementById('saldo-setup');
+  if(panel&&document.getElementById('extrato-action-buttons'))panel.hidden=!aberto;
   button.setAttribute('aria-expanded',String(aberto));
 }
 function editarSaldoInicial(){
