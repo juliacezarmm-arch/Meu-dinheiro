@@ -1,0 +1,31 @@
+const fs=require('fs'),assert=require('assert'),vm=require('vm');
+const html=fs.readFileSync('index.html','utf8'),rec=fs.readFileSync('js/recorrentes.js','utf8');
+const script=html.match(/<script\s*>([\s\S]*?)<\/script>/);assert(script);
+const src=script[1];
+for(const id of ['card-bank','card-name','card-edit-name','card-due-day','card-payment-day'])assert(html.includes('id="'+id+'"'),'Campo ausente: '+id);
+assert(html.includes('maxlength="60"')&&html.includes('class="bank-product"'),'Campo limitado e nome visivel no cartão');
+assert(html.includes('nomeCartao:card.nome')&&html.includes("desc:'Fatura · '+identificacao"),'Compras e faturas precisam identificar cartão');
+assert(rec.includes("c.nome?' · '+escHtml(c.nome)")&&rec.includes('nomeCartao:card.nome'),'Assinaturas precisam distinguir cartões homônimos');
+function fn(name){const start=src.indexOf('function '+name+'(');assert(start>=0,'Função não localizada: '+name);const rest=src.slice(start+10),next=/\n(?:async )?function [A-Za-z]/.exec(rest);return src.slice(start,next?start+10+next.index:src.length);}
+const names=['escHtml','validarDadosImportados','diaDeCartaoValido','addRegisteredCard','editarCartaoCadastrado','salvarEdicaoCartao','renderRegisteredCards'];
+const elements={};function el(id){return elements[id]||(elements[id]={value:'',innerHTML:'',textContent:'',hidden:true,focus(){}});}
+let saves=0;const ctx=vm.createContext({console,Number,String,Date,Set,Math,Array,JSON,Error,document:{getElementById:el}});
+vm.runInContext("const S={cartoes:[],cartao:[],extrato:[],invest:[],saldoInicial:null};let editingRegisteredCardId=null;const BANK_COLORS={Itaú:'#EC7000',Outro:'#3A6EA5'};let counter=50;function novoIdGlobal(){return ++counter};function saveData(){};function renderCartao(){};function renderExtrato(){};function updateResumo(){};function updatePreview(){};function appAlert(){};function abrirJanela(id){document.getElementById(id).hidden=false};function fecharJanela(id){document.getElementById(id).hidden=true};function dataISOValida(){return true};function saldoInicialValido(){return false};"+names.map(fn).join('\n'),ctx);
+const run=x=>vm.runInContext(x,ctx);
+const legacy={cartoes:[{id:1,bank:'Itaú',dueDay:10,color:'#EC7000'}]};
+assert.strictEqual(run('validarDadosImportados('+JSON.stringify(legacy)+').cartoes[0].bank'),'Itaú','JSON antigo sem nome continua valido');
+assert.throws(()=>run('validarDadosImportados('+JSON.stringify({cartoes:[{id:1,bank:'Itaú',nome:123,dueDay:10}]})+')'),'Nome inválido precisa ser rejeitado');
+assert.throws(()=>run('validarDadosImportados('+JSON.stringify({cartoes:[{id:1,bank:'Itaú',nome:'X'.repeat(61),dueDay:10}]})+')'),'Nome longo precisa ser rejeitado');
+el('card-bank').value='Itaú';el('card-bank').innerHTML='<option>Itaú</option>';el('card-name').value='Black';el('card-due-day').value='10';el('card-payment-day').value='17';
+run('addRegisteredCard()');
+assert.strictEqual(run('S.cartoes[0].nome'),'Black');
+assert.strictEqual(run('S.cartoes[0].dueDay'),10);
+assert(el('cc-card').innerHTML.includes('Itaú · Black'),'Seletor deve mostrar banco e produto');
+assert(el('bank-cards-wrap').innerHTML.includes('bank-product">Black'),'Cartão deve mostrar produto no desenho');
+assert.strictEqual(el('card-name').value,'','Cadastro limpa apenas o campo novo');
+run('editarCartaoCadastrado(51)');assert.strictEqual(el('card-edit-name').value,'Black','Modal carrega nome existente');
+el('card-edit-name').value='LATAM Pass';run('salvarEdicaoCartao()');
+assert.strictEqual(run('S.cartoes[0].nome'),'LATAM Pass','Modal salva nome sem trocar identidade');
+assert.strictEqual(run('S.cartoes[0].id'),51);
+assert(el('cc-card').innerHTML.includes('Itaú · LATAM Pass'));
+console.log('PASS: cadastro e edicao do nome do cartao, identificacao na interface, recorrentes e compatibilidade de JSON legado');
