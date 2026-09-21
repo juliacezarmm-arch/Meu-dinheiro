@@ -82,12 +82,12 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #cc-wrap .cc-paid{text-align:center;white-space:nowrap;overflow:visible}
 #cc-wrap .cc-paid-status{display:inline-block;color:#a8eed0;background:#21372f;border:1px solid #4b806c;border-radius:7px;padding:5px 7px;min-width:42px;font:700 11px var(--font-sans);white-space:nowrap;text-align:center}
 #cc-wrap .cc-actions{white-space:nowrap;overflow:visible;text-align:right}
-#cc-wrap .cc-group-title th{background:#171716;color:#9FE1CB;font-size:11px;font-weight:800;letter-spacing:.02em;padding:10px 7px 6px;border-bottom:1px solid #363631}
-#cc-wrap .cc-group-title:not(:first-child) th{padding-top:16px}
-#cc-wrap .cc-group-subtotal td,#cc-wrap .cc-grand-total td{font-size:11px;overflow:visible;text-overflow:clip;white-space:normal;background:#171716;border-bottom:1px solid #3a3934;padding:8px 5px}
-#cc-wrap .cc-group-subtotal td:first-child,#cc-wrap .cc-grand-total td:first-child{text-align:right;padding-right:10px;color:#c5c3ba}
-#cc-wrap .cc-group-subtotal td.cc-money,#cc-wrap .cc-grand-total td.cc-money{white-space:nowrap;color:#9FE1CB;font-weight:800;text-align:left}
-#cc-wrap .cc-grand-total td{border-top:1px solid #7abfa6;background:#202a25}
+#cc-wrap .cc-group-title th{background:transparent;color:#9FE1CB;font-size:11px;font-weight:800;letter-spacing:.02em;padding:9px 5px 6px;border-bottom:1px solid #363631}
+#cc-wrap .cc-group-title:not(:first-child) th{padding-top:15px}
+#cc-wrap .cc-group-title th:first-child{text-align:left}
+#cc-wrap .cc-group-title th.cc-money{text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap;color:#9FE1CB}
+#page-cartao .cc-launch-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#page-cartao .cc-launch-title #cc-total-display{color:#9FE1CB;font-size:12px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 @media(max-width:580px){#ext-wrap table{font-size:11px}#ext-wrap th,#ext-wrap td{padding:6px 3px}#ext-wrap th:last-child{width:94px!important}#ext-wrap .extrato-pagar{font-size:9px;padding:5px 3px}#cc-wrap table{font-size:11px}#cc-wrap th,#cc-wrap td{padding:6px 3px}}
 th{text-align:left;padding:8px 6px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;font-size:12px}
@@ -491,7 +491,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       <button class="today-btn" onclick="goCartaoCurrentMonth()" title="Volta o cartão para o mês atual.">Mês atual</button>
     </div>
 
-    <div class="section-title" title="Lista de compras e parcelas do cartão no mês selecionado.">Lançamentos</div>
+    <div class="section-title cc-launch-title" title="Lista de compras e parcelas do cartão no mês selecionado."><span>Lançamentos</span><span id="cc-total-display" title="Soma dos valores exibidos neste mês, incluindo eventual histórico; não confirma pagamento."></span></div>
     <div id="cc-wrap"><div class="empty">Nenhuma compra ainda.</div></div>
 
     <div class="section-title" title="Mostra quanto o cartão já comprometeu em cada mês futuro.">Comprometimento por mês</div>
@@ -1847,6 +1847,8 @@ function renderCartao(){
   const forecasts=typeof window.cardRecurringForecasts==='function'?window.cardRecurringForecasts():[];
   const rows=S.cartao.concat(forecasts).filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
   const parcelasNesteMes=getParcelasCartao().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth));
+  const totalVisivel=somarValoresCartaoNoMes(rows,parcelasNesteMes);
+  document.getElementById('cc-total-display').textContent=rows.length?'Total: '+fmt(totalVisivel):'';
   if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
   // Separação somente visual: conserva as compras e todas as parcelas no JSON.
   // O valor da parcela corresponde ao mês da fatura que está sendo visualizado.
@@ -1869,10 +1871,8 @@ function renderCartao(){
         return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
       }).join('');
       const subtotal=somarValoresCartaoNoMes(itens,parcelasNesteMes);
-      return `<tr class="cc-group-title"><th colspan="7" scope="rowgroup">${titulo}</th></tr>`+linhas+
-        `<tr class="cc-group-subtotal"><td colspan="5">Subtotal ${titulo} · valores do mês</td><td class="cc-money">${fmt(subtotal)}</td><td></td></tr>`;
+      return `<tr class="cc-group-title"><th colspan="5" scope="rowgroup">${titulo}</th><th class="cc-money" scope="row">${fmt(subtotal)}</th><th></th></tr>`+linhas;
     }).join('')+
-    `<tr class="cc-grand-total"><td colspan="5">Total exibido neste mês · pode incluir histórico</td><td class="cc-money">${fmt(somarValoresCartaoNoMes(rows,parcelasNesteMes))}</td><td></td></tr>`+
     '</tbody></table></div>';
 
 }

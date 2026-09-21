@@ -23,9 +23,10 @@ assert.strictEqual(sum([{id:30,val:100,parcelas:3}],[{id:'30-1',val:33.33}]),33.
 assert(html.includes('<th style="width:75px">Parcelas</th><th style="width:110px">Valor</th>'),'Exatamente as colunas Parcelas e Valor');
 assert(!html.includes('>Pagas</th>')&&!html.includes('>Valor total</th>')&&!html.includes('>Valor da parcela</th>'),'Remover colunas redundantes');
 assert(!html.includes("qtdParcelas+'x'"),'Quadradinho substitui a antiga quantidade 6x');
-assert(html.includes('class="cc-paid-status"')&&html.includes('colspan="7"'),'Progresso informativo permanece na coluna Parcelas');
-assert(html.includes('Subtotal ${titulo} · valores do mês'),'Subtotais calculados sobre valor do mes');
-assert(html.includes('Total exibido neste mês · pode incluir histórico'),'Total da tabela distingue historico da fatura');
+assert(html.includes('class="cc-paid-status"')&&html.includes('colspan="5"'),'Progresso informativo permanece na coluna Parcelas e totais estao na linha do grupo');
+assert(html.includes('<th colspan=\"5\" scope=\"rowgroup\">${titulo}</th><th class=\"cc-money\" scope=\"row\">${fmt(subtotal)}</th>') || html.includes('<th colspan="5" scope="rowgroup">${titulo}</th><th class="cc-money" scope="row">${fmt(subtotal)}</th>'),'Totais na propria linha de cada grupo, alinhados a Valor');
+assert(html.includes('id="cc-total-display"')&&html.includes("textContent=rows.length?'Total: '+fmt(totalVisivel):''"),'Total geral na linha existente de Lancamentos');
+assert(!html.includes('cc-group-subtotal')&&!html.includes('cc-grand-total'),'Nao renderizar linhas nem faixas extras para os totais');
 assert(!html.includes('somarValoresTotaisCartao('),'Nao somar preco integral das compras');
 const bodyStart=rec.indexOf('function renderRecurring(){'),bodyEnd=rec.indexOf('function saveRecEditor(',bodyStart);
 assert(bodyStart>=0&&bodyEnd>bodyStart,'Renderizacao dos recorrentes ausente');
@@ -34,4 +35,4 @@ assert(!body.includes('<div class="rec-item-bottom">'),'Extrato ainda tem tercei
 assert(body.split('<span class="rec-inline-actions">').length>=3,'Botoes no cabecalho de ambas as listas');
 assert(body.includes('Dia do recebimento: ')&&body.includes('Dia da cobrança: '),'Distinguir entradas e saidas');
 assert(rec.includes('#rec-list .rec-item{padding:8px 10px}')&&rec.includes('#rec-card-list .rec-item{padding:8px 10px}'),'Mesmo tamanho compacto');
-console.log('PASS: coluna Valor mensal, parcelas em uma coluna, subtotais e total exatos, historico e recorrencia preservados');
+console.log('PASS: Valor mensal, progresso em Parcelas, totais nas linhas dos titulos, sem faixas extras, historico e recorrencia preservados');
