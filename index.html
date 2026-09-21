@@ -673,6 +673,7 @@ let isApplyingData=false;
 let dataRevision=0;
 let diskSaveTimer=null;
 let diskSaveQueue=Promise.resolve();
+let fileSaveQueue=Promise.resolve();
 let knownFileSignature=null;
 let refreshBusy=false;
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -927,8 +928,10 @@ function setFileAccessState(open){
  document.body.classList.toggle('file-closed',!open);
  for(const area of document.querySelectorAll('.nav,.page'))area.inert=!open;
 }
+// Compare o CONTEUDO, nao size/lastModified: Android e provedores de arquivos
+// podem atualizar metadados sem alterar os dados do JSON.
 async function fileSignature(handle){
- try{const file=await handle.getFile();return String(file.size)+':'+String(file.lastModified);}catch{return null;}
+ try{const file=await handle.getFile();return await file.text();}catch{return null;}
 }
 async function fileWriteAllowed(handle,ask){
  if(!handle||typeof handle.queryPermission!=='function')return false;
@@ -938,19 +941,22 @@ async function fileWriteAllowed(handle,ask){
  return result==='granted';
 }
 async function fileUnchanged(handle,ask){
- if(!knownFileSignature)return false;
+ if(knownFileSignature===null)return false;
  const current=await fileSignature(handle);
- if(!current){setSaveStatus('Arquivo indisponível — abra o JSON novamente.');return false;}
+ if(current===null){setSaveStatus('Arquivo indisponível — abra o JSON novamente.');return false;}
  if(current===knownFileSignature)return true;
- if(!ask){setSaveStatus('Arquivo alterado fora do aplicativo. Clique Salvar para conferir.');return false;}
- return await appConfirm('O arquivo '+handle.name+' foi modificado fora do aplicativo. Substituir esse arquivo pelos dados desta tela?');
+ if(!ask){setSaveStatus('O conteúdo do JSON mudou. Confira antes de salvar.');return false;}
+ return await appConfirm('O conteúdo do arquivo '+handle.name+' mudou desde que foi aberto. Substituir pelo que aparece nesta tela? Confirme apenas se não houver alterações mais recentes em outra aba ou aplicativo.');
 }
-async function finishFileSave(handle,revision){
+async function finishFileSave(handle,write){
  if(handle!==dataFileHandle)return false;
  const signature=await fileSignature(handle);
- if(!signature)throw Error('Não foi possível verificar a gravação.');
+ if(signature===null)throw Error('Não foi possível verificar a gravação.');
+ if(signature!==write.content){
+  setSaveStatus('Não salvo — o conteúdo mudou durante a gravação.');return false;
+ }
  knownFileSignature=signature;
- if(dataRevision===revision)hasUnsavedChanges=false;
+ if(dataRevision===write.revision)hasUnsavedChanges=false;
  setSaveStatus(hasUnsavedChanges?'Não salvo':'Salvo');
  return !hasUnsavedChanges;
 }
@@ -999,36 +1005,48 @@ async function writeDataFile(handle){
   const content=JSON.stringify(dataPayload(),null,2);
   const writable=await handle.createWritable();
   try{await writable.write(content);await writable.close();}catch(error){try{await writable.abort();}catch{}throw error;}
-  return revision;
+  return {revision,content};
  });
  diskSaveQueue=job;return job;
+}
+// Serializa verificacao, escrita e leitura final juntas. Sem isso, dois
+// salvamentos simultaneos comparam uma assinatura ainda desatualizada.
+function queueFileSave(handle,askPermission){
+ const job=fileSaveQueue.catch(()=>{}).then(async()=>{
+  if(handle!==dataFileHandle)return false;
+  if(!hasUnsavedChanges){setSaveStatus('Salvo');return true;}
+  try{
+   // Permissao do Chrome so e solicitada por um clique explicito.
+   if(!await fileWriteAllowed(handle,askPermission)){
+    setSaveStatus('Não salvo — autorize o JSON pelo botão Salvar.');return false;
+   }
+   if(!await fileUnchanged(handle,askPermission)){
+    setSaveStatus('Não salvo — conflito no conteúdo ou arquivo indisponível.');return false;
+   }
+   const write=await writeDataFile(handle);
+   return await finishFileSave(handle,write);
+  }catch(error){setSaveStatus('Não salvo — falha ao gravar o JSON.');return false;}
+ });
+ fileSaveQueue=job.catch(()=>{});
+ return job;
 }
 async function saveDataFile(askPermission=true){
  const handle=dataFileHandle;
  if(!handle){setSaveStatus('Abra um arquivo JSON para salvar.');return false;}
- if(!hasUnsavedChanges){setSaveStatus('Salvo');return true;}
- try{
-  // Permissao do Chrome so e solicitada por um clique explicito.
-  if(!await fileWriteAllowed(handle,askPermission)){
-   setSaveStatus('Não salvo — autorize o JSON pelo botão Salvar.');return false;
-  }
-  if(!await fileUnchanged(handle,askPermission)){
-   setSaveStatus('Não salvo — arquivo externo alterado ou indisponível.');return false;
-  }
-  const revision=await writeDataFile(handle);
-  return await finishFileSave(handle,revision);
- }catch(error){setSaveStatus('Não salvo — falha ao gravar o JSON.');return false;}
+ return await queueFileSave(handle,askPermission);
 }
 async function saveAsDataFile(){
  if(!window.showSaveFilePicker){appAlert('Este navegador não permite vincular um JSON para edição. Use um navegador compatível no computador.');return false;}
  try{
   const handle=await window.showSaveFilePicker({suggestedName:dataFileHandle?dataFileHandle.name:'meu-dinheiro-dados.json',types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]});
   if(!await fileWriteAllowed(handle,true)){setSaveStatus('Não salvo — arquivo sem permissão de gravação.');return false;}
-  const revision=await writeDataFile(handle);
+  // Nao criar outra gravacao enquanto uma escrita anterior esta pendente.
+  await fileSaveQueue.catch(()=>{});
+  const write=await writeDataFile(handle);
   const signature=await fileSignature(handle);
-  if(!signature){setSaveStatus('Não foi possível verificar o JSON criado.');return false;}
+  if(signature===null||signature!==write.content){setSaveStatus('Não foi possível verificar o JSON criado.');return false;}
   dataFileHandle=handle;knownFileSignature=signature;
-  hasUnsavedChanges=dataRevision!==revision;
+  hasUnsavedChanges=dataRevision!==write.revision;
   setFileAccessState(true);
   setSaveStatus(hasUnsavedChanges?'Não salvo':'Salvo');
   return !hasUnsavedChanges;
@@ -1040,12 +1058,7 @@ async function saveAsDataFile(){
 async function autoSaveDataFile(){
  if(!appReady||isApplyingData||!hasUnsavedChanges||!dataFileHandle)return false;
  const handle=dataFileHandle;
- try{
-  if(!await fileWriteAllowed(handle,false)){setSaveStatus('Não salvo — clique Salvar.');return false;}
-  if(!await fileUnchanged(handle,false))return false;
-  const revision=await writeDataFile(handle);
-  return await finishFileSave(handle,revision);
- }catch(error){setSaveStatus('Não salvo — falha ao gravar o JSON.');return false;}
+ return await queueFileSave(handle,false);
 }
 async function openDataFile(){
  if(hasUnsavedChanges){setSaveStatus('Não salvo — salve antes de abrir outro JSON.');return false;}
@@ -1055,13 +1068,13 @@ async function openDataFile(){
  try{
   const handles=await window.showOpenFilePicker({multiple:false,types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]});
   const handle=handles[0];if(!handle)return false;
-  const file=await handle.getFile();const parsed=JSON.parse(await file.text());
+  const file=await handle.getFile();const originalText=await file.text();const parsed=JSON.parse(originalText);
   validarDadosImportados(parsed);
   if(!await fileWriteAllowed(handle,true)){
    setSaveStatus('Edição não autorizada. Abra o JSON novamente e permita salvar.');return false;
   }
   const previousHandle=dataFileHandle,previousSignature=knownFileSignature;
-  dataFileHandle=handle;knownFileSignature=String(file.size)+':'+String(file.lastModified);
+  dataFileHandle=handle;knownFileSignature=originalText;
   try{applyDataFile(parsed);}catch(error){
    dataFileHandle=previousHandle;knownFileSignature=previousSignature;
    setFileAccessState(!!previousHandle);throw error;

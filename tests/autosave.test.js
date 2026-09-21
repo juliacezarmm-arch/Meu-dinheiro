@@ -6,8 +6,8 @@ const src=match[1];
 for(const name of ['fileSignature','fileWriteAllowed','fileUnchanged','writeDataFile','finishFileSave','saveDataFile','autoSaveDataFile','saveAsDataFile','openDataFile','atualizarAplicativo','atualizarSemSalvar','salvarEAtualizar','setFileAccessState'])assert(src.includes('function '+name+'('),'Função ausente: '+name);
 for(const token of ['indexedDB','localStorage','persistLocalSession','restoreLocalSession','localSet(','localGet(','downloadDataFile(','scheduleLocalSave('])assert(!src.includes(token),'Persistência no navegador proibida: '+token);
 assert(src.includes("window.addEventListener('beforeunload'"),'F5 precisa proteger alterações pendentes');
-assert(src.includes('fileWriteAllowed(handle,false)'),'Autosave apenas com permissão existente');
-assert(src.includes('fileWriteAllowed(handle,true)')||src.includes('fileWriteAllowed(handle,askPermission)'),'Salvar precisa permitir autorização por clique');
+assert(src.includes('queueFileSave(handle,false)'),'Autosave apenas com permissao existente');
+assert(src.includes('fileWriteAllowed(handle,askPermission)'),'Salvar precisa permitir autorizacao por clique');
 for(const id of ['refresh-overlay','refresh-save','refresh-discard','refresh-cancel','refresh-file-name'])assert(html.includes('id="'+id+'"'),'Ação do diálogo ausente: '+id);
 assert(html.includes('Salvar e atualizar')&&html.includes('Atualizar sem salvar'),'Opções de atualização incompletas');
 assert(!/(?<![\w.])(?:alert|confirm|prompt)\s*\(/.test(src),'Proibido usar alert/confirm/prompt nativos');
@@ -16,7 +16,7 @@ assert(!src.includes('void restoreLocalSession()'),'Proibido restaurar sessão a
 function fn(name){const re=new RegExp('^(?:async )?function '+name+'\\([^\\n]*\\)\\{.*?^\\}\\n','ms');const m=src.match(re);assert(m,'Não extraiu '+name);return m[0];}
 let timer=0,write=0,permission=[];
 const ctx=vm.createContext({console,Promise,Error,Date,Number,String,JSON,setTimeout:(f,n)=>{timer=n;return 1},clearTimeout:()=>{},fileWriteAllowed:async(h,ask)=>{permission.push(ask);return true;},fileUnchanged:async()=>true,writeDataFile:async()=>{write++;return 1;},finishFileSave:async()=>{vm.runInContext('hasUnsavedChanges=false',ctx);return true;},setSaveStatus:()=>{}});
-vm.runInContext('let dataFileHandle=null,hasUnsavedChanges=false,appReady=true,isApplyingData=false,dataRevision=0,diskSaveTimer=null;'+fn('saveData')+fn('autoSaveDataFile'),ctx);
+vm.runInContext('let dataFileHandle=null,hasUnsavedChanges=false,appReady=true,isApplyingData=false,dataRevision=0,diskSaveTimer=null,fileSaveQueue=Promise.resolve();'+fn('saveData')+fn('queueFileSave')+fn('autoSaveDataFile'),ctx);
 vm.runInContext('saveData()',ctx);
 assert.strictEqual(vm.runInContext('hasUnsavedChanges',ctx),false,'Sem arquivo nao ha alteracoes permitidas');
 vm.runInContext("dataFileHandle={name:'teste.json'};saveData()",ctx);
