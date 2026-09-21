@@ -11,7 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Aplicar mudança controlada
-        run: python3 tools/patch-metas-integradas-20260921.py
+        run: |
+          python3 tools/fix-metas-patch-20260921.py
+          python3 tools/patch-metas-integradas-20260921.py
       - name: Validar JavaScript, metas, patrimônio e fluxos anteriores
         run: |
           python3 -c "import re,pathlib; s=pathlib.Path('index.html').read_text(); m=re.search(r'<script\s*>([\s\S]*?)</script>',s); assert m; pathlib.Path('/tmp/meu-dinheiro-metas-validar.js').write_text(m.group(1))"
