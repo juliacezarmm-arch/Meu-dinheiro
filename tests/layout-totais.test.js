@@ -24,4 +24,8 @@ assert(!body.includes('<div class="rec-item-bottom">'),'Extrato ainda tem tercei
 assert(body.split('<span class="rec-inline-actions">').length>=3,'Botoes precisam estar no cabecalho de ambas as listas');
 assert(body.includes('Dia do recebimento: ')&&body.includes('Dia da cobrança: '),'Distinguir entradas e saidas');
 assert(rec.includes('#rec-list .rec-item{padding:8px 10px}')&&rec.includes('#rec-card-list .rec-item{padding:8px 10px}'),'Mesmo tamanho compacto nas duas abas');
-console.log('PASS: layout Extrato = Cartao, totais por grupo e geral, centavos exatos e fatura preservada');
+assert(rec.includes("controls.append(saldoToggle,extratoToggle,section.querySelector('#rec-toggle'))"),'Os tres botoes precisam dividir a mesma linha');
+assert(rec.includes('section.hidden=!expanded'),'Conteudo do recorrente precisa ficar abaixo da linha de botoes');
+assert(html.includes('grid-template-columns:repeat(3,minmax(0,1fr))'),'Layout deve ter tres colunas');
+assert(rec.includes('saldoPanel.hidden=true'),'Saldo inicial começa recolhido');
+console.log('PASS: tres botoes do Extrato alinhados, totais por grupo e geral, saldo preservado');

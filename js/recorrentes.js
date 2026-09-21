@@ -59,7 +59,21 @@ section.innerHTML=`<div class="rec-top"><button type="button" id="rec-toggle" ar
 <p class="rec-caption" id="rec-guidance">Informe o dia da cobrança ou do recebimento. A movimentação é programada a partir de hoje. Confira se o pagamento ou recebimento realmente ocorreu.</p>
 <div class="rec-actions"><button type="submit" class="rec-button primary" id="rec-submit">Salvar recorrência</button><button type="button" class="rec-button" id="rec-close">Cancelar edição</button></div></form>
 <div class="rec-list" id="rec-list"></div></div>`;
-const anchor=document.querySelector('#page-extrato .add-form');anchor.parentNode.insertBefore(section,anchor);
+const anchor=document.querySelector('#page-extrato .add-form');
+const extratoToggle=anchor.previousElementSibling;
+if(!extratoToggle||!extratoToggle.classList.contains('form-toggle'))throw Error('Botao Adicionar no extrato ausente');
+anchor.parentNode.insertBefore(section,anchor);
+const saldoPanel=document.getElementById('saldo-setup');
+const saldoToggle=document.getElementById('saldo-toggle');
+const controls=document.createElement('div');
+controls.id='extrato-action-buttons';
+controls.setAttribute('role','group');
+controls.setAttribute('aria-label','Comandos do Extrato');
+saldoPanel.parentNode.insertBefore(controls,saldoPanel);
+controls.append(saldoToggle,extratoToggle,section.querySelector('#rec-toggle'));
+section.querySelector('.rec-top').remove();
+saldoPanel.hidden=true;
+section.hidden=true;
 const cardSection=document.createElement('section');cardSection.id='rec-cartao-area';cardSection.className='rec-area';
 cardSection.innerHTML='<div class="rec-top"><button type="button" id="rec-card-toggle" aria-expanded="true" aria-controls="rec-card-body">Pagamentos recorrentes <span id="rec-card-toggle-symbol" aria-hidden="true">−</span></button></div><div id="rec-card-body"><button type="button" class="rec-button primary" id="rec-card-open">+ Novo pagamento</button><div class="rec-list" id="rec-card-list"></div></div>';
 const cardAnchor=document.querySelector('#page-cartao .section-title:nth-of-type(2)')||document.querySelector('#page-cartao #cc-card').closest('.add-form');cardAnchor.parentNode.insertBefore(cardSection,cardAnchor);
@@ -139,6 +153,7 @@ function openRecEditor(id=null,mode='conta'){
  $('rec-submit').textContent=r?'Salvar alterações':editingRecMode==='cartao'?'Salvar pagamento':'Salvar recorrência';$('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
 }
 function setRecAreaExpanded(expanded){
+ section.hidden=!expanded;
  $('rec-body').hidden=!expanded;
  $('rec-toggle').setAttribute('aria-expanded',String(expanded));
  $('rec-toggle-symbol').textContent=expanded?'−':'+';
@@ -324,7 +339,7 @@ for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('cli
 });
 const oldShowPage=showPage;
 showPage=function(id,btn){oldShowPage(id,btn);if(id==='extrato'||id==='cartao')renderRecurring();};
-$('rec-start').value=today();recurrenceType();closeRecEditor();renderRecurring();
+$('rec-start').value=today();recurrenceType();closeRecEditor();setRecAreaExpanded(false);renderRecurring();
 const midnightPoll=setInterval(()=>{if(S.recorrentes.length)syncRecurring();},5*60*1000);
 })();
 }
