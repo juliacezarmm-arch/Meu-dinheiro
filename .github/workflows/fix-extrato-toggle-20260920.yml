@@ -1,0 +1,64 @@
+name: Validar abertura dos tres paineis do Extrato
+on:
+  push:
+    paths:
+      - .github/workflows/fix-extrato-toggle-20260920.yml
+permissions:
+  contents: write
+jobs:
+  validar-e-publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Corrigir exibicao do painel e adicionar teste de interacao
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html');s=p.read_text(encoding='utf-8')
+          old="  content.hidden=!aberto;\n  button.setAttribute('aria-expanded',String(aberto));\n}\nfunction editarSaldoInicial()"
+          new="  content.hidden=!aberto;\n  const panel=document.getElementById('saldo-setup');\n  if(panel&&document.getElementById('extrato-action-buttons'))panel.hidden=!aberto;\n  button.setAttribute('aria-expanded',String(aberto));\n}\nfunction editarSaldoInicial()"
+          assert s.count(old)==1,'Alteracao inesperada em saldo inicial'
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          p=Path('tests/recorrentes-browser-smoke.py');s=p.read_text(encoding='utf-8')
+          old=" document.getElementById('rec-open').click();"
+          new=""" const controles=document.getElementById('extrato-action-buttons');
+ if(!controles||controles.children.length!==3||!controles.querySelector('#saldo-toggle')||!controles.querySelector('.form-toggle')||!controles.querySelector('#rec-toggle'))throw Error('Tres botoes fora da mesma linha');
+ if(!document.getElementById('saldo-setup').hidden)throw Error('Painel de saldo deve comecar recolhido');
+ document.getElementById('saldo-toggle').click();
+ if(document.getElementById('saldo-setup').hidden||document.getElementById('saldo-content').hidden)throw Error('Botao nao abriu o saldo inicial');
+ document.getElementById('saldo-toggle').click();
+ if(!document.getElementById('saldo-setup').hidden)throw Error('Botao nao fechou o saldo inicial');
+ document.getElementById('rec-open').click();"""
+          assert s.count(old)==1,'Teste de navegador mudou'
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+      - name: Executar testes e simular clique no Chrome
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          match=re.search(r'<script\s*>([\s\S]*?)</script>',html)
+          assert match
+          Path('/tmp/validar-extrato.js').write_text(match.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/validar-extrato.js
+          node --check js/recorrentes.js
+          node tests/parcelas-pagas.test.js
+          node tests/layout-totais.test.js
+          node tests/finance.test.js
+          node tests/ciclo-fatura.test.js
+          node tests/marco-zero.test.js
+          node tests/card-ux.test.js
+          node tests/planejamento.test.js
+          node tests/autosave.test.js
+          node tests/recorrentes.test.js
+          python3 tests/recorrentes-browser-smoke.py
+      - name: Publicar correcao verificada
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html tests/recorrentes-browser-smoke.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'Corrigir abertura e fechamento do saldo inicial nos tres comandos'
+          git push
