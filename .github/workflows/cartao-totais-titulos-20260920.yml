@@ -14,6 +14,7 @@ jobs:
         run: |
           python3 tools/patch-cartao-totais-nas-secoes-20260920.py
           python3 tools/patch-test-cartao-titulo-20260920.py
+          python3 tools/patch-test-parcelas-titulo-20260920.py
       - name: Validar sintaxe, faturas, valores mensais e interface
         run: |
           python3 -c "import re,pathlib; s=pathlib.Path('index.html').read_text(); m=re.search(r'<script\s*>([\s\S]*?)</script>',s); assert m; pathlib.Path('/tmp/cartao-validar.js').write_text(m.group(1))"
@@ -33,7 +34,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html tests/layout-totais.test.js
+          git add index.html tests/layout-totais.test.js tests/parcelas-pagas.test.js
           git diff --cached --quiet && exit 0
           git commit -m 'Mostrar totais de cada grupo no titulo e retirar linhas extras'
           git push
