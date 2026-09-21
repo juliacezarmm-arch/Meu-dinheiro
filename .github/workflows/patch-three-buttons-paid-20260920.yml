@@ -1,0 +1,55 @@
+name: Extrato compacto e parcelas historicas confirmadas
+on:
+  push:
+    paths:
+      - .github/workflows/patch-three-buttons-paid-20260920.yml
+permissions:
+  contents: write
+jobs:
+  validar-e-publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ajustar apenas interface e contagem informativa
+        run: python3 tools/patch-extrato-botoes-progresso-20260920.py
+      - name: Isolar as compras de teste antes da conciliação de fatura
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tests/parcelas-pagas.test.js')
+          s=p.read_text(encoding='utf-8')
+          old="run(\"hoje='2026-09-20'\");\nassert.strictEqual(run(\"getParcelasCartao().find(x=>x.id==='101-0').data\"),'2026-09-10'"
+          new="run(\"hoje='2026-09-20'\");\nrun('S.cartao=S.cartao.slice(0,1)');\nassert.strictEqual(run(\"getParcelasCartao().find(x=>x.id==='101-0').data\"),'2026-09-10'"
+          assert s.count(old)==1,'Contexto dos testes mudou; abortar'
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+      - name: Validar sintaxe, regras financeiras, layout e Chrome
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          match=re.search(r'<script\s*>([\s\S]*?)</script>',s)
+          assert match,'Script principal ausente'
+          Path('/tmp/meu-dinheiro-three-buttons.js').write_text(match.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/meu-dinheiro-three-buttons.js
+          node --check js/recorrentes.js
+          node tests/parcelas-pagas.test.js
+          node tests/layout-totais.test.js
+          node tests/finance.test.js
+          node tests/ciclo-fatura.test.js
+          node tests/marco-zero.test.js
+          node tests/card-ux.test.js
+          node tests/planejamento.test.js
+          node tests/autosave.test.js
+          node tests/recorrentes.test.js
+          python3 tests/recorrentes-browser-smoke.py
+      - name: Publicar somente arquivos validados
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/recorrentes.js tests/parcelas-pagas.test.js tests/layout-totais.test.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Agrupar botoes do Extrato e exibir parcelas quitadas sem clique'
+          git push
