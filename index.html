@@ -346,6 +346,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   </div>
   <div class="data-tools">
     <button type="button" onclick="openDataFile()" title="Abra um JSON para consultar e editar seus registros.">Abrir dados</button>
+    <button type="button" id="json-permission-button" onclick="autorizarJsonPendente()" title="Pedir autorização do Chrome para editar o JSON selecionado." hidden>Autorizar edição do JSON</button>
     <button type="button" onclick="manualSave()" title="Grava diretamente as alteracoes no arquivo JSON aberto.">Salvar</button>
     <button type="button" onclick="saveAsDataFile()" title="Cria um JSON novo ou salva os dados em outro arquivo.">Salvar como</button>
     <button type="button" onclick="atualizarAplicativo()" title="Atualiza o aplicativo, fechando o arquivo atual.">Atualizar</button>
@@ -675,6 +676,9 @@ let diskSaveTimer=null;
 let diskSaveQueue=Promise.resolve();
 let fileSaveQueue=Promise.resolve();
 let knownFileSignature=null;
+// Identificadores temporarios apenas em memoria. Nunca armazenar dados financeiros no navegador.
+let pendingJsonHandle=null;
+let authorizedJsonHandle=null;
 let refreshBusy=false;
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const BANK_COLORS={
@@ -1060,6 +1064,40 @@ async function autoSaveDataFile(){
  const handle=dataFileHandle;
  return await queueFileSave(handle,false);
 }
+// O Chrome exige um novo gesto do usuario em alguns fluxos do seletor Android.
+// A chamada de requestPermission acontece IMEDIATAMENTE no clique deste botao,
+// sem aguardar queryPermission, leitura de arquivo ou outra promise antes.
+function autorizarJsonPendente(){
+ const handle=pendingJsonHandle;
+ if(!handle)return Promise.resolve(false);
+ const button=document.getElementById('json-permission-button');
+ let permission;
+ try{
+  if(typeof handle.requestPermission!=='function')throw Error('Sem API de autorizacao');
+  permission=handle.requestPermission({mode:'readwrite'});
+ }catch(error){
+  setSaveStatus('Edição bloqueada pelo navegador — abra no Chrome completo.');
+  appAlert('O navegador não conseguiu solicitar permissão de edição. Abra este endereço diretamente no aplicativo Chrome, em uma guia normal, e selecione seu JSON. O original não foi alterado.');
+  return Promise.resolve(false);
+ }
+ button.disabled=true;
+ return Promise.resolve(permission).then(async status=>{
+  if(pendingJsonHandle!==handle)return false;
+  if(status!=='granted'){
+   setSaveStatus('Sem permissão de edição — tente no Chrome completo.');
+   appAlert('A edição continua bloqueada. Abra o Meu Dinheiro diretamente no Chrome, fora da janela integrada do aplicativo, e tente novamente. Seu JSON não foi alterado.');
+   return false;
+  }
+  pendingJsonHandle=null;
+  button.hidden=true;
+  authorizedJsonHandle=handle;
+  return await openDataFile();
+ }).catch(error=>{
+  setSaveStatus('Sem permissão de edição — tente no Chrome completo.');
+  appAlert('O navegador não permitiu editar o arquivo nesta janela. Abra o endereço em uma guia normal do Chrome. Nenhum dado foi gravado.');
+  return false;
+ }).finally(()=>{button.disabled=false;});
+}
 async function openDataFile(){
  if(hasUnsavedChanges){setSaveStatus('Não salvo — salve antes de abrir outro JSON.');return false;}
  if(!window.showOpenFilePicker){
@@ -1067,16 +1105,21 @@ async function openDataFile(){
  }
  let etapa='selecao';
  try{
-  const handles=await window.showOpenFilePicker({multiple:false,types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]});
+  const handles=authorizedJsonHandle?[authorizedJsonHandle]:await window.showOpenFilePicker({multiple:false,types:[{description:'Dados Meu dinheiro',accept:{'application/json':['.json']}}]});
+  authorizedJsonHandle=null;
   const handle=handles[0];if(!handle)return false;
   // No Chrome do Android, solicitar a autorizacao imediatamente apos o seletor:
   // ler e analisar o arquivo antes pode consumir a ativacao exigida pelo navegador.
   etapa='permissao';
   if(!await fileWriteAllowed(handle,true)){
-   setSaveStatus('Edição não autorizada. Abra o JSON novamente e permita salvar.');
-   appAlert('O Chrome não autorizou a edição do JSON. Abra o arquivo novamente e permita salvar quando solicitado. Nenhum dado foi alterado.');
+   pendingJsonHandle=handle;
+   document.getElementById('json-permission-button').hidden=false;
+   setSaveStatus('JSON selecionado — toque em Autorizar edição.');
+   appAlert('O JSON foi selecionado, mas o Chrome não autorizou a edição. Toque em Autorizar edição do JSON para solicitar a permissão diretamente. Nenhum dado foi alterado.');
    return false;
   }
+  pendingJsonHandle=null;
+  document.getElementById('json-permission-button').hidden=true;
   etapa='leitura';
   const file=await handle.getFile();
   const originalText=await file.text();
