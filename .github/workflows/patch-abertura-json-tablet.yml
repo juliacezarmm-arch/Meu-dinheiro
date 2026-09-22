@@ -1,0 +1,37 @@
+name: Corrigir abertura do JSON no tablet
+on:
+  push:
+    paths:
+      - 'tools/patch-abertura-json-tablet.py'
+      - '.github/workflows/patch-abertura-json-tablet.yml'
+permissions:
+  contents: write
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Aplicar correcao no site
+        run: python3 tools/patch-abertura-json-tablet.py
+      - name: Conferir sintaxe do aplicativo
+        run: |
+          node -e "const fs=require('fs'),s=fs.readFileSync('index.html','utf8'),m=s.match(/<script\\s*>([\\s\\S]*?)<\\/script>/);if(!m)throw Error('Script ausente');fs.writeFileSync('/tmp/meu-dinheiro-check.js',m[1]);"
+          node --check /tmp/meu-dinheiro-check.js
+      - name: Executar testes JS financeiros e abertura
+        run: |
+          set -e
+          for test in tests/*.test.js; do node "$test"; done
+      - name: Publicar somente se todos os testes passarem
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Corrigir falha na abertura de JSON do tablet com diagnostico seguro'
+            git push
+          fi
