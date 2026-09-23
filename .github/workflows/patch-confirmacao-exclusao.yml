@@ -20,10 +20,15 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
           s=Path('index.html').read_text(encoding='utf-8')
-          m=re.search(r'<script\\s*>([\\s\\S]*?)</script>',s)
-          Path('/tmp/app.js').write_text(m.group(1),encoding='utf-8')
+          start=s.find('<script>')
+          if start<0:
+              raise SystemExit('Script principal nao encontrado')
+          start+=len('<script>')
+          end=s.find('</script>',start)
+          if end<0:
+              raise SystemExit('Fim do script principal nao encontrado')
+          Path('/tmp/app.js').write_text(s[start:end],encoding='utf-8')
           PY
           node --check /tmp/app.js
           node --check js/recorrentes.js
