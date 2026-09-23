@@ -736,6 +736,37 @@ function appConfirm(message){
   ok.addEventListener('click',accept);cancel.addEventListener('click',reject);document.addEventListener('keydown',escape);overlay.hidden=false;cancel.focus();
  });
 }
+async function confirmarExclusao(message){
+  const title=document.getElementById('app-confirm-title');
+  const icon=document.querySelector('#app-confirm-overlay .site-dialog-icon');
+  const accept=document.getElementById('app-confirm-accept');
+  const prevTitle=title.textContent,prevIcon=icon.textContent,prevAccept=accept.textContent;
+  title.textContent='Confirmar exclusão';
+  icon.textContent='!';
+  accept.textContent='Excluir';
+  try{return await appConfirm(message||'Tem certeza que deseja excluir? Esta ação não pode ser desfeita.');}
+  finally{title.textContent=prevTitle;icon.textContent=prevIcon;accept.textContent=prevAccept;}
+}
+
+// Protege qualquer X destrutivo renderizado no aplicativo, inclusive listas dinâmicas.
+// X de fechar janela/aviso não entra aqui porque não apaga dados.
+const exclusaoConfirmadaPorBotao=new WeakSet();
+document.addEventListener('click',async event=>{
+  const btn=event.target&&event.target.closest?event.target.closest('button'):null;
+  if(!btn||btn.dataset.recdelete||btn.classList.contains('goal-delete'))return;
+  const onclick=btn.getAttribute('onclick')||'';
+  const label=[btn.getAttribute('aria-label')||'',btn.dataset.help||'',btn.getAttribute('title')||''].join(' ');
+  const temX=btn.textContent.trim()==='×'||!!btn.querySelector('.ti-x');
+  const chamaExclusao=/\b(?:del|delete)[A-Za-z0-9_]*\s*\(/.test(onclick);
+  const rotuloExclusao=/\b(?:excluir|remover|apagar)\b/i.test(label);
+  if(!temX||(!chamaExclusao&&!rotuloExclusao))return;
+  if(exclusaoConfirmadaPorBotao.has(btn)){exclusaoConfirmadaPorBotao.delete(btn);return;}
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if(!await confirmarExclusao('Tem certeza que deseja excluir este registro? Essa ação não pode ser desfeita.'))return;
+  exclusaoConfirmadaPorBotao.add(btn);
+  btn.click();
+},true);
 document.addEventListener('keydown',event=>{if(event.key!=='Escape'||!document.getElementById('app-confirm-overlay').hidden)return;for(const id of ['extrato-editor','card-editor','card-payment-editor','card-paid-editor'])if(!document.getElementById(id).hidden){fecharJanela(id);break;}});
 function fmt(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function today(){const d=new Date();return isoDate(d.getFullYear(),d.getMonth(),d.getDate());}
@@ -2316,15 +2347,15 @@ async function delInv(id){
   const hist=ensureInvestHistory(item);
   const temLancamentos=S.extrato.some(x=>x.destId===id);
   const temProgresso=Number(item.valorAtual||0)>0||Number(item.totalAportado||0)>0||Number(item.totalResgatado||0)>0||hist.length>0||temLancamentos;
-  if(temProgresso){
-    const tipo=item.kind==='meta'?'esta meta':'este investimento';
-    const alvo=item.kind==='meta'?'meta':'investimento';
-    const concluida=item.kind==='meta'&&Number(item.meta||0)>0&&Number(item.valorAtual||0)>=Number(item.meta||0);
-    const msg=concluida
+  const tipo=item.kind==='meta'?'esta meta':'este investimento';
+  const alvo=item.kind==='meta'?'meta':'investimento';
+  const concluida=item.kind==='meta'&&Number(item.meta||0)>0&&Number(item.valorAtual||0)>=Number(item.meta||0);
+  const msg=temProgresso
+    ? (concluida
       ? `Esta meta já tem progresso e parece estar concluída.\n\nSe excluir, o histórico e os lançamentos ligados a ela serão apagados.\n\nTem certeza que deseja excluir esta meta?`
-      : `${tipo.charAt(0).toUpperCase()+tipo.slice(1)} já tem dinheiro, histórico ou lançamentos ligados.\n\nSe excluir, a pessoa pode perder o progresso desse ${alvo}.\n\nTem certeza que deseja excluir?`;
-    if(!await appConfirm(msg))return;
-  }
+      : `${tipo.charAt(0).toUpperCase()+tipo.slice(1)} já tem dinheiro, histórico ou lançamentos ligados.\n\nSe excluir, a pessoa pode perder o progresso desse ${alvo}.\n\nTem certeza que deseja excluir?`)
+    : `Tem certeza que deseja excluir ${tipo}? Essa ação não pode ser desfeita.`;
+  if(!await confirmarExclusao(msg))return;
   const linkedExtIds=S.extrato.filter(x=>x.destId===id).map(x=>x.id);
   S.invest.forEach(x=>{
     if(x.id!==id&&linkedExtIds.length){

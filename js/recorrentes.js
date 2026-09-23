@@ -260,7 +260,7 @@ function saveRecEditor(event){
 }
 async function deleteRec(id){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r)return;
- if(!await appConfirm('Excluir agora o cadastro de '+r.nome+'? As movimentações já registradas ficam no histórico, mas todas as previsões futuras são removidas.'))return;
+ if(!await confirmarExclusao('Excluir agora o cadastro de '+r.nome+'? As movimentações já registradas ficam no histórico, mas todas as previsões futuras são removidas.'))return;
  r.excluida=true;r.fim=today();saveData();syncRecurring();renderCartao();renderExtrato();updateResumo();
 }
 function ignoreRecurring(row){
