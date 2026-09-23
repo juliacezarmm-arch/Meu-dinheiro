@@ -1645,7 +1645,7 @@ function movimentarReservaInterna(id,liberar){
   if(ultimaDataFinanceira(meta)>today()){appAlert('Existe movimentação posterior a hoje nesta meta; confira o histórico.');return;}
   ensureInvestHistory(meta).push({id:novoIdGlobal()+'-reserva',tipo:liberar?'resgate':'aporte',data:today(),valor,origem:'reserva_interna',storageId:storage.id,storageNome:storage.nome});
   recalcInvestFromHistory(meta);
-  investUi.acao[id]='';investUi.historico[id]=true;investUi.mes[id]=today().slice(0,7);
+  investUi.acao[id]='';investUi.historico[id]=false;investUi.mes[id]=today().slice(0,7);
   // Somente a alocação interna muda. O investimento, Extrato e saldo da conta permanecem intactos.
   saveData();refreshInvestViews();
 }
@@ -2028,7 +2028,7 @@ function addInvest(){
     item.historico.push({id:item.id+'-inicial',tipo:'aporte',data:today(),valor:custo,saldo:custo,origem:'saldo_inicial',cryptoQtd:cryptoQtd||null,cryptoCotacao:cryptoCotacao||null,cryptoPrecoMedio:cryptoPrecoMedio||null,cryptoInvestido:investido||null});
     if(isCrypto&&inicial!==custo)item.historico.push({id:item.id+'-mercado',tipo:'atualizacao',data:today(),valor:inicial,saldo:inicial});
     recalcInvestFromHistory(item);
-    investUi.historico[item.id]=true;
+    investUi.historico[item.id]=false;
     investUi.mes[item.id]=today().slice(0,7);
   }
   S.invest.push(item);
@@ -2511,7 +2511,7 @@ function saveInvestAporte(id){
   if(extId!==null)S.extrato.push({id:extId,data,desc:'Investimento - '+item.nome,tipo:'investimento',categoria:'Investimento',subcategoria:item.nome,val,destId:item.id});
   recalcInvestFromHistory(item);
   investUi.acao[id]='';
-  investUi.historico[id]=true;
+  investUi.historico[id]=false;
   investUi.mes[id]=data.slice(0,7);
   saveData();refreshInvestViews();
 }
@@ -2559,12 +2559,12 @@ function saveInvestUpdate(id){
       const metaNovoValor=Number((Number(meta.valorAtual||0)*fatorAtualizacao).toFixed(2));
       ensureInvestHistory(meta).push({id:histId+'-meta-'+meta.id,tipo:'atualizacao',data,valor:metaNovoValor,saldo:metaNovoValor,storageId:item.id,storageNome:item.nome});
       recalcInvestFromHistory(meta);
-      investUi.historico[meta.id]=true;
+      investUi.historico[meta.id]=false;
       investUi.mes[meta.id]=data.slice(0,7);
     });
   }
   investUi.acao[id]='';
-  investUi.historico[id]=true;
+  investUi.historico[id]=false;
   investUi.mes[id]=data.slice(0,7);
   saveData();refreshInvestViews();
 }
@@ -2595,7 +2595,7 @@ function saveInvestResgate(id){
   }
   S.extrato.push({id:extId,data,desc:'Resgate - '+item.nome,tipo:'entrada',categoria:'Resgate',subcategoria:item.nome,val:resgate,destId:item.id,storageId:storage?storage.id:null,storageNome:storage?storage.nome:''});
   investUi.acao[id]='';
-  investUi.historico[id]=true;
+  investUi.historico[id]=false;
   investUi.mes[id]=data.slice(0,7);
   saveData();refreshInvestViews();
 }
@@ -2890,9 +2890,10 @@ function renderDestinoCard(item){
       <div class="row row1"><input type="number" id="update-crypto-preco-medio-${item.id}" value="${item.cryptoPrecoMedio||''}" placeholder="Preço médio (R$)" min="0" step="0.01" title="Digite o seu preço médio dessa cripto."/></div>
       <div class="hint">Preço médio: ${fmt(item.cryptoPrecoMedio||0)} · Valor atual = quantidade x cotação.</div>
       `:`
+      <div class="hint">Valor atual registrado: ${fmt(item.valorAtual||0)}. Informe o valor total que aparece hoje no banco.</div>
       <div class="row row2">
         <input type="date" id="update-data-${item.id}" value="${today()}" title="Data em que você conferiu o valor atualizado."/>
-        <input type="number" id="update-val-${item.id}" placeholder="Valor atual (R$)" min="0" step="0.01" title="Valor que existe hoje nesse investimento."/>
+        <input type="number" id="update-val-${item.id}" value="${Number(item.valorAtual||0)}" placeholder="Valor atual (R$)" min="0" step="0.01" title="Valor total que aparece hoje nesse investimento."/>
       </div>
       `}
       <button onclick="saveInvestUpdate(${item.id})" title="Salva o valor atual do investimento para calcular rendimento.">Salvar valor atualizado</button>
