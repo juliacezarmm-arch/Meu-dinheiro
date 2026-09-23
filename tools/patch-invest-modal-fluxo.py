@@ -30,7 +30,7 @@ rep(
   investUi.historico[id]=false;
   investUi.mes[id]=data.slice(0,7);
   saveData();refreshInvestViews();""",
-2
+3
 )
 
 # Atualizacao: metas vinculadas tambem nao abrem historico sozinhas.
