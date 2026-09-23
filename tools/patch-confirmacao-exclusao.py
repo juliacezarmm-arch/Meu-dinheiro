@@ -109,3 +109,11 @@ assert(html.includes('aria-label="Remover movimento"'),'X do histórico deve con
 
 console.log('PASS: exclusoes por X exigem confirmacao e X de fechar nao e interceptado');
 ''',encoding="utf-8")
+
+rt=Path("tests/recorrentes.test.js")
+rts=rt.read_text(encoding="utf-8")
+old_token="for(const token of ['recorrenciaData','recorrenciaIgnoradas','saldoInicial.data','originalJaRegistrado','syncRecurring','cardForecasts','cashForecastsForMonth','deleteRec','openRecEditor','appConfirm'])"
+new_token="for(const token of ['recorrenciaData','recorrenciaIgnoradas','saldoInicial.data','originalJaRegistrado','syncRecurring','cardForecasts','cashForecastsForMonth','deleteRec','openRecEditor','confirmarExclusao'])"
+if rts.count(old_token)!=1:
+    raise SystemExit("Lista de regras do teste de recorrencias nao encontrada")
+rt.write_text(rts.replace(old_token,new_token),encoding="utf-8")
