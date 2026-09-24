@@ -224,6 +224,20 @@ td:last-child{white-space:normal}
 .yield-list{display:grid;gap:6px;margin-top:.65rem}
 .yield-row{display:grid;grid-template-columns:70px 1fr 82px;gap:8px;align-items:center;background:#10100f;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.5rem;font-size:12px}
 .yield-row strong{text-align:right}
+.invest-type-summary{background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:.75rem;margin:.75rem 0}
+.invest-type-summary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:.6rem}
+.invest-type-summary-head strong{font-size:14px}
+.invest-type-summary-head span{font-size:11px;color:var(--color-text-secondary);text-align:right;line-height:1.35;max-width:360px}
+.invest-type-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.invest-type-table{width:100%;min-width:590px;border-collapse:collapse}
+.invest-type-table th,.invest-type-table td{padding:.55rem .6rem;border-top:1px solid #31302c;text-align:right;font-size:11.5px;white-space:nowrap}
+.invest-type-table thead th{border-top:0;color:var(--color-text-secondary);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em}
+.invest-type-table th:first-child,.invest-type-table td:first-child{text-align:left}
+.invest-type-table tbody td:first-child{font-weight:800;color:var(--color-text-primary)}
+.invest-type-table .positive{color:#1D9E75;font-weight:800}
+.invest-type-table .negative{color:#E24B4A;font-weight:800}
+.invest-type-table .neutral{color:var(--color-text-secondary);font-weight:800}
+@media(max-width:620px){.invest-type-summary-head{display:block}.invest-type-summary-head span{display:block;text-align:left;max-width:none;margin-top:4px}}
 @media(max-width:760px){
   .goal-list{grid-template-columns:1fr}
   .chart-panel>.plain-summary{grid-template-columns:1fr}
@@ -570,10 +584,11 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       <button class="btn-green" onclick="addInvest()" title="Cadastra esse investimento para receber dinheiro pelo extrato."><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar investimento</button>
     </div>
     <div class="cards">
-      <div class="card" title="Valor atual somado dos investimentos cadastrados."><div class="label">Total investido</div><div class="value blue" id="inv-total">R$ 0</div></div>
-      <div class="card" title="Quanto os investimentos renderam em relação ao valor colocado."><div class="label">Rendimento</div><div class="inv-rend-summary"><span class="value green" id="inv-rend">R$ 0</span><span class="inv-rend-percent" id="inv-rend-pct" title="Rendimento acumulado dividido pelos aportes líquidos (aportes menos resgates). Indicador aproximado, não é taxa anual nem retorno ponderado pelo tempo.">—</span></div></div>
+      <div class="card" title="Valor atual somado dos investimentos cadastrados."><div class="label">Patrimônio atual</div><div class="value blue" id="inv-total">R$ 0</div></div>
+      <div class="card" title="Quanto os investimentos renderam em relação ao total aportado."><div class="label">Rendimento</div><div class="inv-rend-summary"><span class="value green" id="inv-rend">R$ 0</span><span class="inv-rend-percent" id="inv-rend-pct" title="Rendimento acumulado dividido pelo total aportado. Indicador aproximado: não considera o tempo de cada aporte.">—</span></div></div>
       <div class="card" title="Quantidade de investimentos cadastrados."><div class="label">Investimentos</div><div class="value" id="inv-qtd">0</div></div>
     </div>
+    <div id="inv-type-summary"></div>
     <div class="month-switch" aria-label="Escolher mês dos investimentos" title="Filtra histórico e rendimento de todos os investimentos pelo mesmo mês.">
       <button onclick="changeInvestMonth(-1)" aria-label="Mês anterior" title="Ver investimentos do mês anterior.">‹</button>
       <div class="current-month" id="inv-month-label" title="Mês mostrado nos investimentos.">Mês atual</div>
@@ -2705,7 +2720,7 @@ function renderStockChart(item,mes,periodo){
         return `<div class="yield-row">
           <span>${r.label}</span>
           <span>Rendeu ${r.rendimento>=0?'+':''}${fmt(r.rendimento)}</span>
-          <strong style="color:${cor}">${r.pct.toFixed(1).replace('.',',')}%</strong>
+          <strong style="color:${cor}">${fmtInvestPct(r.pct)}</strong>
         </div>`;
       }).join('')}
     </div>
@@ -2813,18 +2828,65 @@ function renderExtrato(){
     }).join('')+'</tbody></table>';
 }
 
+function fmtInvestPct(value){
+  return Number(value).toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4})+'%';
+}
+function valorInicialInvestimento(item){
+  const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
+  const inicialMarcado=hist.find(h=>h.tipo==='aporte'&&h.origem==='saldo_inicial');
+  if(inicialMarcado)return Number(inicialMarcado.valor||0);
+  const inicialLegado=hist.find(h=>h.tipo==='aporte'&&!h.origem);
+  return inicialLegado?Number(inicialLegado.valor||0):0;
+}
+function resumoGrupoInvestimentos(items){
+  const patrimonio=items.reduce((s,x)=>s+Number(x.valorAtual||0),0);
+  const aportado=items.reduce((s,x)=>s+Number(x.totalAportado||0),0);
+  const resgatado=items.reduce((s,x)=>s+Number(x.totalResgatado||0),0);
+  const rendimento=patrimonio+resgatado-aportado;
+  const inicial=items.reduce((s,x)=>s+valorInicialInvestimento(x),0);
+  return {inicial,patrimonio,aportado,resgatado,rendimento,pct:aportado>0?rendimento/aportado*100:null};
+}
+function renderInvestTypeSummary(investimentos){
+  const host=document.getElementById('inv-type-summary');
+  if(!host)return;
+  if(!investimentos.length){host.innerHTML='';return;}
+  const grupos=new Map();
+  investimentos.forEach(item=>{
+    const tipo=String(item.tipo||'Outro').trim()||'Outro';
+    if(!grupos.has(tipo))grupos.set(tipo,[]);
+    grupos.get(tipo).push(item);
+  });
+  const linhas=[...grupos.entries()].map(([tipo,items])=>({tipo,qtd:items.length,...resumoGrupoInvestimentos(items)}))
+    .sort((a,b)=>b.patrimonio-a.patrimonio||a.tipo.localeCompare(b.tipo,'pt-BR'));
+  host.innerHTML=`<section class="invest-type-summary">
+    <div class="invest-type-summary-head">
+      <strong>Por tipo de investimento</strong>
+      <span>Valor inicial = valor informado quando o investimento entrou no app. Rendimento considera também aportes e resgates posteriores.</span>
+    </div>
+    <div class="invest-type-table-wrap">
+      <table class="invest-type-table">
+        <thead><tr><th>Tipo</th><th>Valor inicial</th><th>Patrimônio atual</th><th>Rendimento</th><th>Rentabilidade</th></tr></thead>
+        <tbody>${linhas.map(r=>{
+          const cls=r.rendimento>0?'positive':r.rendimento<0?'negative':'neutral';
+          const pct=r.pct===null?'—':(r.pct>0?'+':'')+fmtInvestPct(r.pct);
+          return `<tr><td>${escHtml(r.tipo)}${r.qtd>1?` <span style="color:var(--color-text-secondary);font-weight:600">(${r.qtd})</span>`:''}</td><td>${fmt(r.inicial)}</td><td>${fmt(r.patrimonio)}</td><td class="${cls}">${r.rendimento>0?'+':''}${fmt(r.rendimento)}</td><td class="${cls}">${pct}</td></tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+  </section>`;
+}
+
 function renderInvest(){
   const invMonthLabel=document.getElementById('inv-month-label');
   if(invMonthLabel)invMonthLabel.textContent=mesStr(investMes.getFullYear(),investMes.getMonth());
   S.invest.forEach(recalcInvestFromHistory);
   const investimentos=S.invest.filter(x=>x.kind==='investimento');
-  const total=investimentos.reduce((s,x)=>s+x.valorAtual,0);
-  const base=investimentos.reduce((s,x)=>s+(x.totalAportado-x.totalResgatado),0);
-  const rendimento=total-base;
-  document.getElementById('inv-total').textContent=fmt(total);
-  document.getElementById('inv-rend').textContent=fmt(rendimento);
-  document.getElementById('inv-rend-pct').textContent=base>0?(rendimento/base*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%':'—';
+  const geral=resumoGrupoInvestimentos(investimentos);
+  document.getElementById('inv-total').textContent=fmt(geral.patrimonio);
+  document.getElementById('inv-rend').textContent=(geral.rendimento>0?'+':'')+fmt(geral.rendimento);
+  document.getElementById('inv-rend-pct').textContent=geral.pct===null?'—':(geral.pct>0?'+':'')+fmtInvestPct(geral.pct);
   document.getElementById('inv-qtd').textContent=investimentos.length;
+  renderInvestTypeSummary(investimentos);
   const wrap=document.getElementById('inv-wrap');
   if(!investimentos.length){wrap.innerHTML='<div class="empty">Cadastre um investimento e depois registre o dinheiro pelo Extrato.</div>';return;}
   wrap.innerHTML='<div class="goal-list">'+investimentos.map(item=>{
@@ -2987,7 +3049,7 @@ function renderDestinoCard(item){
     </div>
     <div class="plain-summary">
       <div class="plain-card" title="${monitor?'Saldo observado, sem criar dinheiro adicional':'Valor atual registrado'}"><strong>${monitor?'Acompanhado':'Atual'}: ${fmt(atual)}</strong><span>${monitor?'Mesmo saldo do investimento, sem reserva.':'Valor registrado neste investimento ou reserva.'}</span></div>
-      ${monitor?`<div class="plain-card"><strong>Faltam: ${fmt(Math.max(0,item.meta-atual))}</strong><span>Objetivo de patrimônio; não altera o Extrato.</span></div>`:`<div class="plain-card" title="Mostra quanto rendeu no mês selecionado."><strong>Rendeu no mês: ${fmt(resultadoMes.rendimento)}</strong><span>${item.kind==='meta'?'Estimativa pela variação do investimento vinculado.':resultadoMes.pct.toFixed(1).replace('.',',')+'% aproximado; não considera o tempo de cada aporte.'}</span></div>`}
+      ${monitor?`<div class="plain-card"><strong>Faltam: ${fmt(Math.max(0,item.meta-atual))}</strong><span>Objetivo de patrimônio; não altera o Extrato.</span></div>`:`<div class="plain-card" title="Mostra quanto rendeu no mês selecionado."><strong>Rendeu no mês: ${fmt(resultadoMes.rendimento)}</strong><span>${item.kind==='meta'?'Estimativa pela variação do investimento vinculado.':fmtInvestPct(resultadoMes.pct)+' aproximado; não considera o tempo de cada aporte.'}</span></div>`}
     </div>
     ${progresso}
     ${item.kind==='investimento'?`<div class="inv-meta-list"><strong>Dinheiro deste investimento</strong>
