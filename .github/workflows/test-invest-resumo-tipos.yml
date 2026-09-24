@@ -1,0 +1,32 @@
+name: Testar resumo de investimentos
+on:
+  push:
+    paths:
+      - 'tests/invest-resumo-tipos.test.js'
+      - '.github/workflows/test-invest-resumo-tipos.yml'
+permissions:
+  contents: read
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar sintaxe e resumo por tipo
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          start=s.find('<script>')+len('<script>')
+          end=s.find('</script>',start)
+          if start < len('<script>') or end < 0: raise SystemExit('Script principal nao encontrado')
+          Path('/tmp/app.js').write_text(s[start:end],encoding='utf-8')
+          PY
+          node --check /tmp/app.js
+          node tests/invest-resumo-tipos.test.js
+          node tests/finance.test.js
+          node tests/metas-integradas.test.js
+          node tests/modais-invest.test.js
+          node tests/invest-modal-fluxo.test.js
