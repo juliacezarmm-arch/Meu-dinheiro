@@ -7,6 +7,11 @@ for(const name of ['fileSignature','fileWriteAllowed','fileUnchanged','writeData
 for(const token of ['indexedDB','localStorage','persistLocalSession','restoreLocalSession','localSet(','localGet(','downloadDataFile(','scheduleLocalSave('])assert(!src.includes(token),'Persistência no navegador proibida: '+token);
 assert(src.includes("window.addEventListener('beforeunload'"),'F5 precisa proteger alterações pendentes');
 assert(src.includes('queueFileSave(handle,false)'),'Autosave apenas com permissao existente');
+assert(src.includes("new Blob([content],{type:'application/json;charset=utf-8'})"),'Salvamento deve calcular o tamanho real em bytes');
+assert(src.includes("writable.write({type:'write',position:0,data:blob})"),'Salvamento deve reescrever desde o início');
+assert(src.includes('await writable.truncate(blob.size)'),'Salvamento deve remover bytes antigos que possam sobrar no fim');
+assert(src.includes('function recuperarJsonComFechamentoExtra('),'Abertura deve recuperar apenas fechamento extra no fim');
+assert(src.includes("setSaveStatus('Não salvo — JSON recuperado; salve para corrigir.')"),'JSON recuperado precisa exigir nova gravação');
 assert(src.includes('fileWriteAllowed(handle,askPermission)'),'Salvar precisa permitir autorizacao por clique');
 for(const id of ['refresh-overlay','refresh-save','refresh-discard','refresh-cancel','refresh-file-name'])assert(html.includes('id="'+id+'"'),'Ação do diálogo ausente: '+id);
 assert(html.includes('Salvar e atualizar')&&html.includes('Atualizar sem salvar'),'Opções de atualização incompletas');
