@@ -1053,8 +1053,15 @@ async function writeDataFile(handle){
  const job=diskSaveQueue.catch(()=>{}).then(async()=>{
   const revision=dataRevision;
   const content=JSON.stringify(dataPayload(),null,2);
+  // Grave bytes exatos e trunque explicitamente o arquivo. Alguns provedores
+  // de arquivos podem preservar bytes antigos no fim quando o novo JSON fica menor.
+  const blob=new Blob([content],{type:'application/json;charset=utf-8'});
   const writable=await handle.createWritable();
-  try{await writable.write(content);await writable.close();}catch(error){try{await writable.abort();}catch{}throw error;}
+  try{
+   await writable.write({type:'write',position:0,data:blob});
+   await writable.truncate(blob.size);
+   await writable.close();
+  }catch(error){try{await writable.abort();}catch{}throw error;}
   return {revision,content};
  });
  diskSaveQueue=job;return job;
@@ -1144,6 +1151,14 @@ function autorizarJsonPendente(){
   return false;
  }).finally(()=>{button.disabled=false;});
 }
+function recuperarJsonComFechamentoExtra(texto){
+ let candidato=String(texto||'').trimEnd();
+ for(let removidos=1;removidos<=3&&candidato.endsWith('}');removidos++){
+  candidato=candidato.slice(0,-1).trimEnd();
+  try{return {parsed:JSON.parse(candidato),removidos};}catch{}
+ }
+ return null;
+}
 async function openDataFile(){
  if(hasUnsavedChanges){setSaveStatus('Não salvo — salve antes de abrir outro JSON.');return false;}
  if(!window.showOpenFilePicker){
@@ -1171,13 +1186,18 @@ async function openDataFile(){
   const originalText=await file.text();
   etapa='formato';
   let parsed;
+  let recuperadoFechamentoExtra=false;
   try{parsed=JSON.parse(originalText);}
   catch(error){
    if(error instanceof SyntaxError){
-    appAlert('O arquivo selecionado não contém um JSON válido. Ele não foi modificado. Não sobrescreva o original; verifique se existe uma cópia de segurança.');
-    return false;
-   }
-   throw error;
+    const recuperado=recuperarJsonComFechamentoExtra(originalText);
+    if(!recuperado){
+      appAlert('O arquivo selecionado não contém um JSON válido. Ele não foi modificado. Não sobrescreva o original; verifique se existe uma cópia de segurança.');
+      return false;
+    }
+    parsed=recuperado.parsed;
+    recuperadoFechamentoExtra=true;
+   }else throw error;
   }
   etapa='validacao';
   try{validarDadosImportados(parsed);}
@@ -1201,7 +1221,13 @@ async function openDataFile(){
   }
   dataRevision++;
   setFileAccessState(true);
-  setSaveStatus(hasUnsavedChanges?'Não salvo — recorrência atualizada.':'Salvo');
+  if(recuperadoFechamentoExtra){
+    hasUnsavedChanges=true;
+    setSaveStatus('Não salvo — JSON recuperado; salve para corrigir.');
+    appAlert('Encontrei um fechamento extra no fim do JSON e consegui recuperar seus dados. O arquivo será corrigido ao salvar. Nenhum registro foi descartado.');
+  }else{
+    setSaveStatus(hasUnsavedChanges?'Não salvo — recorrência atualizada.':'Salvo');
+  }
   return true;
  }catch(error){
   if(error&&error.name==='AbortError')return false;
