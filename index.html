@@ -1053,15 +1053,31 @@ async function writeDataFile(handle){
  const job=diskSaveQueue.catch(()=>{}).then(async()=>{
   const revision=dataRevision;
   const content=JSON.stringify(dataPayload(),null,2);
-  // Grave bytes exatos e trunque explicitamente o arquivo. Alguns provedores
-  // de arquivos podem preservar bytes antigos no fim quando o novo JSON fica menor.
+
+  // Nunca reaproveite bytes do arquivo anterior. Se o JSON novo for menor,
+  // qualquer sobra no final torna o arquivo invalido (foi o que gerou o bloco
+  // duplicado depois do fechamento do JSON).
+  JSON.parse(content); // garante que o texto a gravar e JSON valido antes de tocar no arquivo
   const blob=new Blob([content],{type:'application/json;charset=utf-8'});
-  const writable=await handle.createWritable();
+  const writable=await handle.createWritable({keepExistingData:false});
   try{
-   await writable.write({type:'write',position:0,data:blob});
+   // Com keepExistingData:false o arquivo ja nasce truncado. Ainda truncamos
+   // explicitamente no tamanho exato como segunda protecao para provedores
+   // que implementam a File System Access API de forma diferente.
+   await writable.write(blob);
    await writable.truncate(blob.size);
    await writable.close();
-  }catch(error){try{await writable.abort();}catch{}throw error;}
+  }catch(error){
+   try{await writable.abort();}catch{}
+   throw error;
+  }
+
+  // Nao considere o salvamento concluido se o proprio arquivo nao puder ser
+  // relido como um unico JSON valido.
+  const savedText=await fileSignature(handle);
+  if(savedText===null)throw Error('Nao foi possivel reler o JSON salvo.');
+  try{JSON.parse(savedText);}catch{throw Error('O arquivo gravado nao e um JSON valido.');}
+  if(savedText!==content)throw Error('O arquivo gravado difere do conteudo esperado.');
   return {revision,content};
  });
  diskSaveQueue=job;return job;
