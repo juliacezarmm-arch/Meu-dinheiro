@@ -2358,7 +2358,11 @@ function renderCartao(){
   if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
   // Separação somente visual: conserva as compras e todas as parcelas no JSON.
   // O valor da parcela corresponde ao mês da fatura que está sendo visualizado.
-  const grupos=[['À vista',rows.filter(r=>r.tipo!=='parcelado')],['Parcelamentos',rows.filter(r=>r.tipo==='parcelado')]];
+  const grupos=[
+    ['À vista',rows.filter(r=>r.tipo!=='parcelado'&&!r.previsto)],
+    ['Recorrentes',rows.filter(r=>r.tipo!=='parcelado'&&r.previsto)],
+    ['Parcelamentos',rows.filter(r=>r.tipo==='parcelado')]
+  ];
   wrap.innerHTML='<div class="cc-table-wrap"><table class="cc-launch-table"><thead><tr><th style="width:55px">Data</th><th>Descrição</th><th style="width:73px">Tipo</th><th style="width:53px">Vence</th><th style="width:75px">Parcelas</th><th style="width:110px">Valor</th><th style="width:55px"></th></tr></thead><tbody>'+
     grupos.map(([titulo,itens])=>{
       if(!itens.length)return '';
