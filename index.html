@@ -76,11 +76,12 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .extrato-pagar{font:700 10px var(--font-sans);padding:6px 5px;background:#1D9E75;border:1px solid #1D9E75;border-radius:7px;color:white;cursor:pointer;white-space:nowrap}
 #ext-wrap td:nth-child(4){font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
 #ext-wrap td:last-child{overflow:visible;white-space:nowrap;text-align:right}
-#ext-wrap .ext-day-header th{padding:15px 6px 7px;background:#0d0d0c;color:#9FE1CB;border-bottom:1px solid #3a3934;font-size:12px;font-weight:900;letter-spacing:.01em;text-transform:none}
+#ext-wrap .ext-day-header th{padding:12px 6px 7px;background:#0d0d0c;color:#9FE1CB;border-bottom:1px solid #3a3934;font-size:12px;font-weight:900;letter-spacing:.01em;text-transform:none}
 #ext-wrap .ext-day-header:first-child th{padding-top:9px}
-#ext-wrap .ext-day-balance td{padding:8px 6px 12px;background:#11110f;border-bottom:1px solid #5a5750}
-#ext-wrap .ext-day-balance-label{text-align:right;color:var(--color-text-secondary);font-size:11px;font-weight:800}
-#ext-wrap .ext-day-balance-value{color:#9FE1CB;font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+#ext-wrap .ext-day-head-line{display:flex;align-items:center;justify-content:space-between;gap:14px;white-space:nowrap}
+#ext-wrap .ext-day-date{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#ext-wrap .ext-day-balance-inline{flex:none;color:#9FE1CB;font-size:11px;font-weight:900;font-variant-numeric:tabular-nums}
+#ext-wrap .ext-day-balance-inline span{color:var(--color-text-secondary);margin-right:5px;font-weight:800}
 #cc-wrap .cc-money{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip;font-size:11px;font-weight:700}
 #cc-wrap .cc-table-wrap{width:100%;overflow-x:auto}
 #cc-wrap .cc-launch-table{min-width:690px}
@@ -2916,12 +2917,12 @@ function renderExtrato(){
       const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.faturaPendente?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento da fatura; ainda não pago.</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes na aba Cartão.</div>`:'';
       return`<tr><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.desc||'-')}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${escHtml(categoria)}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td>${action}</td></tr>`;
     }).join('');
-    let saldoHtml='';
+    let saldoCabecalho='';
     if(saldoInicialValido(S.saldoInicial)&&data>=S.saldoInicial.data&&data<=today()){
       const saldoDia=calcularSaldoDisponivelAte(data);
-      saldoHtml=`<tr class="ext-day-balance"><td colspan="3" class="ext-day-balance-label">Saldo do dia</td><td class="ext-day-balance-value">${fmt(saldoDia)}</td><td></td></tr>`;
+      saldoCabecalho=`<div class="ext-day-balance-inline"><span>Saldo do dia:</span>${fmt(saldoDia)}</div>`;
     }
-    return `<tr class="ext-day-header"><th colspan="5">${tituloDia}</th></tr>`+linhas+saldoHtml;
+    return `<tr class="ext-day-header"><th colspan="5"><div class="ext-day-head-line"><span class="ext-day-date">${tituloDia}</span>${saldoCabecalho}</div></th></tr>`+linhas;
   }).join('');
   wrap.innerHTML=resumo+projecao+avisoSaldo+aviso+'<table><thead><tr><th>Descrição</th><th style="width:94px">Categoria</th><th style="width:67px">Status</th><th style="width:116px">Valor</th><th style="width:110px"></th></tr></thead><tbody>'+corpo+'</tbody></table>';
 }
