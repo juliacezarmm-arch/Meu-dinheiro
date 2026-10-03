@@ -51,7 +51,8 @@ section.innerHTML=`<div class="rec-top"><button type="button" id="rec-toggle" ar
 <div id="rec-body"><p class="rec-caption">Cadastre salário, débito automático, Pix ou transferência. Exclua o cadastro quando quiser; os lançamentos anteriores permanecem.</p><button type="button" class="rec-button primary" id="rec-open">+ Novo registro</button>
 <form class="rec-form" id="rec-form" hidden novalidate><strong id="rec-form-title">Novo registro recorrente</strong>
 <div class="row row2" style="margin-top:12px"><label>Descrição<input id="rec-name" type="text" maxlength="75" placeholder="Ex.: Office, salário, academia" required></label><label>Valor (R$)<input id="rec-value" type="number" min="0.01" step="0.01" required placeholder="60,00"></label></div>
-<div class="row row2"><label>Tipo<select id="rec-type"><option value="saida">Despesa</option><option value="entrada">Entrada / salário</option></select></label><label>Forma de movimentação<select id="rec-method"><option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="pix">Pix</option><option value="transferencia">Transferência</option></select></label></div>
+<div class="row row2"><label>Tipo<select id="rec-type"><option value="saida">Despesa</option><option value="entrada">Entrada / salário</option></select></label><label>Forma de movimentação<select id="rec-method"><option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="boleto">Boleto</option><option value="pix">Pix</option><option value="transferencia">Transferência</option></select></label></div>
+<div class="rec-caption" id="rec-confirm-row" hidden><label style="display:flex;flex-direction:row;align-items:center;gap:8px;color:#f5f5f2"><input id="rec-confirm" type="checkbox" style="width:auto"> Exigir confirmação para considerar pago</label><span id="rec-confirm-note"></span></div>
 <div class="row row1" id="rec-card-row" hidden><label>Cartão<select id="rec-card"><option value="">Selecione o cartão</option></select></label></div>
 <div class="row row2"><label>Categoria<select id="rec-category"></select></label><label>Subcategoria<select id="rec-subcategory"></select></label></div>
 <div class="row row2"><label>Frequência<select id="rec-frequency"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="anual">Anual</option></select></label><label id="rec-date-label">Data da próxima cobrança<input id="rec-start" type="date" required></label><label id="rec-day-label" hidden>Dia da cobrança<input id="rec-day" type="number" min="1" max="31" step="1" inputmode="numeric" placeholder="10" aria-describedby="rec-guidance"></label></div>
@@ -89,7 +90,10 @@ function placeCardRow(){
 }
 const datePlusOne=v=>{const d=new Date(v+'T12:00:00');d.setDate(d.getDate()+1);return isoDate(d.getFullYear(),d.getMonth(),d.getDate());};
 const displayDate=v=>v?v.slice(8,10)+'/'+v.slice(5,7)+'/'+v.slice(0,4):'';
-const kindLabel={debito_automatico:'Débito automático',debito:'Débito',pix:'Pix',transferencia:'Transferência',cartao:'Cartão de crédito',recebimento:'Conta / salário'};
+const kindLabel={debito_automatico:'Débito automático',debito:'Débito',boleto:'Boleto',pix:'Pix',transferencia:'Transferência',cartao:'Cartão de crédito',recebimento:'Conta / salário'};
+function exigeConfirmacao(r){
+ return !!(r&&r.tipo==='saida'&&(r.metodo==='boleto'||(['pix','transferencia'].includes(r.metodo)&&r.exigirConfirmacao===true)));
+}
 function key(r,data){return String(r.id)+'|'+data;}
 function originalJaRegistrado(r,data){
  const list=r.metodo==='cartao'?S.cartao:S.extrato;
@@ -120,11 +124,22 @@ function recurrenceType(){
  if(editingRecMode==='cartao'){
   $('rec-type').value='saida';sel.innerHTML='<option value="cartao">Cartão de crédito</option>';
  }else if(entrada)sel.innerHTML='<option value="recebimento">Recebimento / salário</option><option value="pix">Pix recebido</option><option value="transferencia">Transferência recebida</option>';
- else sel.innerHTML='<option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="pix">Pix</option><option value="transferencia">Transferência</option>';
+ else sel.innerHTML='<option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="boleto">Boleto</option><option value="pix">Pix</option><option value="transferencia">Transferência</option>';
  $('rec-type').closest('label').hidden=editingRecMode==='cartao';
  $('rec-method').closest('label').hidden=editingRecMode==='cartao';
  placeCardRow();
- recurrenceCategories();recurrenceTiming();
+ recurrenceCategories();recurrenceTiming();recurrenceConfirmation();
+}
+function recurrenceConfirmation(){
+ const row=$('rec-confirm-row'),check=$('rec-confirm'),note=$('rec-confirm-note');
+ if(!row||!check)return;
+ const metodo=$('rec-method').value;
+ const saida=editingRecMode==='conta'&&$('rec-type').value==='saida';
+ const boleto=saida&&metodo==='boleto';
+ const opcional=saida&&['pix','transferencia'].includes(metodo);
+ row.hidden=!(boleto||opcional);
+ if(boleto){check.checked=true;check.disabled=true;note.textContent='Boleto sempre fica como conta a pagar até você confirmar.';}
+ else{check.disabled=false;note.textContent='Ative quando o pagamento depender de você, em vez de ocorrer automaticamente.';}
 }
 function recurrenceTiming(){
  const mensal=$('rec-frequency').value==='mensal';
@@ -133,7 +148,7 @@ function recurrenceTiming(){
  $('rec-day').required=mensal;$('rec-start').required=!mensal;
  $('rec-day-label').firstChild.textContent=recebimento?'Dia do recebimento':'Dia da cobrança';
  $('rec-date-label').firstChild.textContent=recebimento?'Data do próximo recebimento':'Data da próxima cobrança';
- $('rec-guidance').textContent=mensal?(editingRecMode==='cartao'?'Informe apenas o dia do mês (1 a 31). A próxima cobrança será programada a partir de hoje; meses curtos usam o último dia. O pagamento da fatura é separado.':'Informe apenas o dia do mês (1 a 31). O próximo lançamento será programado a partir de hoje; meses curtos usam o último dia. O aplicativo não consulta bancos: confira se a movimentação ocorreu.'):(editingRecMode==='cartao'?'Para frequência semanal ou anual, informe a data da próxima cobrança. O vencimento e o pagamento da fatura são separados.':'Para frequência semanal ou anual, informe a data do próximo pagamento ou recebimento. O aplicativo não consulta bancos: confira a movimentação efetiva.');
+ $('rec-guidance').textContent=mensal?(editingRecMode==='cartao'?'Informe apenas o dia do mês (1 a 31). A próxima cobrança será programada a partir de hoje; meses curtos usam o último dia. O pagamento da fatura é separado.':'Informe apenas o dia do mês (1 a 31). Boleto fica como conta a pagar até você confirmar; Pix e transferência podem exigir confirmação. Débito automático e recebimento continuam automáticos.'):(editingRecMode==='cartao'?'Para frequência semanal ou anual, informe a data da próxima cobrança. O vencimento e o pagamento da fatura são separados.':'Para frequência semanal ou anual, informe a data do próximo pagamento ou recebimento. O aplicativo não consulta bancos: confira a movimentação efetiva.');
 }
 function openRecEditor(id=null,mode='conta'){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));editingRecId=r?r.id:null;
@@ -148,6 +163,8 @@ function openRecEditor(id=null,mode='conta'){
  $('rec-type').value=r?r.tipo:'saida';recurrenceType();
  $('rec-method').value=editingRecMode==='cartao'?'cartao':r?r.metodo:'debito_automatico';
  placeCardRow();cardOptions();cardSelect.value=r&&r.cartaoId?String(r.cartaoId):'';
+ recurrenceConfirmation();
+ if($('rec-confirm')&&r&&r.metodo!=='boleto')$('rec-confirm').checked=!!r.exigirConfirmacao;
  $('rec-category').value=r?r.categoria:'';recurrenceSubcategories();$('rec-subcategory').value=r?r.subcategoria:'';
  $('rec-frequency').value=r?r.frequencia:'mensal';$('rec-start').value=r?r.inicio:today();
  $('rec-day').value=r&&r.frequencia==='mensal'?String(r.diaCobranca||Number(r.inicio.slice(8))):'';
@@ -180,10 +197,24 @@ function cardForecasts(){
 }
 function cashForecastsForMonth(y,m){
  const last=isoDate(y,m,new Date(y,m+1,0).getDate());
- return S.recorrentes.filter(r=>r.metodo!=='cartao'&&!r.excluida).flatMap(r=>ocorrencias(r,last).filter(d=>d>today()&&d.slice(0,7)===last.slice(0,7)&&(!saldoInicialValido(S.saldoInicial)||d>S.saldoInicial.data)&&!originalJaRegistrado(r,d)).map(data=>({id:'rec-futuro-'+r.id+'-'+data,data,desc:r.nome,val:r.valor,tipo:r.tipo,categoria:r.categoria,subcategoria:r.subcategoria,pagamento:r.metodo,auto:true,previsto:true}))).sort((a,b)=>a.data.localeCompare(b.data));
+ return S.recorrentes.filter(r=>r.metodo!=='cartao'&&!r.excluida).flatMap(r=>ocorrencias(r,last)
+  .filter(d=>d.slice(0,7)===last.slice(0,7)&&(!saldoInicialValido(S.saldoInicial)||d>S.saldoInicial.data)&&!originalJaRegistrado(r,d))
+  .map(data=>{
+    const manual=exigeConfirmacao(r);
+    if(!manual&&data<=today())return null;
+    return {id:'rec-futuro-'+r.id+'-'+data,data,desc:r.nome,val:r.valor,tipo:r.tipo,categoria:r.categoria,subcategoria:r.subcategoria,pagamento:r.metodo,auto:true,previsto:data>today(),recorrenciaPendente:manual,recorrenciaId:r.id,recorrenciaData:data};
+  }).filter(Boolean)).sort((a,b)=>a.data.localeCompare(b.data));
 }
-// O Extrato exibe previsões na própria tabela; só o registro efetivo entra no saldo e no JSON.
+function pendingRecurringObligationsUntil(fim){
+ if(!dataISOValida(fim))return [];
+ return S.recorrentes.filter(r=>!r.excluida&&r.metodo!=='cartao'&&exigeConfirmacao(r)).flatMap(r=>
+   ocorrencias(r,fim).filter(data=>(!saldoInicialValido(S.saldoInicial)||data>S.saldoInicial.data)&&!originalJaRegistrado(r,data))
+    .map(data=>({data,desc:r.nome,val:r.valor,tipo:r.tipo,recorrenciaId:r.id,recorrenciaData:data}))
+ );
+}
+// O Extrato exibe previsões e contas a pagar; só o pagamento confirmado entra no saldo real.
 window.cashRecurringForecasts=cashForecastsForMonth;
+window.pendingRecurringObligationsUntil=pendingRecurringObligationsUntil;
 
 function syncRecurring(){
  if(!Array.isArray(S.recorrentes)||!S.recorrentes.length){renderRecurring();return false;}
@@ -192,6 +223,7 @@ function syncRecurring(){
  for(const r of S.recorrentes){
   if(r.excluida)continue;
   const card=r.metodo==='cartao'?S.cartoes.find(c=>String(c.id)===String(r.cartaoId)):null;
+  if(r.metodo!=='cartao'&&exigeConfirmacao(r))continue;
   for(const data of ocorrencias(r,hoje)){
    if(originalJaRegistrado(r,data))continue;
    if(r.metodo==='cartao'){
@@ -206,6 +238,18 @@ function syncRecurring(){
  if(changed){saveData();renderCartao();renderExtrato();updateResumo();}
  renderRecurring();return changed;
 }
+window.abrirPagamentoRecorrente=function(id,data){
+ const rec=S.recorrentes.find(x=>String(x.id)===String(id));
+ if(!rec||!exigeConfirmacao(rec)||!dataISOValida(data)||originalJaRegistrado(rec,data))return;
+ abrirPagamentoPendente({kind:'recorrente',recorrenciaId:rec.id,nome:rec.nome,valor:rec.valor,vencimento:data,metodo:rec.metodo});
+};
+window.confirmRecurringPayment=function(id,vencimento,pagamento){
+ const rec=S.recorrentes.find(x=>String(x.id)===String(id));
+ if(!rec||!exigeConfirmacao(rec)||!dataISOValida(vencimento)||originalJaRegistrado(rec,vencimento))return false;
+ S.extrato.push({id:novoIdExtrato(),data:pagamento.data,desc:rec.nome,tipo:rec.tipo,val:pagamento.valor,categoria:rec.categoria,subcategoria:rec.subcategoria,gastoTipo:'',pagamento:pagamento.metodo,recorrenciaId:rec.id,recorrenciaData:vencimento,vencimentoPagamento:vencimento,pagoConfirmado:true,geradoAutomaticamente:false});
+ return true;
+};
+
 function recurringNext(r){
  const horizon=new Date(today()+'T12:00:00');horizon.setFullYear(horizon.getFullYear()+3);
  const end=isoDate(horizon.getFullYear(),horizon.getMonth(),horizon.getDate());
@@ -226,8 +270,9 @@ function renderRecurring(){
     <div class="rec-item-sub"><strong style="color:#f5f5f2">−${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo])}${card?' ('+escHtml(card.bank)+(card.nome?' · '+escHtml(card.nome):'')+')':''} · <span class="rec-item-date-inline">${cobranca}${next?' · Próxima: '+displayDate(next):''}</span></div></div>`;
    }
    const dia=r.frequencia==='mensal'?(r.tipo==='entrada'?'Dia do recebimento: ':'Dia da cobrança: ')+(r.diaCobranca||Number(r.inicio.slice(8))):'Desde: '+displayDate(r.inicio);
+   const confirmacao=exigeConfirmacao(r)?' · confirmação manual':'';
    return `<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">${escHtml(r.nome)}</span><span class="rec-tag${ended?' inactive':''}">${ended?'Encerrado':r.tipo==='entrada'?'Entrada':'Saída'}</span><span class="rec-inline-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir agora</button></span></div>
-    <div class="rec-item-sub"><strong style="color:#f5f5f2">${r.tipo==='saida'?'−':'+'}${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo]||r.metodo)} · <span class="rec-item-date-inline">${dia}${r.fim?' · Encerramento: '+displayDate(r.fim):''}${next?' · Próxima: '+displayDate(next):''}</span></div></div>`;
+    <div class="rec-item-sub"><strong style="color:#f5f5f2">${r.tipo==='saida'?'−':'+'}${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo]||r.metodo)}${confirmacao} · <span class="rec-item-date-inline">${dia}${r.fim?' · Encerramento: '+displayDate(r.fim):''}${next?' · Próxima: '+displayDate(next):''}</span></div></div>`;
   }).join('');
  }
  $('rec-list').innerHTML=html(ativos.filter(r=>r.metodo!=='cartao'),'Nenhum registro recorrente da conta. Cadastre salário, Pix ou débito automático.');
@@ -245,11 +290,12 @@ function saveRecEditor(event){
   inicio=proximaCobrancaMensal(existing?datePlusOne(today()):today(),diaCobranca);
  }
  if(!nome||!valorMonetarioValido(valor)||valor<=0||!dataISOValida(inicio)||fim&&!dataISOValida(fim)||fim&&fim<=inicio||!['semanal','mensal','anual'].includes(frequencia)||!['entrada','saida'].includes(tipo)||!categoria||!subcategoria){appAlert('Preencha descrição, valor, categoria e datas válidas.');return;}
- if(tipo==='entrada'&&!['recebimento','pix','transferencia'].includes(metodo)||tipo==='saida'&&!['cartao','debito_automatico','debito','pix','transferencia'].includes(metodo)){appAlert('Escolha uma forma de pagamento válida.');return;}
+ if(tipo==='entrada'&&!['recebimento','pix','transferencia'].includes(metodo)||tipo==='saida'&&!['cartao','debito_automatico','debito','boleto','pix','transferencia'].includes(metodo)){appAlert('Escolha uma forma de pagamento válida.');return;}
  if((editingRecMode==='cartao')!==(metodo==='cartao')){appAlert('Escolha a aba correspondente ao registro.');return;}
  if(metodo==='cartao'&&!S.cartoes.some(c=>String(c.id)===String(cartaoId))){appAlert('Cadastre e selecione um cartão antes de salvar.');return;}
  let novoId=novoIdGlobal();while(S.recorrentes.some(x=>String(x.id)===String(novoId)))novoId++;
- const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,...(mensal?{diaCobranca}:{})};
+ const exigirConfirmacao=metodo==='boleto'||(['pix','transferencia'].includes(metodo)&&!!($('rec-confirm')&&$('rec-confirm').checked));
+ const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,...(exigirConfirmacao?{exigirConfirmacao:true}:{}),...(mensal?{diaCobranca}:{})};
  if(existing){
   // Passado imutável: edição troca apenas ocorrências a partir de amanhã.
   newRecord.vigenteDesde=datePlusOne(today());
@@ -276,7 +322,8 @@ validarDadosImportados=function(file){
   if(!Array.isArray(dados.recorrentes)||dados.recorrentes.length>2000)throw Error('Cadastro de recorrências inválido.');
   const ids=new Set();
   for(const r of dados.recorrentes){
-   if(!r||typeof r!=='object'||!Number.isSafeInteger(Number(r.id))||Number(r.id)<=0||ids.has(String(r.id))||typeof r.nome!=='string'||!r.nome.trim()||r.nome.length>75||!valorMonetarioValido(r.valor)||r.valor<=0||!['entrada','saida'].includes(r.tipo)||!['cartao','debito_automatico','debito','pix','transferencia','recebimento'].includes(r.metodo)||!['semanal','mensal','anual'].includes(r.frequencia)||!dataISOValida(r.inicio)||r.fim!==null&&r.fim!==undefined&&!dataISOValida(r.fim)||r.vigenteDesde&&!dataISOValida(r.vigenteDesde)||r.diaCobranca!==undefined&&r.diaCobranca!==null&&(!Number.isInteger(r.diaCobranca)||r.diaCobranca<1||r.diaCobranca>31||r.frequencia!=='mensal'))throw Error('Recorrência inválida no arquivo.');
+   if(!r||typeof r!=='object'||!Number.isSafeInteger(Number(r.id))||Number(r.id)<=0||ids.has(String(r.id))||typeof r.nome!=='string'||!r.nome.trim()||r.nome.length>75||!valorMonetarioValido(r.valor)||r.valor<=0||!['entrada','saida'].includes(r.tipo)||!['cartao','debito_automatico','debito','boleto','pix','transferencia','recebimento'].includes(r.metodo)||!['semanal','mensal','anual'].includes(r.frequencia)||!dataISOValida(r.inicio)||r.fim!==null&&r.fim!==undefined&&!dataISOValida(r.fim)||r.vigenteDesde&&!dataISOValida(r.vigenteDesde)||r.diaCobranca!==undefined&&r.diaCobranca!==null&&(!Number.isInteger(r.diaCobranca)||r.diaCobranca<1||r.diaCobranca>31||r.frequencia!=='mensal'))throw Error('Recorrência inválida no arquivo.');
+   if(r.exigirConfirmacao!==undefined&&typeof r.exigirConfirmacao!=='boolean')throw Error('Confirmação de recorrência inválida.');
    ids.add(String(r.id));
   }
  }
@@ -331,7 +378,7 @@ $('rec-open').addEventListener('click',()=>openRecEditor());$('rec-close').addEv
 $('rec-card-open').addEventListener('click',()=>openRecEditor(null,'cartao'));
 $('rec-form').addEventListener('submit',saveRecEditor);
 $('rec-type').addEventListener('change',recurrenceType);
-$('rec-method').addEventListener('change',placeCardRow);
+$('rec-method').addEventListener('change',()=>{placeCardRow();recurrenceConfirmation();});
 $('rec-category').addEventListener('change',recurrenceSubcategories);
 $('rec-frequency').addEventListener('change',recurrenceTiming);
 for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('click',event=>{
