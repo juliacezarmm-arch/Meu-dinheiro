@@ -76,6 +76,10 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .extrato-pagar{font:700 10px var(--font-sans);padding:6px 5px;background:#1D9E75;border:1px solid #1D9E75;border-radius:7px;color:white;cursor:pointer;white-space:nowrap}
 #ext-wrap td:nth-child(4){font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
 #ext-wrap td:last-child{overflow:visible;white-space:nowrap;text-align:right}
+#ext-wrap .ext-description-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ext-wrap .ext-category-cell{font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25}
+#ext-wrap .ext-value-cell{font-variant-numeric:tabular-nums;font-size:12px;font-weight:500;white-space:nowrap}
+#ext-wrap .ext-actions-cell{overflow:visible;white-space:nowrap;text-align:right}
 #ext-wrap .ext-day-header th{padding:12px 6px 7px;background:#0d0d0c;color:#9FE1CB;border-bottom:1px solid #3a3934;font-size:12px;font-weight:900;letter-spacing:.01em;text-transform:none}
 #ext-wrap .ext-day-header:first-child th{padding-top:9px}
 #ext-wrap .ext-day-head-line{display:flex;align-items:center;justify-content:space-between;gap:14px;white-space:nowrap}
@@ -98,7 +102,31 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #page-cartao .cc-launch-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #page-cartao .cc-launch-title #cc-total-display{color:#9FE1CB;font-size:12px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
 
-@media(max-width:580px){#ext-wrap table{font-size:11px}#ext-wrap th,#ext-wrap td{padding:6px 3px}#ext-wrap th:last-child{width:94px!important}#ext-wrap .extrato-pagar{font-size:9px;padding:5px 3px}#cc-wrap table{font-size:11px}#cc-wrap th,#cc-wrap td{padding:6px 3px}}
+@media(max-width:580px){
+  /* Extrato no celular: categoria passa para baixo da descrição para liberar largura. */
+  #ext-wrap table{font-size:11px;table-layout:fixed}
+  #ext-wrap th,#ext-wrap td{padding:6px 4px}
+  #ext-wrap thead th:nth-child(2),#ext-wrap td.ext-category-cell{display:none}
+  #ext-wrap thead th:nth-child(3){width:66px!important}
+  #ext-wrap thead th:nth-child(4){width:88px!important}
+  #ext-wrap thead th:last-child{width:76px!important}
+  #ext-wrap .ext-description-cell{white-space:normal;line-height:1.2;overflow:visible;text-overflow:clip;padding-right:7px}
+  #ext-wrap .ext-mobile-category{display:block;margin-top:2px;color:var(--color-text-secondary);font-size:9.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #ext-wrap .ext-status-cell{text-align:left;overflow:visible}
+  #ext-wrap .ext-status-cell .badge{font-size:9.5px;padding:2px 6px;white-space:nowrap}
+  #ext-wrap .ext-value-cell{font-size:10.5px!important;font-weight:700;white-space:nowrap;overflow:visible;text-overflow:clip}
+  #ext-wrap .ext-actions-cell{width:76px;white-space:nowrap;text-align:right;padding-left:1px;padding-right:1px}
+  #ext-wrap .extrato-pagar{font-size:8.5px;padding:5px 4px;line-height:1.05}
+  #ext-wrap .extrato-edit-btn{min-width:24px;min-height:27px;font-size:15px}
+  /* Cabeçalho do dia mais baixo: data + saldo continuam na mesma linha. */
+  #ext-wrap .ext-day-header th{padding:6px 5px 5px!important;font-size:11px}
+  #ext-wrap .ext-day-head-line{gap:8px;min-height:18px}
+  #ext-wrap .ext-day-balance-inline{font-size:10px}
+  #ext-wrap .ext-day-balance-inline span{margin-right:3px}
+  #cc-wrap table{font-size:11px}
+  #cc-wrap th,#cc-wrap td{padding:6px 3px}
+}
+@media(min-width:581px){#ext-wrap .ext-mobile-category{display:none}}
 th{text-align:left;padding:8px 6px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;font-size:12px}
 td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 td:last-child{white-space:normal}
@@ -3198,7 +3226,7 @@ function renderExtrato(){
       const action=r.faturaPendente?`<button class="extrato-pagar" type="button" onclick="registrarPagamentoFatura(${Number(r.cardId)},'${r.faturaMes}')" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button>`:pendenteRecorrente?`<button class="extrato-pagar" type="button" onclick="abrirPagamentoRecorrente(${Number(r.recorrenciaId)},'${r.recorrenciaData}')" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button>`:pendenteAvulso?`<button class="extrato-pagar" type="button" onclick="abrirPagamentoBoleto(${Number(r.id)})" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button> <button class="del extrato-edit-btn" type="button" onclick="editarLancamentoExtrato(${Number(r.id)})" aria-label="Editar lançamento" title="Corrige esta conta antes do pagamento.">✎</button><button class="del" type="button" onclick="delExt(${Number(r.id)})" aria-label="Remover" title="Apaga esta conta a pagar."><i class="ti ti-x" aria-hidden="true"></i></button>`:r.auto?'':`<button class="del extrato-edit-btn" type="button" onclick="editarLancamentoExtrato(${Number(r.id)})" aria-label="Editar lançamento" title="Corrige os dados deste lançamento sem duplicar.">✎</button><button class="del" type="button" onclick="delExt(${Number(r.id)})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
       const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.faturaPendente?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento da fatura; ainda não pago.</div>`:(pendenteAvulso||pendenteRecorrente)?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento ${r.data.split('-').reverse().join('/')} · aguardando confirmação do pagamento.</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes na aba Cartão.</div>`:'';
-      return`<tr><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.desc||'-')}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${escHtml(categoria)}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td>${action}</td></tr>`;
+      return`<tr><td class="ext-description-cell">${escHtml(r.desc||'-')}<div class="ext-mobile-category">${escHtml(categoria)}</div>${detalhe}</td><td class="ext-category-cell">${escHtml(categoria)}</td><td class="ext-status-cell"><span class="badge ${bc}">${tipoLabel}</span></td><td class="ext-value-cell" style="color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td class="ext-actions-cell">${action}</td></tr>`;
     }).join('');
     let saldoCabecalho='';
     if(saldoInicialValido(S.saldoInicial)&&data>=S.saldoInicial.data&&data<=today()){
