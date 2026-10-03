@@ -76,8 +76,19 @@ section.querySelector('.rec-top').remove();
 saldoPanel.hidden=true;
 section.hidden=true;
 const cardSection=document.createElement('section');cardSection.id='rec-cartao-area';cardSection.className='rec-area';
-cardSection.innerHTML='<div class="rec-top"><button type="button" id="rec-card-toggle" aria-expanded="true" aria-controls="rec-card-body">Pagamentos recorrentes <span id="rec-card-toggle-symbol" aria-hidden="true">−</span></button></div><div id="rec-card-body"><button type="button" class="rec-button primary" id="rec-card-open">+ Novo pagamento</button><div class="rec-list" id="rec-card-list"></div></div>';
+cardSection.innerHTML='<div class="rec-top"><button type="button" id="rec-card-toggle" aria-expanded="true" aria-controls="rec-card-body">Recorrentes <span id="rec-card-toggle-symbol" aria-hidden="true">−</span></button></div><div id="rec-card-body"><button type="button" class="rec-button primary" id="rec-card-open">+ Novo pagamento</button><div class="rec-list" id="rec-card-list"></div></div>';
 const cardAnchor=document.querySelector('#page-cartao .section-title:nth-of-type(2)')||document.querySelector('#page-cartao #cc-card').closest('.add-form');cardAnchor.parentNode.insertBefore(cardSection,cardAnchor);
+const cardControls=document.getElementById('cartao-action-buttons');
+const cardForms=[...document.querySelectorAll('#page-cartao .add-form')];
+const registerToggle=cardForms[0]&&cardForms[0].previousElementSibling&&cardForms[0].previousElementSibling.classList.contains('form-toggle')?cardForms[0].previousElementSibling:null;
+const purchaseToggle=cardForms[1]&&cardForms[1].previousElementSibling&&cardForms[1].previousElementSibling.classList.contains('form-toggle')?cardForms[1].previousElementSibling:null;
+if(cardControls){
+  if(registerToggle)cardControls.appendChild(registerToggle);
+  if(purchaseToggle)cardControls.appendChild(purchaseToggle);
+  cardControls.appendChild(cardSection.querySelector('#rec-card-toggle'));
+  cardSection.querySelector('.rec-top').remove();
+  cardSection.hidden=true;
+}
 const $=id=>document.getElementById(id);
 const cardRow=$('rec-card-row');
 const cardSelect=$('rec-card');
@@ -179,6 +190,7 @@ function setRecAreaExpanded(expanded){
  if(!expanded&&$('rec-form').parentElement===$('rec-body'))closeRecEditor();
 }
 function setCardRecAreaExpanded(expanded){
+ cardSection.hidden=!expanded;
  $('rec-card-body').hidden=!expanded;
  $('rec-card-toggle').setAttribute('aria-expanded',String(expanded));
  $('rec-card-toggle-symbol').textContent=expanded?'−':'+';
@@ -388,7 +400,7 @@ for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('cli
 });
 const oldShowPage=showPage;
 showPage=function(id,btn){oldShowPage(id,btn);if(id==='extrato'||id==='cartao')renderRecurring();};
-$('rec-start').value=today();recurrenceType();closeRecEditor();setRecAreaExpanded(false);renderRecurring();
+$('rec-start').value=today();recurrenceType();closeRecEditor();setRecAreaExpanded(false);setCardRecAreaExpanded(false);renderRecurring();
 const midnightPoll=setInterval(()=>{if(S.recorrentes.length)syncRecurring();},5*60*1000);
 })();
 }
