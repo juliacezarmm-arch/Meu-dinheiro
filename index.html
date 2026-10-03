@@ -74,8 +74,13 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
 .section-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:1.25rem 0 .75rem}
 table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .extrato-pagar{font:700 10px var(--font-sans);padding:6px 5px;background:#1D9E75;border:1px solid #1D9E75;border-radius:7px;color:white;cursor:pointer;white-space:nowrap}
-#ext-wrap td:nth-child(5){font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
+#ext-wrap td:nth-child(4){font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
 #ext-wrap td:last-child{overflow:visible;white-space:nowrap;text-align:right}
+#ext-wrap .ext-day-header th{padding:15px 6px 7px;background:#0d0d0c;color:#9FE1CB;border-bottom:1px solid #3a3934;font-size:12px;font-weight:900;letter-spacing:.01em;text-transform:none}
+#ext-wrap .ext-day-header:first-child th{padding-top:9px}
+#ext-wrap .ext-day-balance td{padding:8px 6px 12px;background:#11110f;border-bottom:1px solid #5a5750}
+#ext-wrap .ext-day-balance-label{text-align:right;color:var(--color-text-secondary);font-size:11px;font-weight:800}
+#ext-wrap .ext-day-balance-value{color:#9FE1CB;font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
 #cc-wrap .cc-money{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip;font-size:11px;font-weight:700}
 #cc-wrap .cc-table-wrap{width:100%;overflow-x:auto}
 #cc-wrap .cc-launch-table{min-width:690px}
@@ -2891,18 +2896,34 @@ function renderExtrato(){
   const projecao=saldoInicialValido(S.saldoInicial)?`<div class="plain-summary compact-summary" style="margin:8px 0 12px"><div class="plain-card"><strong>Saldo de hoje: ${fmt(calcularSaldoDisponivelAte(today()))}</strong><span>Somente dinheiro lançado até hoje.</span></div><div class="plain-card"><strong style="color:${sobra===null?'#c5c3ba':sobra<0?'#efaba4':'#9FE1CB'}">${sobra===null?'Sobra prevista indisponível':'Sobra prevista até '+fimMes.slice(8,10)+'/'+fimMes.slice(5,7)+': '+fmt(sobra)}</strong><span>Inclui entradas e contas programadas e faturas em aberto, sem descontar compras duas vezes.</span></div></div>`:'';
   if(!rows.length){wrap.innerHTML=resumo+projecao+avisoSaldo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
   const hoje=new Date(today()+'T12:00:00');
-  wrap.innerHTML=resumo+projecao+avisoSaldo+aviso+'<table><thead><tr><th style="width:54px">Data</th><th>Descrição</th><th style="width:94px">Categoria</th><th style="width:67px">Status</th><th style="width:116px">Valor</th><th style="width:110px"></th></tr></thead><tbody>'+
-    rows.map(r=>{
-      const d=new Date(r.data+'T12:00:00');
+  const nomesMes=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const gruposDia=new Map();
+  rows.forEach(r=>{
+    if(!gruposDia.has(r.data))gruposDia.set(r.data,[]);
+    gruposDia.get(r.data).push(r);
+  });
+  const corpo=[...gruposDia.entries()].map(([data,itens])=>{
+    const d=new Date(data+'T12:00:00');
+    const tituloDia=d.getDate()+' de '+nomesMes[d.getMonth()];
+    const linhas=itens.map(r=>{
+      const rd=new Date(r.data+'T12:00:00');
       const bc=r.tipo==='saldo_inicial'?'b-pagamento':r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
-      const futuro=d>hoje;
+      const futuro=rd>hoje;
       const tipoLabel=r.faturaPendente?'a pagar':r.previsto||futuro?'previsto':r.tipo==='saldo_inicial'?'saldo':r.tipo==='cartao'?'cartão':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
       const color=r.tipo==='saldo_inicial'?'#9FE1CB':r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#A32D2D':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
       const action=r.faturaPendente?`<button class="extrato-pagar" type="button" onclick="registrarPagamentoFatura(${Number(r.cardId)},'${r.faturaMes}')" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button>`:r.auto?'':`<button class="del extrato-edit-btn" type="button" onclick="editarLancamentoExtrato(${Number(r.id)})" aria-label="Editar lançamento" title="Corrige os dados deste lançamento sem duplicar.">✎</button><button class="del" type="button" onclick="delExt(${Number(r.id)})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
       const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.faturaPendente?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento da fatura; ainda não pago.</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes na aba Cartão.</div>`:'';
-      return`<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.desc||'-')}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${escHtml(categoria)}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td>${action}</td></tr>`;
-    }).join('')+'</tbody></table>';
+      return`<tr><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.desc||'-')}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${escHtml(categoria)}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td>${action}</td></tr>`;
+    }).join('');
+    let saldoHtml='';
+    if(saldoInicialValido(S.saldoInicial)&&data>=S.saldoInicial.data&&data<=today()){
+      const saldoDia=calcularSaldoDisponivelAte(data);
+      saldoHtml=`<tr class="ext-day-balance"><td colspan="3" class="ext-day-balance-label">Saldo do dia</td><td class="ext-day-balance-value">${fmt(saldoDia)}</td><td></td></tr>`;
+    }
+    return `<tr class="ext-day-header"><th colspan="5">${tituloDia}</th></tr>`+linhas+saldoHtml;
+  }).join('');
+  wrap.innerHTML=resumo+projecao+avisoSaldo+aviso+'<table><thead><tr><th>Descrição</th><th style="width:94px">Categoria</th><th style="width:67px">Status</th><th style="width:116px">Valor</th><th style="width:110px"></th></tr></thead><tbody>'+corpo+'</tbody></table>';
 }
 
 function fmtInvestPct(value){
