@@ -110,6 +110,8 @@ td:last-child{white-space:normal}
 .b-compra{background:#FAEEDA;color:#633806}
 .b-pagamento{background:#E1F5EE;color:#085041}
 .b-cartao{background:#FAEEDA;color:#633806}
+.b-pendente{background:#FAEEDA;color:#633806}
+.b-vencido{background:#FCEBEB;color:#791F1F}
 .del{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:14px;padding:1px 4px;border-radius:4px}
 .del:hover{color:#A32D2D}
 .extrato-edit-btn{color:#9FE1CB;min-width:27px;min-height:30px;font-size:17px;font-weight:800}
@@ -680,6 +682,19 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <p class="site-dialog-copy">Essa data será a saída no Extrato. O vencimento permanece como referência da fatura, sem duplicar a despesa.</p>
   <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('card-payment-editor')">Cancelar</button><button class="site-button primary" type="submit">Confirmar pagamento</button></div></form>
 </div></div>
+<div id="pending-payment-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="pending-payment-title" hidden onclick="if(event.target===this)fecharJanela('pending-payment-editor')">
+  <div class="site-dialog-panel">
+    <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">$</span><h2 id="pending-payment-title">Marcar como pago</h2></div>
+    <p class="site-dialog-copy" id="pending-payment-description"></p>
+    <form novalidate onsubmit="event.preventDefault();salvarPagamentoPendente()">
+      <label class="site-field">Valor efetivamente pago (R$)<input id="pending-payment-amount" type="number" inputmode="decimal" min="0.01" step="0.01" required></label>
+      <label class="site-field">Data em que você pagou<input id="pending-payment-date" type="date" required></label>
+      <label class="site-field">Forma usada no pagamento<select id="pending-payment-method"><option value="boleto">Boleto</option><option value="pix">Pix</option><option value="transferencia">Transferência</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
+      <p class="site-dialog-copy">O vencimento continua como referência. O saldo real só muda na data em que o pagamento foi confirmado.</p>
+      <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('pending-payment-editor')">Cancelar</button><button class="site-button primary" type="submit">Confirmar pagamento</button></div>
+    </form>
+  </div>
+</div>
 <div id="invest-modal" class="site-dialog invest-dialog" role="dialog" aria-modal="true" aria-labelledby="invest-modal-title" hidden onclick="if(event.target===this)fecharPainelInvestimento()">
   <div class="site-dialog-panel invest-modal-panel">
     <div class="invest-modal-heading"><div><span class="invest-modal-eyebrow">Investimentos e metas</span><h2 id="invest-modal-title">Detalhes</h2></div><button class="invest-modal-close" type="button" onclick="fecharPainelInvestimento()" aria-label="Fechar janela">×</button></div>
@@ -739,6 +754,7 @@ let editingCartaoId=null;
 let editingExtratoId=null;
 let editingRegisteredCardId=null;
 let pagamentoEmEdicao=null;
+let pagamentoPendenteEmEdicao=null;
 let parcelasPagasEmEdicao=null;
 let extratoResumoAberto=false;
 const resumoCharts={annual:false,extrato:false,cartao:false,invest:false,metas:false};
@@ -747,7 +763,7 @@ let investModalAtivo=null;
 function fecharAviso(){clearTimeout(appAlert.timer);document.getElementById('app-toast').hidden=true;}
 function appAlert(message){const toast=document.getElementById('app-toast');document.getElementById('app-toast-message').textContent=String(message);toast.hidden=false;clearTimeout(appAlert.timer);appAlert.timer=setTimeout(fecharAviso,6500);}
 function abrirJanela(id){const e=document.getElementById(id);if(!e)return;e.hidden=false;const first=e.querySelector('input,select,button');if(first)first.focus();}
-function fecharJanela(id){const e=document.getElementById(id);if(e)e.hidden=true;if(id==='card-editor')editingRegisteredCardId=null;if(id==='extrato-editor')editingExtratoId=null;if(id==='card-payment-editor')pagamentoEmEdicao=null;if(id==='card-paid-editor')parcelasPagasEmEdicao=null;}
+function fecharJanela(id){const e=document.getElementById(id);if(e)e.hidden=true;if(id==='card-editor')editingRegisteredCardId=null;if(id==='extrato-editor')editingExtratoId=null;if(id==='card-payment-editor')pagamentoEmEdicao=null;if(id==='pending-payment-editor')pagamentoPendenteEmEdicao=null;if(id==='card-paid-editor')parcelasPagasEmEdicao=null;}
 function appConfirm(message){
  return new Promise(resolve=>{
   const overlay=document.getElementById('app-confirm-overlay'),ok=document.getElementById('app-confirm-accept'),cancel=document.getElementById('app-confirm-cancel'),previous=document.activeElement;
@@ -824,6 +840,9 @@ function validarDadosImportados(arquivo){
       if(key==='extrato'&&!dataISOValida(r.data))throw Error('Lançamento sem data.');
       if(key==='cartao'&&!dataISOValida(r.data))throw Error('Compra sem data.');
       if(key==='extrato'&&!['entrada','saida','investimento','meta'].includes(r.tipo))throw Error('Tipo de lançamento inválido.');
+      if(key==='extrato'&&r.exigeConfirmacaoPagamento!==undefined&&typeof r.exigeConfirmacaoPagamento!=='boolean')throw Error('Confirmação de pagamento inválida.');
+      if(key==='extrato'&&r.pagoConfirmado!==undefined&&typeof r.pagoConfirmado!=='boolean')throw Error('Status de pagamento inválido.');
+      if(key==='extrato'&&r.vencimentoPagamento!==undefined&&r.vencimentoPagamento!==null&&!dataISOValida(r.vencimentoPagamento))throw Error('Vencimento de pagamento inválido.');
       for(const campo of ['val','valorAtual','totalAportado','totalResgatado','meta']){
         if(r[campo]!==undefined&&(typeof r[campo]!=='number'||!Number.isFinite(r[campo])||r[campo]<0))throw Error('Valor financeiro inválido em '+key+': '+campo);
       }
@@ -882,7 +901,10 @@ function pagoNaFaturaFinanceira(cardId,mes){
     .reduce((centavos,x)=>centavos+Math.round(Number(x.val)*100),0);
 }
 function receitaReal(x){return x.tipo==='entrada'&&x.categoria!=='Resgate'&&x.subcategoria!=='Dinheiro do mês passado';}
-function movimentoRealizado(x){return !S.saldoInicial||x.data<=today();}
+function movimentoRealizado(x){
+  if(x&&x.exigeConfirmacaoPagamento&&!x.pagoConfirmado)return false;
+  return !S.saldoInicial||x.data<=today();
+}
 function pagoNaFatura(cardId,mes){
   return S.extrato.filter(x=>x.tipo==='saida'&&String(x.cardId)===String(cardId)&&x.faturaMes===mes)
     .reduce((total,x)=>total+Math.round(Number(x.val)*100),0);
@@ -916,6 +938,7 @@ function calcularSaldoDisponivelAte(limite){
   let centavos=Math.round(Number(base.valor)*100);
   for(const item of S.extrato){
     if(ignorados.has(String(item.id))||!item.data||item.data<base.data||item.data>dataFinal)continue;
+    if(item.exigeConfirmacaoPagamento&&!item.pagoConfirmado)continue;
     if(item.tipo==='entrada'&&item.subcategoria==='Dinheiro do mês passado')continue;
     const valor=Math.round(Number(item.val||0)*100);
     if(item.tipo==='entrada')centavos+=valor;
@@ -1862,7 +1885,13 @@ function addExtrato(){
   }
   if(!categoria||!subcategoria||!valorMonetarioValido(val)||val<=0){appAlert('Preencha categoria, subcategoria e valor.');return;}
   if(tipo==='saida'&&!pagamento){appAlert('Para saídas, informe tipo de gasto e forma de pagamento.');return;}
-  S.extrato.push({id:novoIdExtrato(),data,desc,tipo,val:Math.round(val*100)/100,categoria,subcategoria,gastoTipo:tipo==='saida'?gastoTipo:'',pagamento:tipo==='saida'?pagamento:''});
+  const novoLancamento={id:novoIdExtrato(),data,desc,tipo,val:Math.round(val*100)/100,categoria,subcategoria,gastoTipo:tipo==='saida'?gastoTipo:'',pagamento:tipo==='saida'?pagamento:''};
+  if(tipo==='saida'&&pagamento==='boleto'){
+    novoLancamento.exigeConfirmacaoPagamento=true;
+    novoLancamento.pagoConfirmado=false;
+    novoLancamento.vencimentoPagamento=data;
+  }
+  S.extrato.push(novoLancamento);
   document.getElementById('ext-desc').value='';
   document.getElementById('ext-val').value='';
   document.getElementById('ext-categoria').value='';
@@ -2009,6 +2038,13 @@ function salvarEdicaoExtrato(){
     item.tipo=tipo;item.categoria=categoria;item.subcategoria=subcategoria;item.desc=desc;
     item.pagamento=tipo==='saida'?pagamento:'';
     item.gastoTipo=tipo==='saida'?(item.gastoTipo||'variavel'):'';
+    if(tipo==='saida'&&pagamento==='boleto'&&!item.pagoConfirmado){
+      item.exigeConfirmacaoPagamento=true;
+      item.vencimentoPagamento=data;
+    }else if(!item.pagoConfirmado){
+      delete item.exigeConfirmacaoPagamento;
+      delete item.vencimentoPagamento;
+    }
   }
   item.data=data;
   item.val=valor;
@@ -2812,6 +2848,50 @@ function renderStockChart(item,mes,periodo){
 
 // Faturas pendentes são compromissos: entram na projeção, mas não no caixa até o pagamento.
 // Cada cartão mantém sua própria fatura; compras e assinaturas nunca viram saídas duplicadas.
+function abrirPagamentoPendente(config){
+  if(!config||!config.kind)return;
+  pagamentoPendenteEmEdicao=config;
+  document.getElementById('pending-payment-title').textContent='Marcar como pago · '+(config.nome||'Conta');
+  const venc=config.vencimento&&dataISOValida(config.vencimento)?config.vencimento.split('-').reverse().join('/'):'—';
+  document.getElementById('pending-payment-description').textContent='Vencimento: '+venc+' · Valor previsto: '+fmt(Number(config.valor||0))+'.';
+  document.getElementById('pending-payment-amount').value=Number(config.valor||0).toFixed(2);
+  const dataCampo=document.getElementById('pending-payment-date');
+  dataCampo.value=today();
+  if(S.saldoInicial)dataCampo.min=S.saldoInicial.data;
+  dataCampo.max=today();
+  const metodo=document.getElementById('pending-payment-method');
+  metodo.value=['boleto','pix','transferencia','debito','dinheiro','outro'].includes(config.metodo)?config.metodo:'boleto';
+  abrirJanela('pending-payment-editor');
+}
+function abrirPagamentoBoleto(id){
+  const item=S.extrato.find(x=>String(x.id)===String(id));
+  if(!item||!item.exigeConfirmacaoPagamento||item.pagoConfirmado)return;
+  abrirPagamentoPendente({kind:'avulso',id:item.id,nome:item.desc||item.subcategoria||'Boleto',valor:item.val,vencimento:item.vencimentoPagamento||item.data,metodo:item.pagamento||'boleto'});
+}
+function salvarPagamentoPendente(){
+  const cfg=pagamentoPendenteEmEdicao;if(!cfg)return;
+  const campo=document.getElementById('pending-payment-amount');
+  const valor=Number(campo.value),data=document.getElementById('pending-payment-date').value,metodo=document.getElementById('pending-payment-method').value;
+  if(campo.value.trim()===''||!valorMonetarioValido(valor)||valor<=0){appAlert('Informe o valor efetivamente pago.');return;}
+  if(!dataISOValida(data)||data>today()||S.saldoInicial&&data<S.saldoInicial.data){appAlert('Informe uma data de pagamento válida, até hoje.');return;}
+  if(!['boleto','pix','transferencia','debito','dinheiro','outro'].includes(metodo)){appAlert('Escolha a forma usada no pagamento.');return;}
+  if(cfg.kind==='avulso'){
+    const item=S.extrato.find(x=>String(x.id)===String(cfg.id));
+    if(!item||item.pagoConfirmado){fecharJanela('pending-payment-editor');return;}
+    item.vencimentoPagamento=item.vencimentoPagamento||item.data;
+    item.data=data;item.val=Math.round(valor*100)/100;item.pagamento=metodo;
+    item.exigeConfirmacaoPagamento=true;item.pagoConfirmado=true;
+  }else if(cfg.kind==='recorrente'){
+    if(typeof window.confirmRecurringPayment!=='function'){appAlert('Não foi possível localizar a recorrência.');return;}
+    const ok=window.confirmRecurringPayment(cfg.recorrenciaId,cfg.vencimento,{data,valor:Math.round(valor*100)/100,metodo});
+    if(!ok){appAlert('Essa cobrança já foi registrada ou não está mais disponível.');return;}
+  }else return;
+  fecharJanela('pending-payment-editor');
+  extratoMes=new Date(data+'T12:00:00');
+  saveData();renderCartao();renderExtrato();updateResumo();
+  appAlert('Pagamento confirmado. O saldo foi atualizado na data em que o dinheiro saiu.');
+}
+
 function faturasPendentesDoMes(y,m){
   const mes=isoDate(y,m,1).slice(0,7);
   return S.cartoes.flatMap(card=>{
@@ -2829,18 +2909,31 @@ function calcularSobraPrevistaAte(fim){
   let centavos=Math.round(calcularSaldoDisponivelAte(today())*100);
   const ignorados=new Set(S.saldoInicial.idsIgnorados.map(String));
   for(const x of S.extrato){
+    if(x.exigeConfirmacaoPagamento&&!x.pagoConfirmado){
+      if(x.data>=S.saldoInicial.data&&x.data<=fim&&!ignorados.has(String(x.id))){
+        const val=Math.round(Number(x.val||0)*100);
+        if(x.tipo==='entrada')centavos+=val;
+        else if(['saida','investimento','meta'].includes(x.tipo))centavos-=val;
+      }
+      continue;
+    }
     if(x.data<=today()||x.data>fim||x.data<S.saldoInicial.data||ignorados.has(String(x.id)))continue;
     if(x.tipo==='entrada'&&x.subcategoria==='Dinheiro do mês passado')continue;
     const val=Math.round(Number(x.val||0)*100);
     if(x.tipo==='entrada')centavos+=val;
     else if(['saida','investimento','meta'].includes(x.tipo))centavos-=val;
   }
+  if(typeof window.pendingRecurringObligationsUntil==='function'){
+    for(const rec of window.pendingRecurringObligationsUntil(fim)){
+      centavos+=(rec.tipo==='entrada'?1:-1)*Math.round(Number(rec.val||0)*100);
+    }
+  }
   const limite=new Date(fim+'T12:00:00');
   const cursor=new Date(today().slice(0,7)+'-01T12:00:00');
   let i=0;
   for(;cursor<=limite&&i<240;i++,cursor.setMonth(cursor.getMonth()+1)){
     if(typeof window.cashRecurringForecasts==='function')for(const rec of window.cashRecurringForecasts(cursor.getFullYear(),cursor.getMonth())){
-      if(rec.data>fim)continue;
+      if(rec.data>fim||rec.recorrenciaPendente)continue;
       centavos+=(rec.tipo==='entrada'?1:-1)*Math.round(rec.val*100);
     }
   }
@@ -2908,13 +3001,17 @@ function renderExtrato(){
     const tituloDia=d.getDate()+' de '+nomesMes[d.getMonth()];
     const linhas=itens.map(r=>{
       const rd=new Date(r.data+'T12:00:00');
-      const bc=r.tipo==='saldo_inicial'?'b-pagamento':r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
       const futuro=rd>hoje;
-      const tipoLabel=r.faturaPendente?'a pagar':r.previsto||futuro?'previsto':r.tipo==='saldo_inicial'?'saldo':r.tipo==='cartao'?'cartão':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
+      const pendenteAvulso=!!(r.exigeConfirmacaoPagamento&&!r.pagoConfirmado);
+      const pendenteRecorrente=!!r.recorrenciaPendente;
+      const vencidoPendente=(pendenteAvulso||pendenteRecorrente)&&r.data<today();
+      const venceHoje=(pendenteAvulso||pendenteRecorrente)&&r.data===today();
+      const bc=vencidoPendente?'b-vencido':(pendenteAvulso||pendenteRecorrente||r.faturaPendente)?'b-pendente':r.tipo==='saldo_inicial'?'b-pagamento':r.tipo==='entrada'?'b-pagamento':r.tipo==='cartao'?'b-cartao':(r.tipo==='investimento'||r.tipo==='meta')?'badge':'b-compra';
+      const tipoLabel=vencidoPendente?'vencido':venceHoje?'a pagar':r.faturaPendente?'a pagar':(pendenteAvulso||pendenteRecorrente)&&futuro?'previsto':r.previsto||futuro?'previsto':r.tipo==='saldo_inicial'?'saldo':r.tipo==='cartao'?'cartão':r.tipo==='investimento'?'invest.':r.tipo==='meta'?'meta':r.tipo;
       const color=r.tipo==='saldo_inicial'?'#9FE1CB':r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#A32D2D':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
-      const action=r.faturaPendente?`<button class="extrato-pagar" type="button" onclick="registrarPagamentoFatura(${Number(r.cardId)},'${r.faturaMes}')" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button>`:r.auto?'':`<button class="del extrato-edit-btn" type="button" onclick="editarLancamentoExtrato(${Number(r.id)})" aria-label="Editar lançamento" title="Corrige os dados deste lançamento sem duplicar.">✎</button><button class="del" type="button" onclick="delExt(${Number(r.id)})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
+      const action=r.faturaPendente?`<button class="extrato-pagar" type="button" onclick="registrarPagamentoFatura(${Number(r.cardId)},'${r.faturaMes}')" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button>`:pendenteRecorrente?`<button class="extrato-pagar" type="button" onclick="abrirPagamentoRecorrente(${Number(r.recorrenciaId)},'${r.recorrenciaData}')" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button>`:pendenteAvulso?`<button class="extrato-pagar" type="button" onclick="abrirPagamentoBoleto(${Number(r.id)})" aria-label="Marcar como pago ${escHtml(r.desc)}">Marcar como pago</button> <button class="del extrato-edit-btn" type="button" onclick="editarLancamentoExtrato(${Number(r.id)})" aria-label="Editar lançamento" title="Corrige esta conta antes do pagamento.">✎</button><button class="del" type="button" onclick="delExt(${Number(r.id)})" aria-label="Remover" title="Apaga esta conta a pagar."><i class="ti ti-x" aria-hidden="true"></i></button>`:r.auto?'':`<button class="del extrato-edit-btn" type="button" onclick="editarLancamentoExtrato(${Number(r.id)})" aria-label="Editar lançamento" title="Corrige os dados deste lançamento sem duplicar.">✎</button><button class="del" type="button" onclick="delExt(${Number(r.id)})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
-      const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.faturaPendente?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento da fatura; ainda não pago.</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes na aba Cartão.</div>`:'';
+      const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.faturaPendente?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento da fatura; ainda não pago.</div>`:(pendenteAvulso||pendenteRecorrente)?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento ${r.data.split('-').reverse().join('/')} · aguardando confirmação do pagamento.</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes na aba Cartão.</div>`:'';
       return`<tr><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(r.desc||'-')}${detalhe}</td><td style="font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25">${escHtml(categoria)}</td><td><span class="badge ${bc}">${tipoLabel}</span></td><td style="font-weight:500;color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td>${action}</td></tr>`;
     }).join('');
     let saldoCabecalho='';
@@ -2924,7 +3021,7 @@ function renderExtrato(){
     }
     return `<tr class="ext-day-header"><th colspan="5"><div class="ext-day-head-line"><span class="ext-day-date">${tituloDia}</span>${saldoCabecalho}</div></th></tr>`+linhas;
   }).join('');
-  wrap.innerHTML=resumo+projecao+avisoSaldo+aviso+'<table><thead><tr><th>Descrição</th><th style="width:94px">Categoria</th><th style="width:67px">Status</th><th style="width:116px">Valor</th><th style="width:110px"></th></tr></thead><tbody>'+corpo+'</tbody></table>';
+  wrap.innerHTML=resumo+projecao+avisoSaldo+aviso+'<table><thead><tr><th>Descrição</th><th style="width:94px">Categoria</th><th style="width:67px">Status</th><th style="width:116px">Valor</th><th style="width:190px"></th></tr></thead><tbody>'+corpo+'</tbody></table>';
 }
 
 function fmtInvestPct(value){
