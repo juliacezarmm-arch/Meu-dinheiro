@@ -3207,7 +3207,7 @@ function renderExtrato(){
   const investimentoMes=rowsBase.filter(r=>r.tipo==='investimento'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
   const metaMes=rowsBase.filter(r=>r.tipo==='meta'&&movimentoNoControleFinanceiro(r)).reduce((s,r)=>s+r.val,0);
   const cartaoMes=rowsBase.filter(r=>r.tipo==='cartao').reduce((s,r)=>s+r.val,0);
-  const aviso=parcelasMes.length?'<div class="hint">As faturas pendentes entram na sobra prevista. Ao pagar, use o botão da fatura abaixo; o saldo de hoje só muda após registrar o pagamento.</div>':'';
+  const aviso=parcelasMes.length?'<div class="hint">As faturas pendentes entram na sobra prevista. Ao pagar, use o botão da fatura abaixo; o saldo do mês só muda após registrar o pagamento.</div>':'';
   const avisoSaldo=S.saldoInicial?'<div class="hint">O saldo inicial não é uma entrada. Parcelas anteriores ao início ficam somente na aba Cartão; não entram neste extrato, no resumo ou no saldo disponível.</div>':'';
   const resumoDetalhe=`<div class="plain-summary compact-summary">
     <div class="plain-card"><strong>Entradas: ${fmt(entradasMes)}</strong><span>Dinheiro que entrou em ${monthLabel}.</span></div>
@@ -3219,8 +3219,13 @@ function renderExtrato(){
   </div>`;
   const resumo=`<button class="summary-toggle" onclick="toggleExtratoResumo()" title="Abre ou fecha um resumo simples do extrato deste mês."><span>Resumo do mês</span><span>${extratoResumoAberto?'-':'+'}</span></button>${extratoResumoAberto?resumoDetalhe:''}`;
   const fimMes=isoDate(viewYear,viewMonth,new Date(viewYear,viewMonth+1,0).getDate());
+  const inicioMesSelecionado=isoDate(viewYear,viewMonth,1);
+  const mesFuturo=inicioMesSelecionado>today();
+  const saldoMes=mesFuturo?null:calcularSaldoDisponivelAte(fimMes);
   const sobra=calcularSobraPrevistaAte(fimMes);
-  const projecao=saldoInicialValido(S.saldoInicial)?`<div class="plain-summary compact-summary" style="margin:8px 0 12px"><div class="plain-card"><strong>Saldo de hoje: ${fmt(calcularSaldoDisponivelAte(today()))}</strong><span>Somente dinheiro lançado até hoje.</span></div><div class="plain-card"><strong style="color:${sobra===null?'#c5c3ba':sobra<0?'#efaba4':'#9FE1CB'}">${sobra===null?'Sobra prevista indisponível':'Sobra prevista até '+fimMes.slice(8,10)+'/'+fimMes.slice(5,7)+': '+fmt(sobra)}</strong><span>Inclui entradas e contas programadas e faturas em aberto, sem descontar compras duas vezes.</span></div></div>`:'';
+  const textoSaldoMes=mesFuturo?'Saldo do mês indisponível':'Saldo do mês: '+fmt(saldoMes);
+  const detalheSaldoMes=mesFuturo?'Esse mês ainda não começou.':(fimMes<today()?'Saldo ao final de '+monthLabel+'.':'Saldo realizado no mês até hoje.');
+  const projecao=saldoInicialValido(S.saldoInicial)?`<div class="plain-summary compact-summary" style="margin:8px 0 12px"><div class="plain-card"><strong>${textoSaldoMes}</strong><span>${detalheSaldoMes}</span></div><div class="plain-card"><strong style="color:${sobra===null?'#c5c3ba':sobra<0?'#efaba4':'#9FE1CB'}">${sobra===null?'Sobra prevista indisponível':'Sobra prevista até '+fimMes.slice(8,10)+'/'+fimMes.slice(5,7)+': '+fmt(sobra)}</strong><span>Inclui entradas e contas programadas e faturas em aberto, sem descontar compras duas vezes.</span></div></div>`:'';
   if(!rows.length){wrap.innerHTML=resumo+projecao+avisoSaldo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
   const hoje=new Date(today()+'T12:00:00');
   const nomesMes=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
