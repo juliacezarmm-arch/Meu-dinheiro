@@ -79,9 +79,8 @@ const cardSection=document.createElement('section');cardSection.id='rec-cartao-a
 cardSection.innerHTML='<div class="rec-top"><button type="button" id="rec-card-toggle" aria-expanded="true" aria-controls="rec-card-body">Recorrentes <span id="rec-card-toggle-symbol" aria-hidden="true">−</span></button></div><div id="rec-card-body"><button type="button" class="rec-button primary" id="rec-card-open">+ Novo pagamento</button><div class="rec-list" id="rec-card-list"></div></div>';
 const cardAnchor=document.querySelector('#page-cartao .section-title:nth-of-type(2)')||document.querySelector('#page-cartao #cc-card').closest('.add-form');cardAnchor.parentNode.insertBefore(cardSection,cardAnchor);
 const cardControls=document.getElementById('cartao-action-buttons');
-const cardForms=[...document.querySelectorAll('#page-cartao .add-form')];
-const registerToggle=cardForms[0]&&cardForms[0].previousElementSibling&&cardForms[0].previousElementSibling.classList.contains('form-toggle')?cardForms[0].previousElementSibling:null;
-const purchaseToggle=cardForms[1]&&cardForms[1].previousElementSibling&&cardForms[1].previousElementSibling.classList.contains('form-toggle')?cardForms[1].previousElementSibling:null;
+const registerToggle=document.querySelector('[data-floating-target="card-register-form"]');
+const purchaseToggle=document.querySelector('[data-floating-target="card-purchase-form"]');
 if(cardControls){
   if(registerToggle)cardControls.appendChild(registerToggle);
   if(purchaseToggle)cardControls.appendChild(purchaseToggle);
@@ -183,20 +182,23 @@ function openRecEditor(id=null,mode='conta'){
  $('rec-submit').textContent=r?'Salvar alterações':editingRecMode==='cartao'?'Salvar pagamento':'Salvar recorrência';$('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
 }
 function setRecAreaExpanded(expanded){
- section.hidden=!expanded;
- $('rec-body').hidden=!expanded;
- $('rec-toggle').setAttribute('aria-expanded',String(expanded));
- $('rec-toggle-symbol').textContent=expanded?'−':'+';
- if(!expanded&&$('rec-form').parentElement===$('rec-body'))closeRecEditor();
+ if(expanded){
+   $('rec-body').hidden=false;
+   abrirPainelFlutuante(section,'Registros recorrentes',$('rec-toggle'));
+ }else if(floatingPanelState&&floatingPanelState.node===section)fecharPainelFlutuante();
+ else section.hidden=true;
 }
 function setCardRecAreaExpanded(expanded){
- cardSection.hidden=!expanded;
- $('rec-card-body').hidden=!expanded;
- $('rec-card-toggle').setAttribute('aria-expanded',String(expanded));
- $('rec-card-toggle-symbol').textContent=expanded?'−':'+';
- if(!expanded&&$('rec-form').parentElement===$('rec-card-body'))closeRecEditor();
+ if(expanded){
+   $('rec-card-body').hidden=false;
+   abrirPainelFlutuante(cardSection,'Recorrentes do cartão',$('rec-card-toggle'));
+ }else if(floatingPanelState&&floatingPanelState.node===cardSection)fecharPainelFlutuante();
+ else cardSection.hidden=true;
 }
 function closeRecEditor(){$('rec-form').hidden=true;editingRecId=null;editingRecMode='conta';placeCardRow();$('rec-body').appendChild($('rec-form'));}
+window.onFloatingPanelClosed=function(id){
+ if(id==='recorrentes-area'||id==='rec-cartao-area')closeRecEditor();
+};
 function cardForecasts(){
  const hoje=today(),horizon=new Date(hoje+'T12:00:00');horizon.setMonth(horizon.getMonth()+36);
  const selecionado=new Date(cartaoMes.getFullYear(),cartaoMes.getMonth()+13,1,12);
@@ -384,8 +386,8 @@ const oldDelExt=delExt;
 delExt=function(id){const row=S.extrato.find(x=>String(x.id)===String(id));oldDelExt(id);if(row&&!S.extrato.some(x=>String(x.id)===String(id))){ignoreRecurring(row);saveData();renderRecurring();}};
 const oldDelCard=delRegisteredCard;
 delRegisteredCard=function(id){if(S.recorrentes.some(r=>!r.excluida&&r.metodo==='cartao'&&String(r.cartaoId)===String(id))){appAlert('Este cartão está vinculado a uma recorrência. Encerre ou exclua o cadastro antes de removê-lo.');return;}oldDelCard(id);};
-$('rec-toggle').addEventListener('click',()=>setRecAreaExpanded($('rec-body').hidden));
-$('rec-card-toggle').addEventListener('click',()=>setCardRecAreaExpanded($('rec-card-body').hidden));
+$('rec-toggle').addEventListener('click',()=>setRecAreaExpanded(!(floatingPanelState&&floatingPanelState.node===section)));
+$('rec-card-toggle').addEventListener('click',()=>setCardRecAreaExpanded(!(floatingPanelState&&floatingPanelState.node===cardSection)));
 $('rec-open').addEventListener('click',()=>openRecEditor());$('rec-close').addEventListener('click',closeRecEditor);
 $('rec-card-open').addEventListener('click',()=>openRecEditor(null,'cartao'));
 $('rec-form').addEventListener('submit',saveRecEditor);
@@ -400,7 +402,7 @@ for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('cli
 });
 const oldShowPage=showPage;
 showPage=function(id,btn){oldShowPage(id,btn);if(id==='extrato'||id==='cartao')renderRecurring();};
-$('rec-start').value=today();recurrenceType();closeRecEditor();setRecAreaExpanded(false);setCardRecAreaExpanded(false);renderRecurring();
+$('rec-start').value=today();recurrenceType();closeRecEditor();section.hidden=true;cardSection.hidden=true;renderRecurring();
 const midnightPoll=setInterval(()=>{if(S.recorrentes.length)syncRecurring();},5*60*1000);
 })();
 }
