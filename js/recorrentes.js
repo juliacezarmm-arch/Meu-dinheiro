@@ -109,6 +109,44 @@ function originalJaRegistrado(r,data){
  const list=r.metodo==='cartao'?S.cartao:S.extrato;
  return list.some(x=>String(x.recorrenciaId)===String(r.id)&&x.recorrenciaData===data||(!x.recorrenciaId&&x.data===data&&Number(x.val)===Number(r.valor)&&String(x.desc||'').trim().toLowerCase()===r.nome.trim().toLowerCase()&&(r.metodo!=='cartao'||String(x.cardId)===String(r.cartaoId))));
 }
+function primeiraMensalDesde(data,dia){
+ if(!dataISOValida(data)||!Number.isInteger(Number(dia))||Number(dia)<1||Number(dia)>31)return null;
+ return proximaCobrancaMensal(data,Number(dia));
+}
+function mesDaFaturaRecorrente(r,data){
+ const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));if(!card||!dataISOValida(data))return null;
+ const d=dueDateFor(new Date(data+'T12:00:00'),card.dueDay,0,card.closeDay);
+ return monthKey(d.getFullYear(),d.getMonth());
+}
+function migrarCicloRecorrentesCartao(){
+ if(!saldoInicialValido(S.saldoInicial)||!Array.isArray(S.recorrentes))return false;
+ let changed=false;
+ const controle=S.saldoInicial.data;
+ const atualDate=new Date(today()+'T12:00:00');
+ const faturaAtual=monthKey(atualDate.getFullYear(),atualDate.getMonth());
+ for(const rec of S.recorrentes){
+  if(rec.cicloFaturaV2===true||rec.excluida||rec.metodo!=='cartao'||rec.frequencia!=='mensal')continue;
+  const primeiro=primeiraMensalDesde(controle,rec.diaCobranca);
+  if(primeiro&&primeiro<rec.inicio){
+   rec.inicio=primeiro;
+   if(!rec.vigenteDesde)rec.vigenteDesde=controle;
+   changed=true;
+  }
+  const prefix=String(rec.id)+'|';
+  const antes=S.recorrenciaIgnoradas.length;
+  // Versões antigas podiam marcar como "ignorada" uma cobrança que, na verdade,
+  // pertencia à fatura atual. A migração restaura só esse primeiro ciclo legado.
+  S.recorrenciaIgnoradas=S.recorrenciaIgnoradas.filter(item=>{
+   if(!item.startsWith(prefix))return true;
+   const data=item.slice(prefix.length);
+   if(!dataISOValida(data)||data<controle||data>today())return true;
+   return mesDaFaturaRecorrente(rec,data)!==faturaAtual;
+  });
+  if(S.recorrenciaIgnoradas.length!==antes)changed=true;
+  rec.cicloFaturaV2=true;changed=true;
+ }
+ return changed;
+}
 function ocorrencias(r,ate){return datasRecorrentes(r,ate).filter(data=>!S.recorrenciaIgnoradas.includes(key(r,data)));}
 function cardOptions(){
  const sel=cardSelect;const previous=sel.value;
@@ -154,11 +192,18 @@ function recurrenceConfirmation(){
 function recurrenceTiming(){
  const mensal=$('rec-frequency').value==='mensal';
  const recebimento=editingRecMode==='conta'&&$('rec-type').value==='entrada';
- $('rec-day-label').hidden=!mensal;$('rec-date-label').hidden=mensal;
- $('rec-day').required=mensal;$('rec-start').required=!mensal;
+ $('rec-day-label').hidden=!mensal;
+ $('rec-date-label').hidden=false;
+ $('rec-day').required=mensal;$('rec-start').required=true;
  $('rec-day-label').firstChild.textContent=recebimento?'Dia do recebimento':'Dia da cobrança';
- $('rec-date-label').firstChild.textContent=recebimento?'Data do próximo recebimento':'Data da próxima cobrança';
- $('rec-guidance').textContent=mensal?(editingRecMode==='cartao'?'Informe apenas o dia do mês (1 a 31). A próxima cobrança será programada a partir de hoje; meses curtos usam o último dia. O pagamento da fatura é separado.':'Informe apenas o dia do mês (1 a 31). Boleto fica como conta a pagar até você confirmar; Pix e transferência podem exigir confirmação. Débito automático e recebimento continuam automáticos.'):(editingRecMode==='cartao'?'Para frequência semanal ou anual, informe a data da próxima cobrança. O vencimento e o pagamento da fatura são separados.':'Para frequência semanal ou anual, informe a data do próximo pagamento ou recebimento. O aplicativo não consulta bancos: confira a movimentação efetiva.');
+ $('rec-date-label').firstChild.textContent=mensal?'Ativa desde':(recebimento?'Data do próximo recebimento':'Data da próxima cobrança');
+ $('rec-guidance').textContent=mensal
+  ?(editingRecMode==='cartao'
+    ?'Informe o dia da cobrança e desde quando essa recorrência existe. A fatura é definida pela data da cobrança: se cair no dia do vencimento ou depois, vai para o mês seguinte.'
+    :'Informe o dia e desde quando a recorrência existe. Boleto fica como conta a pagar até você confirmar; Pix e transferência podem exigir confirmação.')
+  :(editingRecMode==='cartao'
+    ?'Para frequência semanal ou anual, informe a data da próxima cobrança. O vencimento e o pagamento da fatura são separados.'
+    :'Para frequência semanal ou anual, informe a data do próximo pagamento ou recebimento. O aplicativo não consulta bancos: confira a movimentação efetiva.');
 }
 function openRecEditor(id=null,mode='conta'){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));editingRecId=r?r.id:null;
@@ -232,7 +277,7 @@ window.pendingRecurringObligationsUntil=pendingRecurringObligationsUntil;
 
 function syncRecurring(){
  if(!Array.isArray(S.recorrentes)||!S.recorrentes.length){renderRecurring();return false;}
- let changed=false;const hoje=today();
+ let changed=migrarCicloRecorrentesCartao();const hoje=today();
  // O mês futuro no cartão é previsão derivada do cadastro, não uma compra duplicada no JSON.
  for(const r of S.recorrentes){
   if(r.excluida)continue;
@@ -296,12 +341,14 @@ function saveRecEditor(event){
  event.preventDefault();
  const existing=S.recorrentes.find(x=>String(x.id)===String(editingRecId));
  const nome=$('rec-name').value.trim(),valor=Number($('rec-value').value),tipo=$('rec-type').value,metodo=$('rec-method').value,cartaoId=metodo==='cartao'?Number($('rec-card').value):null;
- let inicio=$('rec-start').value;const fim=existing?existing.fim||null:null,frequencia=$('rec-frequency').value,categoria=$('rec-category').value,subcategoria=$('rec-subcategory').value;
+ const dataBase=$('rec-start').value;
+ let inicio=dataBase;const fim=existing?existing.fim||null:null,frequencia=$('rec-frequency').value,categoria=$('rec-category').value,subcategoria=$('rec-subcategory').value;
  const mensal=frequencia==='mensal';
  const diaCobranca=mensal?Number($('rec-day').value):null;
  if(mensal){
   if($('rec-day').value.trim()===''||!Number.isInteger(diaCobranca)||diaCobranca<1||diaCobranca>31){appAlert('Informe o dia do mês entre 1 e 31.');return;}
-  inicio=proximaCobrancaMensal(existing?datePlusOne(today()):today(),diaCobranca);
+  if(!dataISOValida(dataBase)){appAlert('Informe desde quando essa recorrência existe.');return;}
+  inicio=existing?existing.inicio:proximaCobrancaMensal(dataBase,diaCobranca);
  }
  if(!nome||!valorMonetarioValido(valor)||valor<=0||!dataISOValida(inicio)||fim&&!dataISOValida(fim)||fim&&fim<=inicio||!['semanal','mensal','anual'].includes(frequencia)||!['entrada','saida'].includes(tipo)||!categoria||!subcategoria){appAlert('Preencha descrição, valor, categoria e datas válidas.');return;}
  if(tipo==='entrada'&&!['recebimento','pix','transferencia'].includes(metodo)||tipo==='saida'&&!['cartao','debito_automatico','debito','boleto','pix','transferencia'].includes(metodo)){appAlert('Escolha uma forma de pagamento válida.');return;}
@@ -309,12 +356,15 @@ function saveRecEditor(event){
  if(metodo==='cartao'&&!S.cartoes.some(c=>String(c.id)===String(cartaoId))){appAlert('Cadastre e selecione um cartão antes de salvar.');return;}
  let novoId=novoIdGlobal();while(S.recorrentes.some(x=>String(x.id)===String(novoId)))novoId++;
  const exigirConfirmacao=metodo==='boleto'||(['pix','transferencia'].includes(metodo)&&!!($('rec-confirm')&&$('rec-confirm').checked));
- const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,...(exigirConfirmacao?{exigirConfirmacao:true}:{}),...(mensal?{diaCobranca}:{})};
+ const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,cicloFaturaV2:true,...(exigirConfirmacao?{exigirConfirmacao:true}:{}),...(mensal?{diaCobranca}:{})};
  if(existing){
   // Passado imutável: edição troca apenas ocorrências a partir de amanhã.
   newRecord.vigenteDesde=datePlusOne(today());
   const idx=S.recorrentes.findIndex(x=>String(x.id)===String(existing.id));S.recorrentes[idx]=newRecord;
- }else S.recorrentes.push(newRecord);
+ }else{
+  newRecord.vigenteDesde=dataBase;
+  S.recorrentes.push(newRecord);
+ }
  closeRecEditor();saveData();syncRecurring();renderExtrato();renderCartao();updateResumo();
  appAlert(existing?'Cadastro editado. Movimentações passadas foram preservadas; mudanças valem a partir de amanhã.':'Recorrência cadastrada. Previsões futuras aparecem nas abas correspondentes.');
 }
@@ -338,6 +388,7 @@ validarDadosImportados=function(file){
   for(const r of dados.recorrentes){
    if(!r||typeof r!=='object'||!Number.isSafeInteger(Number(r.id))||Number(r.id)<=0||ids.has(String(r.id))||typeof r.nome!=='string'||!r.nome.trim()||r.nome.length>75||!valorMonetarioValido(r.valor)||r.valor<=0||!['entrada','saida'].includes(r.tipo)||!['cartao','debito_automatico','debito','boleto','pix','transferencia','recebimento'].includes(r.metodo)||!['semanal','mensal','anual'].includes(r.frequencia)||!dataISOValida(r.inicio)||r.fim!==null&&r.fim!==undefined&&!dataISOValida(r.fim)||r.vigenteDesde&&!dataISOValida(r.vigenteDesde)||r.diaCobranca!==undefined&&r.diaCobranca!==null&&(!Number.isInteger(r.diaCobranca)||r.diaCobranca<1||r.diaCobranca>31||r.frequencia!=='mensal'))throw Error('Recorrência inválida no arquivo.');
    if(r.exigirConfirmacao!==undefined&&typeof r.exigirConfirmacao!=='boolean')throw Error('Confirmação de recorrência inválida.');
+   if(r.cicloFaturaV2!==undefined&&typeof r.cicloFaturaV2!=='boolean')throw Error('Versão do ciclo da recorrência inválida.');
    ids.add(String(r.id));
   }
  }
