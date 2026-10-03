@@ -80,6 +80,11 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #ext-wrap .ext-category-cell{font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25}
 #ext-wrap .ext-value-cell{font-variant-numeric:tabular-nums;font-size:12px;font-weight:500;white-space:nowrap}
 #ext-wrap .ext-actions-cell{overflow:visible;white-space:nowrap;text-align:right}
+#ext-wrap col.ext-col-description{width:auto}
+#ext-wrap col.ext-col-category{width:120px}
+#ext-wrap col.ext-col-status{width:86px}
+#ext-wrap col.ext-col-value{width:120px}
+#ext-wrap col.ext-col-actions{width:120px}
 #ext-wrap .ext-mobile-meta,.ext-pay-short{display:none}
 #ext-wrap .ext-day-header th{padding:12px 6px 7px;background:#0d0d0c;color:#9FE1CB;border-bottom:1px solid #3a3934;font-size:12px;font-weight:900;letter-spacing:.01em;text-transform:none}
 #ext-wrap .ext-day-header:first-child th{padding-top:9px}
@@ -104,59 +109,41 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #page-cartao .cc-launch-title #cc-total-display{color:#9FE1CB;font-size:12px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 @media(max-width:580px){
-  /* Extrato mobile: mantém aparência de tabela, mas usa uma grade exata.
-     Assim a coluna de ações ocupa só o necessário e o restante vai para Descrição. */
-  #ext-wrap table,#ext-wrap thead,#ext-wrap tbody{display:block;width:100%}
-  #ext-wrap thead tr,#ext-wrap tr.ext-entry-row{
-    display:grid;
-    grid-template-columns:minmax(0,1fr) 70px 58px 80px 44px;
-    align-items:center;
-    width:100%
-  }
-  #ext-wrap thead th,#ext-wrap tr.ext-entry-row>td{
-    display:block!important;
-    width:auto!important;
-    min-width:0;
-    padding:6px 2px;
-    vertical-align:middle;
-    box-sizing:border-box
-  }
+  /* Extrato mobile volta a ser uma tabela real. As larguras abaixo somam 100%,
+     impedindo a coluna de ações de crescer e preservando mais espaço para Descrição. */
+  #ext-wrap table{width:100%;table-layout:fixed;font-size:10.5px}
+  #ext-wrap th,#ext-wrap td{padding:6px 2px;vertical-align:middle;box-sizing:border-box}
+  #ext-wrap col.ext-col-description{width:50%}
+  #ext-wrap col.ext-col-category{width:14%}
+  #ext-wrap col.ext-col-status{width:11%}
+  #ext-wrap col.ext-col-value{width:17%}
+  #ext-wrap col.ext-col-actions{width:8%}
+
   #ext-wrap thead th{font-size:10px}
-  #ext-wrap thead th:last-child{padding:0}
+  #ext-wrap thead th:last-child{padding-left:0;padding-right:0}
 
   #ext-wrap .ext-description-cell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;padding-right:7px}
   #ext-wrap .ext-desc-main{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px}
   #ext-wrap .ext-mobile-meta{display:none!important}
-  #ext-wrap .ext-category-cell{font-size:9px;line-height:1.1;white-space:normal;overflow:hidden;text-overflow:ellipsis;padding-right:5px!important}
+  #ext-wrap .ext-category-cell{font-size:9px;line-height:1.1;white-space:normal;overflow:hidden;text-overflow:ellipsis;padding-right:4px}
   #ext-wrap .ext-status-cell{overflow:visible;white-space:nowrap}
   #ext-wrap .ext-status-cell .badge{font-size:8.5px;padding:2px 4px;white-space:nowrap}
-  #ext-wrap .ext-value-cell{font-size:10px!important;font-weight:700;white-space:nowrap;overflow:visible;text-overflow:clip;text-align:left;padding-left:3px!important}
-  #ext-wrap .ext-actions-cell{
-    white-space:nowrap;text-align:right;padding:0!important;overflow:visible;
-    display:flex!important;align-items:center;justify-content:flex-end;gap:1px
-  }
+  #ext-wrap .ext-value-cell{font-size:10px!important;font-weight:700;white-space:nowrap;overflow:visible;text-overflow:clip;text-align:left;padding-left:2px}
+  #ext-wrap .ext-actions-cell{white-space:nowrap;text-align:right;padding:0!important;overflow:visible}
   #ext-wrap .extrato-pagar{font-size:7.5px;padding:4px 5px;line-height:1;border-radius:6px}
   #ext-wrap .ext-pay-full{display:none}
   #ext-wrap .ext-pay-short{display:inline}
-  #ext-wrap .extrato-edit-btn{min-width:16px;min-height:20px;font-size:11px;padding:0}
+  #ext-wrap .extrato-edit-btn{min-width:14px;min-height:20px;font-size:11px;padding:0}
   #ext-wrap .del{font-size:10px;padding:0 1px}
   #ext-wrap .ext-description-cell>div[style]{font-size:8.5px!important;line-height:1.15!important;margin-top:2px;color:#aaa79f!important;white-space:normal}
 
-  /* Cabeçalho do dia ocupa a largura inteira da grade. */
-  #ext-wrap .ext-day-header{display:grid;grid-template-columns:1fr;width:100%}
-  #ext-wrap .ext-day-header th{
-    display:block!important;width:auto!important;padding:5px 6px!important;font-size:10.5px;
-    border-bottom:1px solid #34342f;background:#11110f
-  }
+  #ext-wrap .ext-day-header th{padding:5px 6px!important;font-size:10.5px;border-bottom:1px solid #34342f;background:#11110f}
   #ext-wrap .ext-day-head-line{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:16px}
   #ext-wrap .ext-day-balance-inline{font-size:9.5px}
   #ext-wrap .ext-day-balance-inline span{margin-right:3px}
 
   #cc-wrap table{font-size:11px}
   #cc-wrap th,#cc-wrap td{padding:6px 3px}
-}
-@media(max-width:420px){
-  #ext-wrap thead tr,#ext-wrap tr.ext-entry-row{grid-template-columns:minmax(0,1fr) 64px 54px 76px 40px}
 }
 @media(min-width:581px){#ext-wrap .ext-mobile-meta{display:none}}
 th{text-align:left;padding:8px 6px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;font-size:12px}
@@ -3267,7 +3254,7 @@ function renderExtrato(){
     }
     return `<tr class="ext-day-header"><th colspan="5"><div class="ext-day-head-line"><span class="ext-day-date">${tituloDia}</span>${saldoCabecalho}</div></th></tr>`+linhas;
   }).join('');
-  wrap.innerHTML=resumo+projecao+avisoSaldo+aviso+'<table><thead><tr><th>Descrição</th><th style="width:94px">Categoria</th><th style="width:67px">Status</th><th style="width:116px">Valor</th><th style="width:190px"></th></tr></thead><tbody>'+corpo+'</tbody></table>';
+  wrap.innerHTML=resumo+projecao+avisoSaldo+aviso+'<table><colgroup><col class="ext-col-description"><col class="ext-col-category"><col class="ext-col-status"><col class="ext-col-value"><col class="ext-col-actions"></colgroup><thead><tr><th>Descrição</th><th>Categoria</th><th>Status</th><th>Valor</th><th></th></tr></thead><tbody>'+corpo+'</tbody></table>';
 }
 
 function fmtInvestPct(value){
