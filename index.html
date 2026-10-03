@@ -1168,10 +1168,41 @@ function autorizarJsonPendente(){
  }).finally(()=>{button.disabled=false;});
 }
 function recuperarJsonComFechamentoExtra(texto){
- let candidato=String(texto||'').trimEnd();
- for(let removidos=1;removidos<=3&&candidato.endsWith('}');removidos++){
-  candidato=candidato.slice(0,-1).trimEnd();
-  try{return {parsed:JSON.parse(candidato),removidos};}catch{}
+ // Recupera somente o PRIMEIRO documento JSON completo. Alguns provedores de
+ // arquivos/sincronizacao ja deixaram bytes de uma versao antiga depois do
+ // fechamento correto do arquivo. JSON.parse rejeita isso como "dados extras".
+ // O scanner respeita strings e escapes, portanto chaves dentro de textos nao
+ // sao confundidas com o fechamento do objeto.
+ const fonte=String(texto||'').replace(/^\uFEFF/,'');
+ const inicio=fonte.search(/\S/);
+ if(inicio<0||!['{','['].includes(fonte[inicio]))return null;
+ const pilha=[];let emString=false,escape=false;
+ for(let i=inicio;i<fonte.length;i++){
+  const ch=fonte[i];
+  if(emString){
+   if(escape){escape=false;continue;}
+   if(ch==='\\\\'){escape=true;continue;}
+   if(ch==='"')emString=false;
+   continue;
+  }
+  if(ch==='"'){emString=true;continue;}
+  if(ch==='{'||ch==='['){pilha.push(ch);continue;}
+  if(ch==='}'||ch===']'){
+   if(!pilha.length)return null;
+   const abre=pilha.pop();
+   if((abre==='{'&&ch!=='}')||(abre==='['&&ch!==']'))return null;
+   if(!pilha.length){
+    const candidato=fonte.slice(inicio,i+1);
+    try{
+     const parsed=JSON.parse(candidato);
+     const sobra=fonte.slice(i+1);
+     // Recuperacao e permitida apenas quando existe lixo apos um JSON completo;
+     // nunca tenta adivinhar ou completar um documento truncado.
+     if(!sobra.trim())return null;
+     return {parsed,removidos:sobra.length,conteudoValido:candidato};
+    }catch{return null;}
+   }
+  }
  }
  return null;
 }
@@ -1240,7 +1271,7 @@ async function openDataFile(){
   if(recuperadoFechamentoExtra){
     hasUnsavedChanges=true;
     setSaveStatus('Não salvo — JSON recuperado; salve para corrigir.');
-    appAlert('Encontrei um fechamento extra no fim do JSON e consegui recuperar seus dados. O arquivo será corrigido ao salvar. Nenhum registro foi descartado.');
+    appAlert('Encontrei dados residuais depois do fechamento correto do JSON e recuperei o documento válido. Salve agora para limpar o arquivo. Nenhum registro do JSON válido foi descartado.');
   }else{
     setSaveStatus(hasUnsavedChanges?'Não salvo — recorrência atualizada.':'Salvo');
   }
