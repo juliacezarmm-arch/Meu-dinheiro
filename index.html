@@ -304,14 +304,46 @@ td:last-child{white-space:normal}
 #saldo-start-saved[hidden],#saldo-content[hidden]{display:none!important}
 .saldo-setup .saldo-corrigir{padding:6px 10px}
 
-/* Os tres comandos do Extrato compartilham uma linha; cada painel continua embaixo. */
-#extrato-action-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
-#extrato-action-buttons #saldo-toggle,#extrato-action-buttons .form-toggle,#extrato-action-buttons #rec-toggle{width:100%;min-width:0;min-height:46px;box-sizing:border-box;margin:0;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:5px;background:#171716;color:#f5f5f2;border:1px solid #3a3934;border-radius:11px;font-size:12px;font-weight:750;text-align:left;line-height:1.25;cursor:pointer;overflow-wrap:anywhere}
-#extrato-action-buttons #saldo-toggle:hover,#extrato-action-buttons .form-toggle:hover,#extrato-action-buttons #rec-toggle:hover{border-color:#9FE1CB}
-#extrato-action-buttons #saldo-toggle span,#extrato-action-buttons .form-toggle span:last-child,#extrato-action-buttons #rec-toggle span{flex:none;font-size:17px;line-height:1;color:#9FE1CB}
-#page-extrato #saldo-setup[hidden],#page-extrato #recorrentes-area[hidden]{display:none!important}
+/* Comandos de cadastro compactos: uma unica linha, no estilo de status.
+   O + / - abre e fecha o painel correspondente sem ocupar uma faixa inteira. */
+#extrato-action-buttons,#cartao-action-buttons{
+  display:flex;align-items:center;gap:6px;margin-bottom:10px;overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:thin;padding:1px 0 2px
+}
+#extrato-action-buttons #saldo-toggle,
+#extrato-action-buttons .form-toggle,
+#extrato-action-buttons #rec-toggle,
+#cartao-action-buttons .form-toggle,
+#cartao-action-buttons #rec-card-toggle{
+  width:auto;min-width:max-content;min-height:30px;box-sizing:border-box;margin:0;padding:5px 9px;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#171716;color:#f5f5f2;
+  border:1px solid #3a3934;border-radius:999px;font-size:11px;font-weight:800;text-align:left;
+  line-height:1.1;cursor:pointer;white-space:nowrap
+}
+#extrato-action-buttons #saldo-toggle:hover,
+#extrato-action-buttons .form-toggle:hover,
+#extrato-action-buttons #rec-toggle:hover,
+#cartao-action-buttons .form-toggle:hover,
+#cartao-action-buttons #rec-card-toggle:hover{border-color:#9FE1CB;background:#1b211e}
+#extrato-action-buttons #saldo-toggle span,
+#extrato-action-buttons .form-toggle span:last-child,
+#extrato-action-buttons #rec-toggle span,
+#cartao-action-buttons .form-toggle span:last-child,
+#cartao-action-buttons #rec-card-toggle span{
+  flex:none;font-size:14px;line-height:1;color:#9FE1CB;font-weight:900
+}
+#page-extrato #saldo-setup[hidden],#page-extrato #recorrentes-area[hidden],
+#page-cartao #rec-cartao-area[hidden]{display:none!important}
 #page-extrato #saldo-content{border-top:0}
-@media(max-width:520px){.saldo-setup .row2{grid-template-columns:1fr}#extrato-action-buttons{gap:5px}#extrato-action-buttons #saldo-toggle,#extrato-action-buttons .form-toggle,#extrato-action-buttons #rec-toggle{font-size:10px;padding:7px 6px;min-height:50px}}
+@media(max-width:520px){
+  .saldo-setup .row2{grid-template-columns:1fr}
+  #extrato-action-buttons,#cartao-action-buttons{gap:5px}
+  #extrato-action-buttons #saldo-toggle,
+  #extrato-action-buttons .form-toggle,
+  #extrato-action-buttons #rec-toggle,
+  #cartao-action-buttons .form-toggle,
+  #cartao-action-buttons #rec-card-toggle{font-size:10px;padding:5px 8px;min-height:29px}
+}
 /* Interface do site: não usar alert, confirm ou prompt do navegador. */
 .site-dialog[hidden],.site-toast[hidden]{display:none!important}
 .site-dialog{position:fixed;inset:0;z-index:15000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(5px)}
@@ -483,6 +515,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <!-- CARTÃO -->
   <div id="page-cartao" class="page">
     <div class="section-title" title="Cadastre e edite vencimento e dia habitual de pagamento de seus cartões.">Meus cartões</div>
+    <div id="cartao-action-buttons" role="group" aria-label="Comandos do Cartão"></div>
     <div class="add-form">
       <div class="row row2">
         <select id="card-bank" title="Escolha o banco ou nome do cartão que você quer cadastrar.">
@@ -1443,7 +1476,7 @@ function goCartaoCurrentMonth(){
 }
 
 function setupCollapsibleForms(){
-  const labels=['Adicionar no extrato','Registrar cartão','Adicionar compra no cartão','Cadastrar investimento','Cadastrar meta'];
+  const labels=['Adicionar no extrato','Registrar cartão','Adicionar compra','Cadastrar investimento','Cadastrar meta'];
   document.querySelectorAll('.add-form').forEach((form,i)=>{
     if(form.dataset.ready)return;
     form.dataset.ready='1';
