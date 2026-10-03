@@ -2465,8 +2465,8 @@ function renderCartao(){
   // Separação somente visual: conserva as compras e todas as parcelas no JSON.
   // O valor da parcela corresponde ao mês da fatura que está sendo visualizado.
   const grupos=[
-    ['À vista',rows.filter(r=>r.tipo!=='parcelado'&&!r.previsto)],
-    ['Recorrentes',rows.filter(r=>r.tipo!=='parcelado'&&r.previsto)],
+    ['À vista',rows.filter(r=>r.tipo!=='parcelado'&&!r.recorrenciaId)],
+    ['Recorrentes',rows.filter(r=>r.tipo!=='parcelado'&&!!r.recorrenciaId)],
     ['Parcelamentos',rows.filter(r=>r.tipo==='parcelado')]
   ];
   wrap.innerHTML='<div class="cc-table-wrap"><table class="cc-launch-table"><thead><tr><th style="width:55px">Data</th><th>Descrição</th><th style="width:73px">Tipo</th><th style="width:53px">Vence</th><th style="width:75px">Parcelas</th><th style="width:110px">Valor</th><th style="width:55px"></th></tr></thead><tbody>'+
@@ -2485,7 +2485,7 @@ function renderCartao(){
         const historico=S.saldoInicial&&parcelaDoMes&&parcelaDoMes.data<S.saldoInicial.data;
         const cat=`${r.subcategoria||'Sem categoria'}${historico?' · Histórico anterior à abertura':''}`;
         const actions=r.previsto?`<button class="del" type="button" onclick="editRecurringCardForecast(${Number(r.recorrenciaId)})" aria-label="Editar assinatura" title="Edita a programação desta assinatura">✎</button>`:`<button class="del" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra.">✎</button><button class="del" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra do cartão."><i class="ti ti-x" aria-hidden="true"></i></button>`;
-        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
+        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':r.recorrenciaId?'Recorrente':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
       }).join('');
       const subtotal=somarValoresCartaoNoMes(itens,parcelasNesteMes);
       return `<tr class="cc-group-title"><th colspan="5" scope="rowgroup">${titulo}</th><th class="cc-money" scope="row">${fmt(subtotal)}</th><th></th></tr>`+linhas;
@@ -3640,7 +3640,7 @@ setSaveStatus('Abra um arquivo JSON para começar.');
 setInterval(()=>{if(hasUnsavedChanges)void autoSaveDataFile();},10000);
 setInterval(updateResumo,5*60*1000);
 </script>
-<script src="js/recorrentes.js?v=20260921-metas-integradas1"></script>
+<script src="js/recorrentes.js?v=20261003-cartoes-compactos3"></script>
 </body>
 </html>
 
