@@ -104,38 +104,39 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #page-cartao .cc-launch-title #cc-total-display{color:#9FE1CB;font-size:12px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 @media(max-width:580px){
-  /* Extrato mobile em formato de lista: mais largura para o texto e menos espaço vazio. */
-  #ext-wrap table,#ext-wrap tbody{display:block;width:100%}
-  #ext-wrap thead{display:none}
-  #ext-wrap tr.ext-entry-row{
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto auto;
-    grid-template-areas:"desc value actions";
-    align-items:center;
-    column-gap:9px;
-    width:100%;
-    padding:7px 5px;
-    border-bottom:1px solid #4b4943
-  }
-  #ext-wrap tr.ext-entry-row>td{display:block;border:0;padding:0;min-width:0}
-  #ext-wrap .ext-description-cell{grid-area:desc;white-space:normal;line-height:1.15;overflow:visible;text-overflow:clip}
-  #ext-wrap .ext-desc-main{font-size:11px;color:var(--color-text-primary);overflow-wrap:anywhere}
-  #ext-wrap .ext-mobile-meta{display:flex;align-items:center;gap:6px;min-width:0;margin-top:3px}
-  #ext-wrap .ext-mobile-category{display:block;min-width:0;max-width:150px;color:var(--color-text-secondary);font-size:9px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #ext-wrap .ext-mobile-meta .badge{flex:none;font-size:8.5px;padding:1px 5px;line-height:1.35}
-  #ext-wrap .ext-category-cell,#ext-wrap .ext-status-cell{display:none!important}
-  #ext-wrap .ext-value-cell{grid-area:value;font-size:10.5px!important;font-weight:800;white-space:nowrap;overflow:visible;text-overflow:clip;text-align:right}
-  #ext-wrap .ext-actions-cell{grid-area:actions;width:auto;white-space:nowrap;text-align:right;display:flex!important;align-items:center;justify-content:flex-end;gap:2px}
-  #ext-wrap .extrato-pagar{font-size:8.5px;padding:5px 7px;line-height:1;border-radius:7px}
+  /* Mantém o Extrato em tabela no celular; apenas redistribui melhor as colunas. */
+  #ext-wrap table{display:table;width:100%;table-layout:fixed;font-size:10.5px}
+  #ext-wrap thead{display:table-header-group}
+  #ext-wrap tbody{display:table-row-group}
+  #ext-wrap tr{display:table-row}
+  #ext-wrap th,#ext-wrap td{display:table-cell;padding:6px 3px;vertical-align:middle}
+
+  /* Descrição recebe a maior parte da largura; ações ficam no mínimo necessário. */
+  #ext-wrap thead th:nth-child(1),#ext-wrap tbody td:nth-child(1){width:43%!important}
+  #ext-wrap thead th:nth-child(2),#ext-wrap tbody td:nth-child(2){width:17%!important}
+  #ext-wrap thead th:nth-child(3),#ext-wrap tbody td:nth-child(3){width:12%!important}
+  #ext-wrap thead th:nth-child(4),#ext-wrap tbody td:nth-child(4){width:18%!important}
+  #ext-wrap thead th:nth-child(5),#ext-wrap tbody td:nth-child(5){width:10%!important}
+
+  #ext-wrap .ext-description-cell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;padding-right:5px}
+  #ext-wrap .ext-desc-main{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px}
+  #ext-wrap .ext-mobile-meta{display:none!important}
+  #ext-wrap .ext-category-cell{display:table-cell!important;font-size:9.5px;line-height:1.15;white-space:normal;overflow:hidden;text-overflow:ellipsis}
+  #ext-wrap .ext-status-cell{display:table-cell!important;overflow:visible;white-space:nowrap}
+  #ext-wrap .ext-status-cell .badge{font-size:9px;padding:2px 5px;white-space:nowrap}
+  #ext-wrap .ext-value-cell{font-size:10px!important;font-weight:700;white-space:nowrap;overflow:visible;text-overflow:clip;text-align:left}
+  #ext-wrap .ext-actions-cell{display:table-cell!important;white-space:nowrap;text-align:right;padding-left:0;padding-right:0;overflow:visible}
+  #ext-wrap .extrato-pagar{font-size:8px;padding:4px 5px;line-height:1;border-radius:6px}
   #ext-wrap .ext-pay-full{display:none}
   #ext-wrap .ext-pay-short{display:inline}
-  #ext-wrap .extrato-edit-btn{min-width:23px;min-height:25px;font-size:14px;padding:0 2px}
-  #ext-wrap .del{font-size:12px;padding:1px 3px}
-  #ext-wrap .ext-description-cell>div[style]{font-size:9px!important;line-height:1.2!important;margin-top:3px;color:#aaa79f!important}
+  #ext-wrap .extrato-edit-btn{min-width:16px;min-height:22px;font-size:12px;padding:0 1px}
+  #ext-wrap .del{font-size:11px;padding:0 2px}
+  #ext-wrap .ext-description-cell>div[style]{font-size:8.5px!important;line-height:1.15!important;margin-top:2px;color:#aaa79f!important;white-space:normal}
 
-  #ext-wrap .ext-day-header{display:block;width:100%}
-  #ext-wrap .ext-day-header th{display:block;width:100%;padding:5px 7px!important;font-size:10.5px;border-bottom:1px solid #34342f;background:#11110f}
-  #ext-wrap .ext-day-head-line{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:17px}
+  /* Data e saldo do dia continuam juntos, mas sem espaço vertical sobrando. */
+  #ext-wrap .ext-day-header{display:table-row}
+  #ext-wrap .ext-day-header th{display:table-cell;width:auto!important;padding:5px 6px!important;font-size:10.5px;border-bottom:1px solid #34342f;background:#11110f}
+  #ext-wrap .ext-day-head-line{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:16px}
   #ext-wrap .ext-day-balance-inline{font-size:9.5px}
   #ext-wrap .ext-day-balance-inline span{margin-right:3px}
 
