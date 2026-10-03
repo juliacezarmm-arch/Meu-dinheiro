@@ -180,6 +180,20 @@ td:last-child{white-space:normal}
 .bank-card .bank-due{font-size:11px;position:relative;z-index:1;opacity:.9}
 .bank-card .bank-chip{width:30px;height:21px;border-radius:6px;background:rgba(255,255,255,.72);margin-bottom:8px;position:relative;z-index:1}
 .bank-card .del{position:absolute;right:8px;top:8px;color:#fff;background:rgba(0,0,0,.18)}
+.cc-filter-wrap{margin:0 0 10px}
+.cc-filter-label{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:6px}
+.cc-filter-chips{display:flex;align-items:center;gap:6px;overflow-x:auto;padding:1px 0 3px;scrollbar-width:thin}
+.cc-filter-chip{flex:none;border:1px solid #3a3934;background:#171716;color:#f5f5f2;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
+.cc-filter-chip:hover{border-color:#9FE1CB}
+.cc-filter-chip.active{background:#9FE1CB;border-color:#9FE1CB;color:#0b3329}
+.cc-card-breakdown{display:grid;gap:5px;margin:-10px 0 14px;padding:8px 10px;background:#11110f;border:1px solid #34342f;border-radius:10px}
+.cc-card-breakdown[hidden]{display:none!important}
+.cc-card-breakdown-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--color-text-secondary)}
+.cc-card-breakdown-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cc-card-breakdown-row strong{flex:none;color:#f5f5f2;font-size:12px;font-variant-numeric:tabular-nums}
+.cc-card-breakdown-row.total{padding-top:5px;margin-top:2px;border-top:1px solid #34342f;color:#9FE1CB;font-weight:800}
+.cc-card-breakdown-row.total strong{color:#9FE1CB}
+@media(max-width:520px){.cc-filter-chip{font-size:10px;padding:5px 8px}.cc-card-breakdown{padding:7px 8px}.cc-card-breakdown-row{font-size:10px}.cc-card-breakdown-row strong{font-size:11px}}
 .goal-list{display:grid;grid-template-columns:1fr;gap:8px}
 .goal-card{position:relative;background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:.75rem;min-width:0}
 .goal-card h3{font-size:14px;margin-bottom:3px}
@@ -555,6 +569,8 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     </div>
     <div id="bank-cards-wrap"><div class="empty">Nenhum cartão cadastrado ainda.</div></div>
 
+    <div id="cc-card-filter" class="cc-filter-wrap" aria-label="Filtrar lançamentos por cartão"></div>
+
     <div class="add-form">
       <div class="row row2">
         <input type="date" id="cc-data" title="Data em que a compra no cartão foi feita."/>
@@ -596,6 +612,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       <div class="card" title="Valor do cartão que vence no mês selecionado."><div class="label">Fatura do mês</div><div class="value amber" id="cc-mes">R$ 0</div></div>
       <div class="card" title="Valor previsto para vencer no próximo mês."><div class="label">Próximo mês</div><div class="value" id="cc-prox" style="color:var(--color-text-primary)">R$ 0</div></div>
     </div>
+    <div id="cc-card-breakdown" class="cc-card-breakdown" hidden></div>
 
     <div class="month-switch" aria-label="Escolher mês do cartão" title="Filtra as compras e parcelas do cartão por mês de vencimento.">
       <button onclick="changeCartaoMonth(-1)" aria-label="Mês anterior" title="Ver cartão do mês anterior.">‹</button>
@@ -809,6 +826,7 @@ const CATEGORIAS={
 let resumoMes=new Date();
 let extratoMes=new Date();
 let cartaoMes=new Date();
+let cartaoFiltroId='todos';
 let investMes=new Date();
 let editingCartaoId=null;
 let editingExtratoId=null;
@@ -1626,7 +1644,7 @@ function renderRegisteredCards(){
  const wrap=document.getElementById('bank-cards-wrap'),select=document.getElementById('cc-card'),prev=select.value;
  select.innerHTML='<option value="">Escolha o cartão</option>'+S.cartoes.map(c=>`<option value="${c.id}">${escHtml(c.bank)}${c.nome?' · '+escHtml(c.nome):''} - vence dia ${c.dueDay}</option>`).join('');
  if(S.cartoes.some(c=>String(c.id)===prev))select.value=prev;
- if(!S.cartoes.length){wrap.innerHTML='<div class="empty">Nenhum cartão cadastrado ainda.</div>';return;}
+ if(!S.cartoes.length){wrap.innerHTML='<div class="empty">Nenhum cartão cadastrado ainda.</div>';renderFiltroCartoes();return;}
  wrap.innerHTML='<div class="bank-cards">'+S.cartoes.map(c=>`
  <div class="bank-card" style="background:${c.color};color:#fff">
  <div class="bank-card-actions">
@@ -1635,6 +1653,7 @@ function renderRegisteredCards(){
  </div><div class="bank-chip"></div><div class="bank-name${c.nome?' has-product':''}">${escHtml(c.bank)}</div>${c.nome?`<div class="bank-product">${escHtml(c.nome)}</div>`:''}
  <div class="bank-due">Vence dia ${c.dueDay}${c.paymentDay?' · Pagamento habitual dia '+c.paymentDay:''}</div>
  </div>`).join('')+'</div>';
+ renderFiltroCartoes();
 }
 
 function addGroup(map,label,val){
@@ -2501,6 +2520,48 @@ function somarValoresCartaoNoMes(itens,parcelasNesteMes){
     return centavos+(valor===null?0:Math.round(valor*100));
   },0)/100;
 }
+function nomeCartaoResumo(card){
+  if(!card)return 'Cartão';
+  const banco=String(card.bank||'').trim();
+  const nome=String(card.nome||'').trim();
+  if(banco==='Outro'&&nome)return nome;
+  return [banco,nome].filter(Boolean).join(' · ')||'Cartão';
+}
+function cartaoPassaFiltro(cardId){
+  return cartaoFiltroId==='todos'||String(cardId)===String(cartaoFiltroId);
+}
+function setCartaoFiltro(id){
+  const valor=String(id||'todos');
+  cartaoFiltroId=valor==='todos'||S.cartoes.some(c=>String(c.id)===valor)?valor:'todos';
+  renderCartao();
+}
+function renderFiltroCartoes(){
+  const wrap=document.getElementById('cc-card-filter');if(!wrap)return;
+  if(cartaoFiltroId!=='todos'&&!S.cartoes.some(c=>String(c.id)===String(cartaoFiltroId)))cartaoFiltroId='todos';
+  if(!S.cartoes.length){wrap.innerHTML='';return;}
+  const chips=[
+    '<button type="button" class="cc-filter-chip'+(cartaoFiltroId==='todos'?' active':'')+'" onclick="setCartaoFiltro(\'todos\')">Todos</button>',
+    ...S.cartoes.map(card=>'<button type="button" class="cc-filter-chip'+(String(cartaoFiltroId)===String(card.id)?' active':'')+'" onclick="setCartaoFiltro(\''+String(card.id)+'\')" title="Mostrar somente '+escHtml(nomeCartaoResumo(card))+'">'+escHtml(nomeCartaoResumo(card))+'</button>')
+  ];
+  wrap.innerHTML='<div class="cc-filter-label">Ver cartão</div><div class="cc-filter-chips">'+chips.join('')+'</div>';
+}
+function renderResumoCartoes(parcelasMes,totalMes){
+  const box=document.getElementById('cc-card-breakdown');if(!box)return;
+  if(cartaoFiltroId!=='todos'||!S.cartoes.length){box.hidden=true;box.innerHTML='';return;}
+  const porCartao=new Map();
+  for(const parcela of parcelasMes){
+    const id=String(parcela.cardId);
+    porCartao.set(id,(porCartao.get(id)||0)+Math.round(Number(parcela.val||0)*100));
+  }
+  const linhas=S.cartoes.map(card=>{
+    const valor=(porCartao.get(String(card.id))||0)/100;
+    return '<div class="cc-card-breakdown-row"><span>'+escHtml(nomeCartaoResumo(card))+'</span><strong>'+fmt(valor)+'</strong></div>';
+  });
+  linhas.push('<div class="cc-card-breakdown-row total"><span>Total dos cartões</span><strong>'+fmt(totalMes)+'</strong></div>');
+  box.innerHTML=linhas.join('');
+  box.hidden=false;
+}
+
 function renderCartao(){
   const viewYear=cartaoMes.getFullYear();
   const viewMonth=cartaoMes.getMonth();
@@ -2510,8 +2571,16 @@ function renderCartao(){
   const nextKey=monthKey(nextD.getFullYear(),nextD.getMonth());
   const monthLabel=mesStr(viewYear,viewMonth);
   document.getElementById('cc-month-label').textContent=monthLabel;
+  renderFiltroCartoes();
 
-  const map=getMesMap();
+  const parcelasTodas=getParcelasCartao();
+  const parcelasFiltradas=parcelasTodas.filter(p=>cartaoPassaFiltro(p.cardId));
+  const map={};
+  for(const p of parcelasFiltradas){
+    const d=new Date(p.data+'T12:00:00');
+    const key=monthKey(d.getFullYear(),d.getMonth());
+    map[key]=((map[key]||0)*100+Math.round(Number(p.val||0)*100))/100;
+  }
   document.getElementById('cc-mes').textContent=fmt(map[nowKey]||0);
   document.getElementById('cc-prox').textContent=fmt(map[nextKey]||0);
 
@@ -2536,9 +2605,14 @@ function renderCartao(){
 
   const wrap=document.getElementById('cc-wrap');
   const forecasts=typeof window.cardRecurringForecasts==='function'?window.cardRecurringForecasts():[];
-  const rows=S.cartao.concat(forecasts).filter(c=>cartaoTemMes(c,viewYear,viewMonth)).sort((a,b)=>b.data.localeCompare(a.data));
-  const parcelasNesteMes=getParcelasCartao().filter(x=>isSameMonthDate(x.data,viewYear,viewMonth));
+  const rows=S.cartao.concat(forecasts)
+    .filter(c=>cartaoPassaFiltro(c.cardId)&&cartaoTemMes(c,viewYear,viewMonth))
+    .sort((a,b)=>b.data.localeCompare(a.data));
+  const parcelasNesteMes=parcelasFiltradas.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth));
   const totalVisivel=somarValoresCartaoNoMes(rows,parcelasNesteMes);
+  const totalTodosMes=parcelasTodas.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth))
+    .reduce((centavos,x)=>centavos+Math.round(Number(x.val||0)*100),0)/100;
+  renderResumoCartoes(parcelasTodas.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)),totalTodosMes);
   document.getElementById('cc-total-display').textContent=rows.length?'Total: '+fmt(totalVisivel):'';
   if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
   // Separação somente visual: conserva as compras e todas as parcelas no JSON.
