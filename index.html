@@ -344,6 +344,26 @@ td:last-child{white-space:normal}
   #cartao-action-buttons .form-toggle,
   #cartao-action-buttons #rec-card-toggle{font-size:10px;padding:5px 8px;min-height:29px}
 }
+/* Cadastros em janela flutuante: os formulários saem do fluxo da página. */
+#action-panel-modal{z-index:16500}
+#action-panel-modal .site-dialog-panel{width:min(94vw,650px);max-height:min(90dvh,780px);padding:0;overflow:hidden}
+.action-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 13px;border-bottom:1px solid #393932}
+.action-panel-heading h2{margin:0;font-size:17px;line-height:1.25}
+.action-panel-close{flex:none;width:34px;height:34px;border:1px solid #4a4944;border-radius:9px;background:#282825;color:#f5f5f2;font-size:22px;line-height:1;cursor:pointer}
+.action-panel-close:hover,.action-panel-close:focus-visible{border-color:#9FE1CB}
+#action-panel-content{max-height:calc(90dvh - 64px);overflow:auto;padding:16px 18px 18px;overscroll-behavior:contain}
+#action-panel-content>.add-form{display:block!important;margin:0;padding:0;border:0;background:transparent}
+#action-panel-content>.rec-area{display:block!important;margin:0;padding:0;border:0;background:transparent}
+#action-panel-content .rec-form{margin-top:10px}
+body.action-panel-open{overflow:hidden}
+.floating-form-toggle{width:auto;min-width:max-content;border-radius:999px;padding:5px 9px;min-height:30px;font-size:11px}
+@media(max-width:580px){
+  #action-panel-modal{padding:8px}
+  #action-panel-modal .site-dialog-panel{width:100%;max-height:calc(100dvh - 16px)}
+  #action-panel-content{max-height:calc(100dvh - 78px);padding:13px}
+  #action-panel-content .row2,#action-panel-content .row3{grid-template-columns:1fr}
+}
+
 /* Interface do site: não usar alert, confirm ou prompt do navegador. */
 .site-dialog[hidden],.site-toast[hidden]{display:none!important}
 .site-dialog{position:fixed;inset:0;z-index:15000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(5px)}
@@ -514,8 +534,8 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 
   <!-- CARTÃO -->
   <div id="page-cartao" class="page">
-    <div class="section-title" title="Cadastre e edite vencimento e dia habitual de pagamento de seus cartões.">Meus cartões</div>
     <div id="cartao-action-buttons" role="group" aria-label="Comandos do Cartão"></div>
+    <div class="section-title" title="Cadastre e edite vencimento e dia habitual de pagamento de seus cartões.">Meus cartões</div>
     <div class="add-form">
       <div class="row row2">
         <select id="card-bank" title="Escolha o banco ou nome do cartão que você quer cadastrar.">
@@ -535,7 +555,6 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     </div>
     <div id="bank-cards-wrap"><div class="empty">Nenhum cartão cadastrado ainda.</div></div>
 
-    <div class="section-title" title="Use esta parte para registrar uma compra feita no cartão de crédito.">Novo lançamento no cartão</div>
     <div class="add-form">
       <div class="row row2">
         <input type="date" id="cc-data" title="Data em que a compra no cartão foi feita."/>
@@ -664,6 +683,13 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     <div id="meta-wrap"><div class="empty">Nenhuma meta ainda.</div></div>
   </div>
 </div>
+<!-- Janela flutuante reutilizada pelos cadastros e listas de recorrências. -->
+<div id="action-panel-modal" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="action-panel-title" hidden onclick="if(event.target===this)fecharPainelFlutuante()">
+  <div class="site-dialog-panel">
+    <div class="action-panel-heading"><h2 id="action-panel-title">Cadastro</h2><button class="action-panel-close" type="button" onclick="fecharPainelFlutuante()" aria-label="Fechar janela">×</button></div>
+    <div id="action-panel-content"></div>
+  </div>
+</div>
 <!-- Caixas de diálogo exclusivas do próprio aplicativo. -->
 <div id="app-toast" class="site-toast" role="status" aria-live="polite" hidden><span id="app-toast-message"></span><button type="button" onclick="fecharAviso()" aria-label="Dispensar aviso">×</button></div>
 <div id="app-confirm-overlay" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title" hidden><div class="site-dialog-panel"><div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">?</span><h2 id="app-confirm-title">Confirmar operação</h2></div><p id="app-confirm-message" class="site-dialog-copy"></p><div class="site-dialog-actions"><button type="button" class="site-button quiet" id="app-confirm-cancel">Cancelar</button><button type="button" class="site-button primary" id="app-confirm-accept">Confirmar</button></div></div></div>
@@ -749,6 +775,7 @@ let knownFileSignature=null;
 let pendingJsonHandle=null;
 let authorizedJsonHandle=null;
 let refreshBusy=false;
+let floatingPanelState=null;
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const BANK_COLORS={
   'Nubank':'#7B2CBF','Itaú':'#EC7000','Bradesco':'#C8102E','Santander':'#E1251B',
@@ -1476,19 +1503,22 @@ function goCartaoCurrentMonth(){
 }
 
 function setupCollapsibleForms(){
-  const labels=['Adicionar no extrato','Registrar cartão','Adicionar compra','Cadastrar investimento','Cadastrar meta'];
+  const defs=[
+    {id:'extrato-add-form',label:'Adicionar no extrato'},
+    {id:'card-register-form',label:'Registrar cartão'},
+    {id:'card-purchase-form',label:'Adicionar compra'},
+    {id:'invest-add-form',label:'Cadastrar investimento'},
+    {id:'meta-add-form',label:'Cadastrar meta'}
+  ];
   document.querySelectorAll('.add-form').forEach((form,i)=>{
     if(form.dataset.ready)return;
-    form.dataset.ready='1';
-    form.classList.add('collapsed');
+    const def=defs[i]||{id:'action-form-'+i,label:'Cadastrar'};
+    form.dataset.ready='1';form.id=form.id||def.id;form.classList.add('collapsed');
     const btn=document.createElement('button');
-    btn.type='button';
-    btn.className='form-toggle';
-    btn.innerHTML='<span>'+labels[i]+'</span><span>+</span>';
-    btn.addEventListener('click',()=>{
-      const closed=form.classList.toggle('collapsed');
-      btn.querySelector('span:last-child').textContent=closed?'+':'-';
-    });
+    btn.type='button';btn.className='form-toggle floating-form-toggle';
+    btn.dataset.floatingTarget=form.id;btn.setAttribute('aria-expanded','false');
+    btn.innerHTML='<span>'+def.label+'</span><span>+</span>';
+    btn.addEventListener('click',()=>abrirFormularioFlutuante(form,def.label,btn));
     form.parentNode.insertBefore(btn,form);
   });
 }
@@ -1580,7 +1610,7 @@ function addRegisteredCard(){
  if(!bank||!diaDeCartaoValido(dueText,true)||!diaDeCartaoValido(paymentText,false)){appAlert('Escolha o banco e informe o vencimento (1 a 31). O dia habitual do pagamento é opcional.');return;}
  S.cartoes.push({id:novoIdGlobal(),bank,nome,dueDay:Number(dueText),paymentDay:paymentText.trim()===''?null:Number(paymentText),closeDay:null,color:BANK_COLORS[bank]||BANK_COLORS.Outro});
  document.getElementById('card-bank').value='';document.getElementById('card-name').value='';document.getElementById('card-due-day').value='';document.getElementById('card-payment-day').value='';
- saveData();renderRegisteredCards();renderCartao();updatePreview();
+ saveData();renderRegisteredCards();renderCartao();updatePreview();fecharPainelFlutuante();
 }
 
 function delRegisteredCard(id){
@@ -1859,7 +1889,53 @@ function updatePreview(){
   }
 }
 
+function abrirPainelFlutuante(node,titulo,opener=null){
+  if(!node)return;
+  if(floatingPanelState&&floatingPanelState.node===node){fecharPainelFlutuante();return;}
+  if(floatingPanelState)fecharPainelFlutuante(false);
+  const modal=document.getElementById('action-panel-modal');
+  const content=document.getElementById('action-panel-content');
+  const marker=document.createComment('action-panel-home');
+  node.parentNode.insertBefore(marker,node);
+  floatingPanelState={node,marker,opener};
+  document.getElementById('action-panel-title').textContent=titulo||'Cadastro';
+  if(node.classList.contains('add-form'))node.classList.remove('collapsed');
+  node.hidden=false;
+  content.appendChild(node);
+  modal.hidden=false;
+  document.body.classList.add('action-panel-open');
+  if(opener){
+    opener.setAttribute('aria-expanded','true');
+    const symbol=opener.querySelector('span:last-child');
+    if(symbol)symbol.textContent='−';
+  }
+  const focusable=node.querySelector('input:not([type="hidden"]),select,button,textarea');
+  if(focusable)setTimeout(()=>focusable.focus(),0);
+}
+function fecharPainelFlutuante(devolverFoco=true){
+  if(!floatingPanelState)return;
+  const {node,marker,opener}=floatingPanelState;
+  floatingPanelState=null;
+  if(marker&&marker.parentNode){marker.parentNode.insertBefore(node,marker);marker.remove();}
+  if(node.classList.contains('add-form'))node.classList.add('collapsed');
+  else node.hidden=true;
+  const modal=document.getElementById('action-panel-modal');
+  if(modal)modal.hidden=true;
+  document.body.classList.remove('action-panel-open');
+  if(opener){
+    opener.setAttribute('aria-expanded','false');
+    const symbol=opener.querySelector('span:last-child');
+    if(symbol)symbol.textContent='+';
+  }
+  if(typeof window.onFloatingPanelClosed==='function')window.onFloatingPanelClosed(node.id);
+  if(devolverFoco&&opener)opener.focus();
+}
+function abrirFormularioFlutuante(form,titulo,opener){
+  abrirPainelFlutuante(form,titulo,opener||document.querySelector('[data-floating-target="'+form.id+'"]'));
+}
+
 function showPage(id,btn){
+  if(floatingPanelState)fecharPainelFlutuante(false);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
@@ -1913,7 +1989,7 @@ function addExtrato(){
     document.getElementById('ext-desc').value='';
     document.getElementById('ext-val').value='';
     document.getElementById('ext-invest-dest').value='';
-    saveData();renderInvest();renderMetas();renderExtrato();updateResumo();
+    saveData();renderInvest();renderMetas();renderExtrato();updateResumo();fecharPainelFlutuante();
     return;
   }
   if(!categoria||!subcategoria||!valorMonetarioValido(val)||val<=0){appAlert('Preencha categoria, subcategoria e valor.');return;}
@@ -1931,7 +2007,7 @@ function addExtrato(){
   document.getElementById('ext-subcategoria').innerHTML='<option value="">Selecione subcategoria</option>';
   document.getElementById('ext-gasto-tipo').value='';
   document.getElementById('ext-pagamento').value='';
-  saveData();renderExtrato();updateResumo();
+  saveData();renderExtrato();updateResumo();fecharPainelFlutuante();
 }
 
 // Editar nao exclui nem recria o registro: conserva ID e vinculos no JSON.
@@ -2129,7 +2205,7 @@ function addCartao(){
   extratoMes=new Date(primeiraParcela.getFullYear(),primeiraParcela.getMonth(),1);
   cartaoMes=new Date(primeiraParcela.getFullYear(),primeiraParcela.getMonth(),1);
   resetCartaoForm();
-  saveData();renderCartao();renderExtrato();updateResumo();
+  saveData();renderCartao();renderExtrato();updateResumo();fecharPainelFlutuante();
 }
 
 function editCartao(id){
@@ -2151,11 +2227,13 @@ function editCartao(id){
   document.getElementById('cc-submit').innerHTML='<i class="ti ti-plus" aria-hidden="true"></i> Salvar edição';
   document.getElementById('cc-cancel-edit').style.display='block';
   updatePreview();
-  document.getElementById('page-cartao').scrollIntoView({behavior:'smooth',block:'start'});
+  const purchaseForm=document.getElementById('card-purchase-form');
+  if(purchaseForm)abrirFormularioFlutuante(purchaseForm,'Editar compra');
 }
 
 function cancelCartaoEdit(){
   resetCartaoForm();
+  fecharPainelFlutuante();
 }
 
 function isCryptoInvest(item){
@@ -2233,7 +2311,7 @@ function addInvest(){
   if(document.getElementById('inv-crypto-cotacao'))document.getElementById('inv-crypto-cotacao').value='';
   if(document.getElementById('inv-crypto-preco-medio'))document.getElementById('inv-crypto-preco-medio').value='';
   updateInvestCryptoPreview();
-  saveData();renderInvestDestinationOptions();renderMetaInvestOptions();renderInvest();updateCategories();updateResumo();
+  saveData();renderInvestDestinationOptions();renderMetaInvestOptions();renderInvest();updateCategories();updateResumo();fecharPainelFlutuante();
 }
 
 function addMeta(){
@@ -2252,7 +2330,7 @@ function addMeta(){
   document.getElementById('meta-val').value='';
   document.getElementById('meta-invest-dest').value='';
   document.getElementById('meta-prazo').value='';
-  saveData();renderInvestDestinationOptions();renderMetaInvestOptions();renderInvest();renderMetas();updateCategories();updateResumo();
+  saveData();renderInvestDestinationOptions();renderMetaInvestOptions();renderInvest();renderMetas();updateCategories();updateResumo();fecharPainelFlutuante();
 }
 
 // Preserva conciliações que já foram efetivamente registradas no JSON.
@@ -3640,7 +3718,7 @@ setSaveStatus('Abra um arquivo JSON para começar.');
 setInterval(()=>{if(hasUnsavedChanges)void autoSaveDataFile();},10000);
 setInterval(updateResumo,5*60*1000);
 </script>
-<script src="js/recorrentes.js?v=20261003-cartoes-compactos3"></script>
+<script src="js/recorrentes.js?v=20261003-floating-panels1"></script>
 </body>
 </html>
 
