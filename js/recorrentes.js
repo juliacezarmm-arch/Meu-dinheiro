@@ -194,6 +194,7 @@ function recurrenceSubcategories(){
 function recurrenceType(){
  const sel=$('rec-method');
  const accountRow=$('rec-account-mode-row');
+ if(accountRow)accountRow.hidden=editingRecMode==='cartao';
  if(editingRecMode==='cartao'){
   // Dentro de "Recorrentes do cartão" não existe forma de movimentação:
   // o contexto já define que é uma despesa no cartão de crédito.
@@ -241,9 +242,8 @@ function openRecEditor(id=null,mode='conta'){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));editingRecId=r?r.id:null;
  editingRecMode=r?(r.metodo==='cartao'?'cartao':'conta'):mode;
  const area=$(editingRecMode==='cartao'?'rec-cartao-area':'recorrentes-area');
- if(editingRecMode==='conta')setRecAreaExpanded(true);
- else setCardRecAreaExpanded(true);
- const list=area.querySelector('.rec-list');list.parentNode.insertBefore($('rec-form'),list);
+ const list=area.querySelector('.rec-list');
+ list.parentNode.insertBefore($('rec-form'),list);
  $('rec-form').hidden=false;
  $('rec-form-title').textContent=r?'Editar '+(editingRecMode==='cartao'?'recorrência do cartão':'registro recorrente'):(editingRecMode==='cartao'?'Nova recorrência do cartão':'Novo registro recorrente');
  $('rec-name').value=r?r.nome:'';$('rec-value').value=r?r.valor:'';
@@ -257,19 +257,29 @@ function openRecEditor(id=null,mode='conta'){
  $('rec-frequency').value=r?r.frequencia:'mensal';$('rec-start').value=r?r.inicio:today();
  $('rec-day').value=r&&r.frequencia==='mensal'?String(r.diaCobranca||Number(r.inicio.slice(8))):'';
  recurrenceTiming();
- $('rec-submit').textContent=r?'Salvar alterações':'Salvar recorrência';$('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
+ $('rec-submit').textContent=r?'Salvar alterações':'Salvar recorrência';
+
+ // Só depois de o formulário estar pronto a janela é aberta.
+ if(editingRecMode==='conta')setRecAreaExpanded(true);
+ else setCardRecAreaExpanded(true);
+
+ $('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
 }
 function setRecAreaExpanded(expanded){
  if(expanded){
    $('rec-body').hidden=false;
-   abrirPainelFlutuante(section,'Registros recorrentes',$('rec-toggle'));
+   if(!(floatingPanelState&&floatingPanelState.node===section)){
+     abrirPainelFlutuante(section,'Registros recorrentes',$('rec-toggle'));
+   }
  }else if(floatingPanelState&&floatingPanelState.node===section)fecharPainelFlutuante();
  else section.hidden=true;
 }
 function setCardRecAreaExpanded(expanded){
  if(expanded){
    $('rec-card-body').hidden=false;
-   abrirPainelFlutuante(cardSection,'Recorrentes do cartão',$('rec-card-toggle'));
+   if(!(floatingPanelState&&floatingPanelState.node===cardSection)){
+     abrirPainelFlutuante(cardSection,'Recorrentes do cartão',$('rec-card-toggle'));
+   }
  }else if(floatingPanelState&&floatingPanelState.node===cardSection)fecharPainelFlutuante();
  else cardSection.hidden=true;
 }
