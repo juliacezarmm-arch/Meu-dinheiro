@@ -41,7 +41,7 @@ S.recorrenciaIgnoradas=Array.isArray(S.recorrenciaIgnoradas)?S.recorrenciaIgnora
 let editingRecId=null;
 let editingRecMode="conta";
 const style=document.createElement('style');
-style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}#rec-card-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-card-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-card-body[hidden]{display:none!important}#rec-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-body[hidden]{display:none!important}.rec-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px}.rec-item-date{font-size:12px;color:#c5c3ba;line-height:1.45;flex:1 1 225px}.rec-inline-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0}.rec-inline-actions .rec-button{padding:6px 8px;font-size:11px;white-space:nowrap}.rec-form [hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
+style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}#rec-card-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-card-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-card-body[hidden]{display:none!important}#rec-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-body[hidden]{display:none!important}.rec-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px}.rec-item-date{font-size:12px;color:#c5c3ba;line-height:1.45;flex:1 1 225px}.rec-inline-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0}.rec-inline-actions .rec-button{padding:6px 8px;font-size:11px;white-space:nowrap}.rec-form [hidden]{display:none!important}#rec-account-mode-row[hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
 style.textContent+=`#rec-card-list{gap:6px}#rec-card-list .rec-item{padding:8px 10px}#rec-card-list .rec-item-head{gap:7px;flex-wrap:wrap}#rec-card-list .rec-item-head .rec-inline-actions{margin-left:auto}#rec-card-list .rec-item-sub{margin-top:4px;font-size:11px;line-height:1.4}#rec-card-list .rec-item-date-inline{color:#c5c3ba}#rec-card-list .rec-inline-actions .rec-button{font-size:10px;padding:4px 6px}#rec-card-open{margin:8px 0}#rec-card-list .rec-item-name{min-width:0}@media(max-width:520px){#rec-card-list .rec-item-head{row-gap:5px}#rec-card-list .rec-item-head .rec-inline-actions{margin-left:0}}`;
 // Extrato: mesma densidade e disposicao de linhas que a lista do Cartao.
 style.textContent+=`#rec-list{gap:6px}#rec-list .rec-item{padding:8px 10px}#rec-list .rec-item-head{gap:7px;flex-wrap:wrap}#rec-list .rec-item-head .rec-inline-actions{margin-left:auto}#rec-list .rec-item-sub{margin-top:4px;font-size:11px;line-height:1.4}#rec-list .rec-item-date-inline{color:#c5c3ba}#rec-list .rec-inline-actions .rec-button{font-size:10px;padding:4px 6px}#rec-list .rec-item-name{min-width:0}@media(max-width:520px){#rec-list .rec-item-head{row-gap:5px}#rec-list .rec-item-head .rec-inline-actions{margin-left:0}}`;
@@ -51,9 +51,9 @@ section.innerHTML=`<div class="rec-top"><button type="button" id="rec-toggle" ar
 <div id="rec-body"><p class="rec-caption">Cadastre salário, débito automático, Pix ou transferência. Exclua o cadastro quando quiser; os lançamentos anteriores permanecem.</p><button type="button" class="rec-button primary" id="rec-open">+ Novo registro</button>
 <form class="rec-form" id="rec-form" hidden novalidate><strong id="rec-form-title">Novo registro recorrente</strong>
 <div class="row row2" style="margin-top:12px"><label>Descrição<input id="rec-name" type="text" maxlength="75" placeholder="Ex.: Office, salário, academia" required></label><label>Valor (R$)<input id="rec-value" type="number" min="0.01" step="0.01" required placeholder="60,00"></label></div>
-<div class="row row2"><label>Tipo<select id="rec-type"><option value="saida">Despesa</option><option value="entrada">Entrada / salário</option></select></label><label>Forma de movimentação<select id="rec-method"><option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="boleto">Boleto</option><option value="pix">Pix</option><option value="transferencia">Transferência</option></select></label></div>
+<div class="row row2" id="rec-account-mode-row"><label>Tipo<select id="rec-type"><option value="saida">Despesa</option><option value="entrada">Entrada / salário</option></select></label><label>Forma de movimentação<select id="rec-method"><option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="boleto">Boleto</option><option value="pix">Pix</option><option value="transferencia">Transferência</option></select></label></div>
 <div class="rec-caption" id="rec-confirm-row" hidden><label style="display:flex;flex-direction:row;align-items:center;gap:8px;color:#f5f5f2"><input id="rec-confirm" type="checkbox" style="width:auto"> Exigir confirmação para considerar pago</label><span id="rec-confirm-note"></span></div>
-<div class="row row1" id="rec-card-row" hidden><label>Cartão<select id="rec-card"><option value="">Selecione o cartão</option></select></label></div>
+<div class="row row1" id="rec-card-row" hidden><label>Cartão de crédito<select id="rec-card"><option value="">Selecione o cartão</option></select></label></div>
 <div class="row row2"><label>Categoria<select id="rec-category"></select></label><label>Subcategoria<select id="rec-subcategory"></select></label></div>
 <div class="row row2"><label>Frequência<select id="rec-frequency"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="anual">Anual</option></select></label><label id="rec-date-label">Data da próxima cobrança<input id="rec-start" type="date" required></label><label id="rec-day-label" hidden>Dia da cobrança<input id="rec-day" type="number" min="1" max="31" step="1" inputmode="numeric" placeholder="10" aria-describedby="rec-guidance"></label></div>
 
@@ -76,7 +76,7 @@ section.querySelector('.rec-top').remove();
 saldoPanel.hidden=true;
 section.hidden=true;
 const cardSection=document.createElement('section');cardSection.id='rec-cartao-area';cardSection.className='rec-area';
-cardSection.innerHTML='<div class="rec-top"><button type="button" id="rec-card-toggle" aria-expanded="true" aria-controls="rec-card-body">Recorrentes <span id="rec-card-toggle-symbol" aria-hidden="true">−</span></button></div><div id="rec-card-body"><button type="button" class="rec-button primary" id="rec-card-open">+ Novo pagamento</button><div class="rec-list" id="rec-card-list"></div></div>';
+cardSection.innerHTML='<div class="rec-top"><button type="button" id="rec-card-toggle" aria-expanded="true" aria-controls="rec-card-body">Recorrentes <span id="rec-card-toggle-symbol" aria-hidden="true">−</span></button></div><div id="rec-card-body"><button type="button" class="rec-button primary" id="rec-card-open">+ Nova recorrência</button><div class="rec-list" id="rec-card-list"></div></div>';
 const cardAnchor=document.querySelector('#page-cartao .section-title:nth-of-type(2)')||document.querySelector('#page-cartao #cc-card').closest('.add-form');cardAnchor.parentNode.insertBefore(cardSection,cardAnchor);
 const cardControls=document.getElementById('cartao-action-buttons');
 const registerToggle=document.querySelector('[data-floating-target="card-register-form"]');
@@ -168,13 +168,21 @@ function recurrenceSubcategories(){
  if(opcoes.includes(prev))subs.value=prev;
 }
 function recurrenceType(){
- const entrada=editingRecMode==='conta'&&$('rec-type').value==='entrada',sel=$('rec-method');
+ const sel=$('rec-method');
+ const accountRow=$('rec-account-mode-row');
  if(editingRecMode==='cartao'){
-  $('rec-type').value='saida';sel.innerHTML='<option value="cartao">Cartão de crédito</option>';
- }else if(entrada)sel.innerHTML='<option value="recebimento">Recebimento / salário</option><option value="pix">Pix recebido</option><option value="transferencia">Transferência recebida</option>';
- else sel.innerHTML='<option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="boleto">Boleto</option><option value="pix">Pix</option><option value="transferencia">Transferência</option>';
- $('rec-type').closest('label').hidden=editingRecMode==='cartao';
- $('rec-method').closest('label').hidden=editingRecMode==='cartao';
+  // Dentro de "Recorrentes do cartão" não existe forma de movimentação:
+  // o contexto já define que é uma despesa no cartão de crédito.
+  $('rec-type').value='saida';
+  sel.innerHTML='<option value="cartao">Cartão de crédito</option>';
+  sel.value='cartao';
+  if(accountRow)accountRow.hidden=true;
+ }else{
+  if(accountRow)accountRow.hidden=false;
+  const entrada=$('rec-type').value==='entrada';
+  if(entrada)sel.innerHTML='<option value="recebimento">Recebimento / salário</option><option value="pix">Pix recebido</option><option value="transferencia">Transferência recebida</option>';
+  else sel.innerHTML='<option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="boleto">Boleto</option><option value="pix">Pix</option><option value="transferencia">Transferência</option>';
+ }
  placeCardRow();
  recurrenceCategories();recurrenceTiming();recurrenceConfirmation();
 }
@@ -213,10 +221,11 @@ function openRecEditor(id=null,mode='conta'){
  else setCardRecAreaExpanded(true);
  const list=area.querySelector('.rec-list');list.parentNode.insertBefore($('rec-form'),list);
  $('rec-form').hidden=false;
- $('rec-form-title').textContent=r?'Editar '+(editingRecMode==='cartao'?'pagamento recorrente':'registro recorrente'):(editingRecMode==='cartao'?'Novo pagamento recorrente':'Novo registro recorrente');
+ $('rec-form-title').textContent=r?'Editar '+(editingRecMode==='cartao'?'recorrência do cartão':'registro recorrente'):(editingRecMode==='cartao'?'Nova recorrência do cartão':'Novo registro recorrente');
  $('rec-name').value=r?r.nome:'';$('rec-value').value=r?r.valor:'';
- $('rec-type').value=r?r.tipo:'saida';recurrenceType();
- $('rec-method').value=editingRecMode==='cartao'?'cartao':r?r.metodo:'debito_automatico';
+ $('rec-type').value=editingRecMode==='cartao'?'saida':r?r.tipo:'saida';
+ recurrenceType();
+ if(editingRecMode!=='cartao')$('rec-method').value=r?r.metodo:'debito_automatico';
  placeCardRow();cardOptions();cardSelect.value=r&&r.cartaoId?String(r.cartaoId):'';
  recurrenceConfirmation();
  if($('rec-confirm')&&r&&r.metodo!=='boleto')$('rec-confirm').checked=!!r.exigirConfirmacao;
@@ -224,7 +233,7 @@ function openRecEditor(id=null,mode='conta'){
  $('rec-frequency').value=r?r.frequencia:'mensal';$('rec-start').value=r?r.inicio:today();
  $('rec-day').value=r&&r.frequencia==='mensal'?String(r.diaCobranca||Number(r.inicio.slice(8))):'';
  recurrenceTiming();
- $('rec-submit').textContent=r?'Salvar alterações':editingRecMode==='cartao'?'Salvar pagamento':'Salvar recorrência';$('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
+ $('rec-submit').textContent=r?'Salvar alterações':'Salvar recorrência';$('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
 }
 function setRecAreaExpanded(expanded){
  if(expanded){
@@ -340,7 +349,10 @@ function renderRecurring(){
 function saveRecEditor(event){
  event.preventDefault();
  const existing=S.recorrentes.find(x=>String(x.id)===String(editingRecId));
- const nome=$('rec-name').value.trim(),valor=Number($('rec-value').value),tipo=$('rec-type').value,metodo=$('rec-method').value,cartaoId=metodo==='cartao'?Number($('rec-card').value):null;
+ const nome=$('rec-name').value.trim(),valor=Number($('rec-value').value);
+ const tipo=editingRecMode==='cartao'?'saida':$('rec-type').value;
+ const metodo=editingRecMode==='cartao'?'cartao':$('rec-method').value;
+ const cartaoId=editingRecMode==='cartao'?Number($('rec-card').value):null;
  const dataBase=$('rec-start').value;
  let inicio=dataBase;const fim=existing?existing.fim||null:null,frequencia=$('rec-frequency').value,categoria=$('rec-category').value,subcategoria=$('rec-subcategory').value;
  const mensal=frequencia==='mensal';
