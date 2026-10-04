@@ -194,7 +194,10 @@ function recurrenceSubcategories(){
 function recurrenceType(){
  const sel=$('rec-method');
  const accountRow=$('rec-account-mode-row');
- if(accountRow)accountRow.hidden=editingRecMode==='cartao';
+ if(accountRow){
+  accountRow.hidden=editingRecMode==='cartao';
+  accountRow.style.display=editingRecMode==='cartao'?'none':'';
+ }
  if(editingRecMode==='cartao'){
   // Dentro de "Recorrentes do cartão" não existe forma de movimentação:
   // o contexto já define que é uma despesa no cartão de crédito.
@@ -263,7 +266,13 @@ function openRecEditor(id=null,mode='conta'){
  if(editingRecMode==='conta')setRecAreaExpanded(true);
  else setCardRecAreaExpanded(true);
 
- $('rec-form').scrollIntoView({behavior:'smooth',block:'nearest'});$('rec-name').focus();
+ // Sempre abre a edição mostrando o início do formulário.
+ const panelContent=document.getElementById('action-panel-content');
+ if(panelContent)panelContent.scrollTop=0;
+ requestAnimationFrame(()=>{
+  if(panelContent)panelContent.scrollTop=0;
+  try{$('rec-name').focus({preventScroll:true});}catch(_){$('rec-name').focus();}
+ });
 }
 function setRecAreaExpanded(expanded){
  if(expanded){
@@ -283,7 +292,15 @@ function setCardRecAreaExpanded(expanded){
  }else if(floatingPanelState&&floatingPanelState.node===cardSection)fecharPainelFlutuante();
  else cardSection.hidden=true;
 }
-function closeRecEditor(){$('rec-form').hidden=true;editingRecId=null;editingRecMode='conta';placeCardRow();$('rec-body').appendChild($('rec-form'));}
+function closeRecEditor(){
+ $('rec-form').hidden=true;
+ editingRecId=null;
+ editingRecMode='conta';
+ const accountRow=$('rec-account-mode-row');
+ if(accountRow){accountRow.hidden=false;accountRow.style.display='';}
+ placeCardRow();
+ $('rec-body').appendChild($('rec-form'));
+}
 window.onFloatingPanelClosed=function(id){
  if(id==='recorrentes-area'||id==='rec-cartao-area')closeRecEditor();
 };
