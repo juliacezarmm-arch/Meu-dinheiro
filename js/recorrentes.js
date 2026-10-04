@@ -113,6 +113,15 @@ function primeiraMensalDesde(data,dia){
  if(!dataISOValida(data)||!Number.isInteger(Number(dia))||Number(dia)<1||Number(dia)>31)return null;
  return proximaCobrancaMensal(data,Number(dia));
 }
+function inicioCicloDaPrimeiraFatura(controle,card){
+ if(!dataISOValida(controle)||!card)return null;
+ const base=new Date(controle+'T12:00:00');
+ const dia=Math.max(1,Math.min(31,Number(card.dueDay)||10));
+ const deslocaMes=base.getDate()<dia?-1:0;
+ const mes=new Date(base.getFullYear(),base.getMonth()+deslocaMes,1,12);
+ const ultimo=new Date(mes.getFullYear(),mes.getMonth()+1,0).getDate();
+ return isoDate(mes.getFullYear(),mes.getMonth(),Math.min(dia,ultimo));
+}
 function mesDaFaturaRecorrente(r,data){
  const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));if(!card||!dataISOValida(data))return null;
  const d=dueDateFor(new Date(data+'T12:00:00'),card.dueDay,0,card.closeDay);
@@ -125,25 +134,40 @@ function migrarCicloRecorrentesCartao(){
  const atualDate=new Date(today()+'T12:00:00');
  const faturaAtual=monthKey(atualDate.getFullYear(),atualDate.getMonth());
  for(const rec of S.recorrentes){
-  if(rec.cicloFaturaV2===true||rec.excluida||rec.metodo!=='cartao'||rec.frequencia!=='mensal')continue;
-  const primeiro=primeiraMensalDesde(controle,rec.diaCobranca);
-  if(primeiro&&primeiro<rec.inicio){
-   rec.inicio=primeiro;
-   if(!rec.vigenteDesde)rec.vigenteDesde=controle;
+  if(rec.excluida||rec.metodo!=='cartao'||rec.frequencia!=='mensal')continue;
+  if(rec.cicloFaturaV3!==true){
+   const card=S.cartoes.find(c=>String(c.id)===String(rec.cartaoId));
+   if(card&&!rec.vigenteDesde){
+    const inicioCiclo=inicioCicloDaPrimeiraFatura(controle,card);
+    const primeiro=inicioCiclo?primeiraMensalDesde(inicioCiclo,rec.diaCobranca):null;
+    if(primeiro&&primeiro<rec.inicio){
+     rec.inicio=primeiro;
+     rec.vigenteDesde=primeiro;
+     changed=true;
+    }
+   }
+   rec.cicloFaturaV3=true;
+   changed=true;
+  }
+  if(rec.cicloFaturaV2!==true){
+   const primeiro=primeiraMensalDesde(controle,rec.diaCobranca);
+   if(primeiro&&primeiro<rec.inicio){
+    rec.inicio=primeiro;
+    if(!rec.vigenteDesde)rec.vigenteDesde=controle;
+    changed=true;
+   }
+   rec.cicloFaturaV2=true;
    changed=true;
   }
   const prefix=String(rec.id)+'|';
   const antes=S.recorrenciaIgnoradas.length;
-  // Versões antigas podiam marcar como "ignorada" uma cobrança que, na verdade,
-  // pertencia à fatura atual. A migração restaura só esse primeiro ciclo legado.
   S.recorrenciaIgnoradas=S.recorrenciaIgnoradas.filter(item=>{
    if(!item.startsWith(prefix))return true;
    const data=item.slice(prefix.length);
-   if(!dataISOValida(data)||data<controle||data>today())return true;
+   if(!dataISOValida(data)||data>today())return true;
    return mesDaFaturaRecorrente(rec,data)!==faturaAtual;
   });
   if(S.recorrenciaIgnoradas.length!==antes)changed=true;
-  rec.cicloFaturaV2=true;changed=true;
  }
  return changed;
 }
