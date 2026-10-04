@@ -612,7 +612,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
         <input type="text" id="card-due-day" placeholder="O cartão vence dia" inputmode="numeric" maxlength="2" pattern="[0-9]*" title="Dia de vencimento da fatura (1 a 31)."/>
         <input type="number" id="card-payment-day" placeholder="Ex.: 17, mesmo se vencer dia 10" min="1" max="31" step="1" title="Dia em que você costuma pagar. A data efetiva será escolhida ao registrar cada pagamento."/>
       </div>
-      <p class="hint">Vencimento e pagamento são datas diferentes. Você informará a data real quando pagar a fatura. Não é necessário informar fechamento.</p>
+      <p class="hint">A referência da fatura e o pagamento são datas diferentes. No Extrato, a fatura aparece no dia habitual de pagamento; ao pagar, você informa a data real em que o dinheiro saiu.</p>
       <button class="btn-green" onclick="addRegisteredCard()" title="Salva esse cartão para você escolher nas compras futuras."><i class="ti ti-plus" aria-hidden="true"></i> Registrar cartão</button>
     </div>
     <div id="bank-cards-wrap"><div class="empty">Nenhum cartão cadastrado ainda.</div></div>
@@ -781,7 +781,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 </div></div>
 <div id="card-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-editor-title" hidden><div class="site-dialog-panel">
   <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">✎</span><h2 id="card-editor-title">Editar cartão</h2></div>
-  <p class="site-dialog-copy">Ajuste os dados do cartão. Vencimento e pagamento são datas diferentes.</p>
+  <p class="site-dialog-copy">Ajuste os dados do cartão. No Extrato, a fatura é posicionada pelo dia habitual de pagamento; a outra data continua como referência da fatura.</p>
   <form id="card-editor-form" novalidate onsubmit="event.preventDefault();salvarEdicaoCartao()">
   <label class="site-field">Banco<select id="card-edit-bank" required></select></label>
   <label class="site-field">Nome do cartão (opcional)<input id="card-edit-name" type="text" maxlength="60" autocomplete="off" placeholder="Ex.: Black, Platinum, Azul, LATAM Pass"></label>
@@ -3142,9 +3142,26 @@ function faturasPendentesDoMes(y,m){
     const pago=pagoNaFaturaFinanceira(card.id,mes);
     const restante=Math.max(0,total-pago);
     if(!restante)return [];
-    const dia=Math.min(Number(card.dueDay)||10,new Date(y,m+1,0).getDate());
+    // No Extrato, a fatura aparece na data em que a saída está prevista.
+    // paymentDay é a referência principal; dueDay fica apenas como referência da fatura.
+    const ultimoDia=new Date(y,m+1,0).getDate();
+    const diaPagamento=Math.min(Number(card.paymentDay)||Number(card.dueDay)||10,ultimoDia);
     const identificacao=card.bank+(card.nome?' · '+card.nome:'');
-    return [{id:'fatura-pendente-'+card.id+'-'+mes,data:isoDate(y,m,dia),desc:'Fatura · '+identificacao,tipo:'cartao',categoria:'Cartão de crédito',subcategoria:identificacao,val:restante/100,cardId:card.id,faturaMes:mes,faturaPendente:true,auto:true}];
+    return [{
+      id:'fatura-pendente-'+card.id+'-'+mes,
+      data:isoDate(y,m,diaPagamento),
+      desc:'Fatura · '+identificacao,
+      tipo:'cartao',
+      categoria:'Cartão de crédito',
+      subcategoria:identificacao,
+      val:restante/100,
+      cardId:card.id,
+      faturaMes:mes,
+      faturaPendente:true,
+      pagamentoPrevistoDia:diaPagamento,
+      vencimentoDia:Number(card.dueDay)||null,
+      auto:true
+    }];
   });
 }
 function calcularSobraPrevistaAte(fim){
@@ -3259,7 +3276,7 @@ function renderExtrato(){
       const color=r.tipo==='saldo_inicial'?'#9FE1CB':r.tipo==='entrada'?'#0F6E56':r.tipo==='cartao'?'#A32D2D':(r.tipo==='investimento'||r.tipo==='meta')?'#185FA5':'#A32D2D';
       const action=r.faturaPendente?`<button class="extrato-pagar" type="button" onclick="registrarPagamentoFatura(${Number(r.cardId)},'${r.faturaMes}')" aria-label="Marcar como pago ${escHtml(r.desc)}"><span class="ext-pay-full">Foi pago</span><span class="ext-pay-short">Pago</span></button>`:pendenteRecorrente?`<button class="extrato-pagar" type="button" onclick="abrirPagamentoRecorrente(${Number(r.recorrenciaId)},'${r.recorrenciaData}')" aria-label="Marcar como pago ${escHtml(r.desc)}"><span class="ext-pay-full">Foi pago</span><span class="ext-pay-short">Pago</span></button>`:pendenteAvulso?`<button class="extrato-pagar" type="button" onclick="abrirPagamentoBoleto(${Number(r.id)})" aria-label="Marcar como pago ${escHtml(r.desc)}"><span class="ext-pay-full">Foi pago</span><span class="ext-pay-short">Pago</span></button> <button class="del extrato-edit-btn" type="button" onclick="editarLancamentoExtrato(${Number(r.id)})" aria-label="Editar lançamento" title="Corrige esta conta antes do pagamento.">✎</button><button class="del" type="button" onclick="delExt(${Number(r.id)})" aria-label="Remover" title="Apaga esta conta a pagar."><i class="ti ti-x" aria-hidden="true"></i></button>`:r.auto?'':`<button class="del extrato-edit-btn" type="button" onclick="editarLancamentoExtrato(${Number(r.id)})" aria-label="Editar lançamento" title="Corrige os dados deste lançamento sem duplicar.">✎</button><button class="del" type="button" onclick="delExt(${Number(r.id)})" aria-label="Remover" title="Apaga este lançamento do extrato."><i class="ti ti-x" aria-hidden="true"></i></button>`;
       const categoria=r.subcategoria||r.categoria||'-';
-      const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.faturaPendente?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento da fatura; ainda não pago.</div>`:(pendenteAvulso||pendenteRecorrente)?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento ${r.data.split('-').reverse().join('/')} · aguardando confirmação do pagamento.</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes na aba Cartão.</div>`:'';
+      const detalhe=r.tipo==='meta'&&r.storageNome?`<div style="font-size:11px;color:var(--color-text-secondary)">Guardado em ${escHtml(r.storageNome)}</div>`:r.faturaPendente?`<div style="font-size:11px;color:var(--color-text-secondary)">Pagamento previsto dia ${r.pagamentoPrevistoDia||Number(r.data.slice(8))}${r.vencimentoDia?' · referência da fatura dia '+r.vencimentoDia:''}; ainda não pago.</div>`:(pendenteAvulso||pendenteRecorrente)?`<div style="font-size:11px;color:var(--color-text-secondary)">Vencimento ${r.data.split('-').reverse().join('/')} · aguardando confirmação do pagamento.</div>`:r.tipo==='cartao'?`<div style="font-size:11px;color:var(--color-text-secondary)">Detalhes na aba Cartão.</div>`:'';
       return`<tr class="ext-entry-row"><td class="ext-description-cell"><div class="ext-desc-main">${escHtml(r.desc||'-')}</div><div class="ext-mobile-meta"><span class="ext-mobile-category">${escHtml(categoria)}</span><span class="badge ${bc}">${tipoLabel}</span></div>${detalhe}</td><td class="ext-category-cell">${escHtml(categoria)}</td><td class="ext-status-cell"><span class="badge ${bc}">${tipoLabel}</span></td><td class="ext-value-cell" style="color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td class="ext-actions-cell">${action}</td></tr>`;
     }).join('');
     let saldoCabecalho='';
