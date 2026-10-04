@@ -40,8 +40,9 @@ S.recorrentes=Array.isArray(S.recorrentes)?S.recorrentes:[];
 S.recorrenciaIgnoradas=Array.isArray(S.recorrenciaIgnoradas)?S.recorrenciaIgnoradas:[];
 let editingRecId=null;
 let editingRecMode="conta";
+let editingRecReactivation=false;
 const style=document.createElement('style');
-style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}#rec-card-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-card-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-card-body[hidden]{display:none!important}#rec-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-body[hidden]{display:none!important}.rec-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px}.rec-item-date{font-size:12px;color:#c5c3ba;line-height:1.45;flex:1 1 225px}.rec-inline-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0}.rec-inline-actions .rec-button{padding:6px 8px;font-size:11px;white-space:nowrap}.rec-form [hidden]{display:none!important}#rec-account-mode-row[hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
+style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-list-section-title{font-size:11px;font-weight:800;color:#9FE1CB;text-transform:uppercase;letter-spacing:.04em;margin:3px 2px 0}.rec-list-section-title.inactive{color:#d5bca8;margin-top:8px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}#rec-card-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-card-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-card-body[hidden]{display:none!important}#rec-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-body[hidden]{display:none!important}.rec-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px}.rec-item-date{font-size:12px;color:#c5c3ba;line-height:1.45;flex:1 1 225px}.rec-inline-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0}.rec-inline-actions .rec-button{padding:6px 8px;font-size:11px;white-space:nowrap}.rec-form [hidden]{display:none!important}#rec-account-mode-row[hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
 style.textContent+=`#rec-card-list{gap:6px}#rec-card-list .rec-item{padding:8px 10px}#rec-card-list .rec-item-head{gap:7px;flex-wrap:wrap}#rec-card-list .rec-item-head .rec-inline-actions{margin-left:auto}#rec-card-list .rec-item-sub{margin-top:4px;font-size:11px;line-height:1.4}#rec-card-list .rec-item-date-inline{color:#c5c3ba}#rec-card-list .rec-inline-actions .rec-button{font-size:10px;padding:4px 6px}#rec-card-open{margin:8px 0}#rec-card-list .rec-item-name{min-width:0}@media(max-width:520px){#rec-card-list .rec-item-head{row-gap:5px}#rec-card-list .rec-item-head .rec-inline-actions{margin-left:0}}`;
 // Extrato: mesma densidade e disposicao de linhas que a lista do Cartao.
 style.textContent+=`#rec-list{gap:6px}#rec-list .rec-item{padding:8px 10px}#rec-list .rec-item-head{gap:7px;flex-wrap:wrap}#rec-list .rec-item-head .rec-inline-actions{margin-left:auto}#rec-list .rec-item-sub{margin-top:4px;font-size:11px;line-height:1.4}#rec-list .rec-item-date-inline{color:#c5c3ba}#rec-list .rec-inline-actions .rec-button{font-size:10px;padding:4px 6px}#rec-list .rec-item-name{min-width:0}@media(max-width:520px){#rec-list .rec-item-head{row-gap:5px}#rec-list .rec-item-head .rec-inline-actions{margin-left:0}}`;
@@ -241,14 +242,17 @@ function recurrenceTiming(){
     ?'Para frequência semanal ou anual, informe a data da próxima cobrança. O vencimento e o pagamento da fatura são separados.'
     :'Para frequência semanal ou anual, informe a data do próximo pagamento ou recebimento. O aplicativo não consulta bancos: confira a movimentação efetiva.');
 }
-function openRecEditor(id=null,mode='conta'){
+function openRecEditor(id=null,mode='conta',reactivate=false){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));editingRecId=r?r.id:null;
  editingRecMode=r?(r.metodo==='cartao'?'cartao':'conta'):mode;
+ editingRecReactivation=!!(reactivate&&r&&r.fim&&r.fim<=today());
  const area=$(editingRecMode==='cartao'?'rec-cartao-area':'recorrentes-area');
  const list=area.querySelector('.rec-list');
  list.parentNode.insertBefore($('rec-form'),list);
  $('rec-form').hidden=false;
- $('rec-form-title').textContent=r?'Editar '+(editingRecMode==='cartao'?'recorrência do cartão':'registro recorrente'):(editingRecMode==='cartao'?'Nova recorrência do cartão':'Novo registro recorrente');
+ $('rec-form-title').textContent=editingRecReactivation
+  ?'Reativar '+(editingRecMode==='cartao'?'recorrência do cartão':'registro recorrente')
+  :r?'Editar '+(editingRecMode==='cartao'?'recorrência do cartão':'registro recorrente'):(editingRecMode==='cartao'?'Nova recorrência do cartão':'Novo registro recorrente');
  $('rec-name').value=r?r.nome:'';$('rec-value').value=r?r.valor:'';
  $('rec-type').value=editingRecMode==='cartao'?'saida':r?r.tipo:'saida';
  recurrenceType();
@@ -257,10 +261,11 @@ function openRecEditor(id=null,mode='conta'){
  recurrenceConfirmation();
  if($('rec-confirm')&&r&&r.metodo!=='boleto')$('rec-confirm').checked=!!r.exigirConfirmacao;
  $('rec-category').value=r?r.categoria:'';recurrenceSubcategories();$('rec-subcategory').value=r?r.subcategoria:'';
- $('rec-frequency').value=r?r.frequencia:'mensal';$('rec-start').value=r?r.inicio:today();
+ $('rec-frequency').value=r?r.frequencia:'mensal';$('rec-start').value=editingRecReactivation?today():r?r.inicio:today();
  $('rec-day').value=r&&r.frequencia==='mensal'?String(r.diaCobranca||Number(r.inicio.slice(8))):'';
  recurrenceTiming();
- $('rec-submit').textContent=r?'Salvar alterações':'Salvar recorrência';
+ if(editingRecReactivation)$('rec-date-label').firstChild.textContent='Reativar desde';
+ $('rec-submit').textContent=editingRecReactivation?'Reativar':r?'Salvar alterações':'Salvar recorrência';
 
  // Só depois de o formulário estar pronto a janela é aberta.
  if(editingRecMode==='conta')setRecAreaExpanded(true);
@@ -296,6 +301,7 @@ function closeRecEditor(){
  $('rec-form').hidden=true;
  editingRecId=null;
  editingRecMode='conta';
+ editingRecReactivation=false;
  const accountRow=$('rec-account-mode-row');
  if(accountRow){accountRow.hidden=false;accountRow.style.display='';}
  placeCardRow();
@@ -376,26 +382,36 @@ function recurringNext(r){
 }
 function renderRecurring(){
  if(!$('rec-list')||!$('rec-card-list'))return;cardOptions();
- const ativos=S.recorrentes.filter(r=>!r.excluida).slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
- function html(list,empty){
-  if(!list.length)return '<div class="rec-caption">'+empty+'</div>';
-  return list.map(r=>{
+ const registros=S.recorrentes.filter(r=>!r.excluida).slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+ function itemHtml(r){
    const next=recurringNext(r),ended=!!r.fim&&r.fim<=today();
    const freq={semanal:'Semanal',mensal:'Mensal',anual:'Anual'}[r.frequencia]||r.frequencia;
    const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));
+   const action=ended
+    ?'<button class="rec-button primary" type="button" data-recreactivate="'+r.id+'">Reativar</button>'
+    :'<button class="rec-button danger" type="button" data-recend="'+r.id+'">Encerrar</button>';
+   const actions='<span class="rec-inline-actions"><button class="rec-button" type="button" data-recedit="'+r.id+'" aria-label="Editar '+escHtml(r.nome)+'">✎ Editar</button>'+action+'</span>';
    if(r.metodo==='cartao'){
     const cobranca=r.frequencia==='mensal'?'Dia da cobrança: '+(r.diaCobranca||Number(r.inicio.slice(8))):'Desde: '+displayDate(r.inicio);
-    return `<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">${escHtml(r.nome)}</span><span class="rec-tag${ended?' inactive':''}">${ended?'Encerrado':'Saída'}</span><span class="rec-inline-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir agora</button></span></div>
-    <div class="rec-item-sub"><strong style="color:#f5f5f2">−${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo])}${card?' ('+escHtml(card.bank)+(card.nome?' · '+escHtml(card.nome):'')+')':''} · <span class="rec-item-date-inline">${cobranca}${next?' · Próxima: '+displayDate(next):''}</span></div></div>`;
+    return '<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">'+escHtml(r.nome)+'</span><span class="rec-tag'+(ended?' inactive':'')+'">'+(ended?'Encerrada':'Ativa')+'</span>'+actions+'</div>'+
+    '<div class="rec-item-sub"><strong style="color:#f5f5f2">−'+fmt(r.valor)+'</strong> · '+freq+' · '+escHtml(kindLabel[r.metodo])+(card?' ('+escHtml(card.bank)+(card.nome?' · '+escHtml(card.nome):'')+')':'')+' · <span class="rec-item-date-inline">'+cobranca+(ended&&r.fim?' · Encerrada em: '+displayDate(r.fim):next?' · Próxima: '+displayDate(next):'')+'</span></div></div>';
    }
    const dia=r.frequencia==='mensal'?(r.tipo==='entrada'?'Dia do recebimento: ':'Dia da cobrança: ')+(r.diaCobranca||Number(r.inicio.slice(8))):'Desde: '+displayDate(r.inicio);
    const confirmacao=exigeConfirmacao(r)?' · confirmação manual':'';
-   return `<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">${escHtml(r.nome)}</span><span class="rec-tag${ended?' inactive':''}">${ended?'Encerrado':r.tipo==='entrada'?'Entrada':'Saída'}</span><span class="rec-inline-actions"><button class="rec-button" type="button" data-recedit="${r.id}" aria-label="Editar ${escHtml(r.nome)}">✎ Editar</button><button class="rec-button danger" type="button" data-recdelete="${r.id}">Excluir agora</button></span></div>
-    <div class="rec-item-sub"><strong style="color:#f5f5f2">${r.tipo==='saida'?'−':'+'}${fmt(r.valor)}</strong> · ${freq} · ${escHtml(kindLabel[r.metodo]||r.metodo)}${confirmacao} · <span class="rec-item-date-inline">${dia}${r.fim?' · Encerramento: '+displayDate(r.fim):''}${next?' · Próxima: '+displayDate(next):''}</span></div></div>`;
-  }).join('');
+   return '<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">'+escHtml(r.nome)+'</span><span class="rec-tag'+(ended?' inactive':'')+'">'+(ended?'Encerrada':'Ativa')+'</span>'+actions+'</div>'+
+    '<div class="rec-item-sub"><strong style="color:#f5f5f2">'+(r.tipo==='saida'?'−':'+')+fmt(r.valor)+'</strong> · '+freq+' · '+escHtml(kindLabel[r.metodo]||r.metodo)+confirmacao+' · <span class="rec-item-date-inline">'+dia+(ended&&r.fim?' · Encerrada em: '+displayDate(r.fim):next?' · Próxima: '+displayDate(next):'')+'</span></div></div>';
  }
- $('rec-list').innerHTML=html(ativos.filter(r=>r.metodo!=='cartao'),'Nenhum registro recorrente da conta. Cadastre salário, Pix ou débito automático.');
- $('rec-card-list').innerHTML=html(ativos.filter(r=>r.metodo==='cartao'),'Nenhum pagamento recorrente no cartão.');
+ function html(list,empty){
+  if(!list.length)return '<div class="rec-caption">'+empty+'</div>';
+  const ativas=list.filter(r=>!(r.fim&&r.fim<=today()));
+  const encerradas=list.filter(r=>r.fim&&r.fim<=today());
+  let out='';
+  if(ativas.length)out+='<div class="rec-list-section-title">Ativas</div>'+ativas.map(itemHtml).join('');
+  if(encerradas.length)out+='<div class="rec-list-section-title inactive">Encerradas</div>'+encerradas.map(itemHtml).join('');
+  return out;
+ }
+ $('rec-list').innerHTML=html(registros.filter(r=>r.metodo!=='cartao'),'Nenhum registro recorrente da conta.');
+ $('rec-card-list').innerHTML=html(registros.filter(r=>r.metodo==='cartao'),'Nenhuma recorrência cadastrada no cartão.');
 }
 function saveRecEditor(event){
  event.preventDefault();
@@ -405,12 +421,14 @@ function saveRecEditor(event){
  const metodo=editingRecMode==='cartao'?'cartao':$('rec-method').value;
  const cartaoId=editingRecMode==='cartao'?Number($('rec-card').value):null;
  const dataBase=$('rec-start').value;
- let inicio=dataBase;const fim=existing?existing.fim||null:null,frequencia=$('rec-frequency').value,categoria=$('rec-category').value,subcategoria=$('rec-subcategory').value;
+ const reativando=!!(existing&&editingRecReactivation);
+ let inicio=dataBase;const fim=reativando?null:existing?existing.fim||null:null,frequencia=$('rec-frequency').value,categoria=$('rec-category').value,subcategoria=$('rec-subcategory').value;
  const mensal=frequencia==='mensal';
  const diaCobranca=mensal?Number($('rec-day').value):null;
  if(mensal){
   if($('rec-day').value.trim()===''||!Number.isInteger(diaCobranca)||diaCobranca<1||diaCobranca>31){appAlert('Informe o dia do mês entre 1 e 31.');return;}
-  if(!dataISOValida(dataBase)){appAlert('Informe desde quando essa recorrência existe.');return;}
+  if(!dataISOValida(dataBase)){appAlert(reativando?'Informe desde quando a recorrência volta a ficar ativa.':'Informe desde quando essa recorrência existe.');return;}
+  if(reativando&&existing.fim&&dataBase<existing.fim){appAlert('A reativação não pode começar antes da data em que a recorrência foi encerrada.');return;}
   inicio=existing?existing.inicio:proximaCobrancaMensal(dataBase,diaCobranca);
  }
  if(!nome||!valorMonetarioValido(valor)||valor<=0||!dataISOValida(inicio)||fim&&!dataISOValida(fim)||fim&&fim<=inicio||!['semanal','mensal','anual'].includes(frequencia)||!['entrada','saida'].includes(tipo)||!categoria||!subcategoria){appAlert('Preencha descrição, valor, categoria e datas válidas.');return;}
@@ -421,20 +439,28 @@ function saveRecEditor(event){
  const exigirConfirmacao=metodo==='boleto'||(['pix','transferencia'].includes(metodo)&&!!($('rec-confirm')&&$('rec-confirm').checked));
  const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,cicloFaturaV2:true,cicloFaturaV3:true,...(exigirConfirmacao?{exigirConfirmacao:true}:{}),...(mensal?{diaCobranca}:{})};
  if(existing){
-  // Passado imutável: edição troca apenas ocorrências a partir de amanhã.
-  newRecord.vigenteDesde=datePlusOne(today());
+  // O histórico já lançado permanece. Na reativação, novas ocorrências passam a valer da data escolhida.
+  newRecord.vigenteDesde=reativando?dataBase:datePlusOne(today());
   const idx=S.recorrentes.findIndex(x=>String(x.id)===String(existing.id));S.recorrentes[idx]=newRecord;
  }else{
   newRecord.vigenteDesde=dataBase;
   S.recorrentes.push(newRecord);
  }
  closeRecEditor();saveData();syncRecurring();renderExtrato();renderCartao();updateResumo();
- appAlert(existing?'Cadastro editado. Movimentações passadas foram preservadas; mudanças valem a partir de amanhã.':'Recorrência cadastrada. Previsões futuras aparecem nas abas correspondentes.');
+ appAlert(reativando?'Recorrência reativada. O histórico anterior foi preservado.':existing?'Cadastro editado. Movimentações passadas foram preservadas; mudanças valem a partir de amanhã.':'Recorrência cadastrada. Previsões futuras aparecem nas abas correspondentes.');
 }
-async function deleteRec(id){
- const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r)return;
- if(!await confirmarExclusao('Excluir agora o cadastro de '+r.nome+'? As movimentações já registradas ficam no histórico, mas todas as previsões futuras são removidas.'))return;
- r.excluida=true;r.fim=today();saveData();syncRecurring();renderCartao();renderExtrato();updateResumo();
+async function endRecurring(id){
+ const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r||r.excluida)return;
+ if(r.fim&&r.fim<=today())return;
+ if(!await appConfirm('Encerrar '+r.nome+'? Os lançamentos anteriores serão mantidos no histórico e as próximas ocorrências deixarão de ser geradas.'))return;
+ r.fim=today();
+ r.excluida=false;
+ saveData();syncRecurring();renderCartao();renderExtrato();updateResumo();renderRecurring();
+ appAlert('Recorrência encerrada. O histórico foi preservado.');
+}
+function reactivateRecurring(id){
+ const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r||r.excluida||!r.fim||r.fim>today())return;
+ openRecEditor(r.id,r.metodo==='cartao'?'cartao':'conta',true);
 }
 function ignoreRecurring(row){
  if(!row||!row.recorrenciaId||!row.recorrenciaData)return;
@@ -513,7 +539,8 @@ $('rec-frequency').addEventListener('change',recurrenceTiming);
 for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('click',event=>{
  const btn=event.target.closest('button');if(!btn)return;
  if(btn.dataset.recedit)openRecEditor(btn.dataset.recedit);
- if(btn.dataset.recdelete)void deleteRec(btn.dataset.recdelete);
+ if(btn.dataset.recend)void endRecurring(btn.dataset.recend);
+ if(btn.dataset.recreactivate)reactivateRecurring(btn.dataset.recreactivate);
 });
 const oldShowPage=showPage;
 showPage=function(id,btn){oldShowPage(id,btn);if(id==='extrato'||id==='cartao')renderRecurring();};
