@@ -91,6 +91,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #ext-wrap .ext-day-head-line{display:flex;align-items:center;justify-content:space-between;gap:14px;white-space:nowrap}
 #ext-wrap .ext-day-date{min-width:0;overflow:hidden;text-overflow:ellipsis}
 #ext-wrap .ext-day-balance-inline{flex:none;color:#9FE1CB;font-size:11px;font-weight:900;font-variant-numeric:tabular-nums}
+#ext-wrap .ext-day-balance-inline.is-negative{color:#efaba4}
 #ext-wrap .ext-day-balance-inline span{color:var(--color-text-secondary);margin-right:5px;font-weight:800}
 #cc-wrap .cc-money{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip;font-size:11px;font-weight:700}
 #cc-wrap .cc-table-wrap{width:100%;overflow-x:auto}
@@ -3198,11 +3199,19 @@ function calcularSobraPrevistaAte(fim){
     }
   }
   if(cursor<=limite)return null;
-  const meses=new Set(parcelasCartaoFinanceiras().filter(x=>x.data<=fim).map(x=>String(x.cardId)+'|'+x.data.slice(0,7)));
-  for(const chave of meses){
-    const [id,mes]=chave.split('|');
-    centavos-=Math.max(0,totalDaFaturaFinanceira(id,mes)-pagoNaFaturaFinanceira(id,mes));
+
+  // Cartões entram na projeção no dia em que o pagamento está previsto no Extrato.
+  // Isso mantém a projeção diária coerente com o paymentDay cadastrado no cartão.
+  const primeiroMes=new Date(today().slice(0,7)+'-01T12:00:00');
+  const ultimoMes=new Date(fim.slice(0,7)+'-01T12:00:00');
+  const cursorFatura=new Date(primeiroMes);
+  let mesesFatura=0;
+  for(;cursorFatura<=ultimoMes&&mesesFatura<240;mesesFatura++,cursorFatura.setMonth(cursorFatura.getMonth()+1)){
+    for(const fatura of faturasPendentesDoMes(cursorFatura.getFullYear(),cursorFatura.getMonth())){
+      if(fatura.data<=fim)centavos-=Math.round(Number(fatura.val||0)*100);
+    }
   }
+  if(cursorFatura<=ultimoMes)return null;
   return centavos/100;
 }
 
@@ -3280,9 +3289,16 @@ function renderExtrato(){
       return`<tr class="ext-entry-row"><td class="ext-description-cell"><div class="ext-desc-main">${escHtml(r.desc||'-')}</div><div class="ext-mobile-meta"><span class="ext-mobile-category">${escHtml(categoria)}</span><span class="badge ${bc}">${tipoLabel}</span></div>${detalhe}</td><td class="ext-category-cell">${escHtml(categoria)}</td><td class="ext-status-cell"><span class="badge ${bc}">${tipoLabel}</span></td><td class="ext-value-cell" style="color:${color}">${['saida','cartao','investimento','meta'].includes(r.tipo)?'−':r.tipo==='entrada'?'+':''}${fmt(r.val)}</td><td class="ext-actions-cell">${action}</td></tr>`;
     }).join('');
     let saldoCabecalho='';
-    if(saldoInicialValido(S.saldoInicial)&&data>=S.saldoInicial.data&&data<=today()){
-      const saldoDia=calcularSaldoDisponivelAte(data);
-      saldoCabecalho=`<div class="ext-day-balance-inline"><span>Saldo do dia:</span>${fmt(saldoDia)}</div>`;
+    if(saldoInicialValido(S.saldoInicial)&&data>=S.saldoInicial.data){
+      if(data<=today()){
+        const saldoDia=calcularSaldoDisponivelAte(data);
+        saldoCabecalho=`<div class="ext-day-balance-inline${saldoDia<0?' is-negative':''}"><span>Saldo do dia:</span>${fmt(saldoDia)}</div>`;
+      }else{
+        const saldoPrevisto=calcularSobraPrevistaAte(data);
+        if(saldoPrevisto!==null){
+          saldoCabecalho=`<div class="ext-day-balance-inline${saldoPrevisto<0?' is-negative':''}" title="Estimativa considerando lançamentos previstos e faturas até este dia."><span>Saldo do dia previsto:</span>${fmt(saldoPrevisto)}</div>`;
+        }
+      }
     }
     return `<tr class="ext-day-header"><th colspan="5"><div class="ext-day-head-line"><span class="ext-day-date">${tituloDia}</span>${saldoCabecalho}</div></th></tr>`+linhas;
   }).join('');
