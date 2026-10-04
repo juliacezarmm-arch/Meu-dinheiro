@@ -77,14 +77,14 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #ext-wrap td:nth-child(4){font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
 #ext-wrap td:last-child{overflow:visible;white-space:nowrap;text-align:right}
 #ext-wrap .ext-description-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#ext-wrap .ext-category-cell{font-size:12px;color:var(--color-text-secondary);white-space:normal;line-height:1.25}
+#ext-wrap .ext-category-cell{font-size:12px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
 #ext-wrap .ext-value-cell{font-variant-numeric:tabular-nums;font-size:12px;font-weight:500;white-space:nowrap}
-#ext-wrap .ext-actions-cell{overflow:visible;white-space:nowrap;text-align:right}
+#ext-wrap .ext-actions-cell{overflow:visible;white-space:nowrap;text-align:right;padding-left:0!important;padding-right:2px!important}
 #ext-wrap col.ext-col-description{width:auto}
-#ext-wrap col.ext-col-category{width:120px}
+#ext-wrap col.ext-col-category{width:150px}
 #ext-wrap col.ext-col-status{width:86px}
-#ext-wrap col.ext-col-value{width:120px}
-#ext-wrap col.ext-col-actions{width:90px}
+#ext-wrap col.ext-col-value{width:110px}
+#ext-wrap col.ext-col-actions{width:58px}
 #ext-wrap .ext-mobile-meta,.ext-pay-short{display:none}
 #ext-wrap .ext-day-header th{padding:12px 6px 7px;background:#0d0d0c;color:#9FE1CB;border-bottom:1px solid #3a3934;font-size:12px;font-weight:900;letter-spacing:.01em;text-transform:none}
 #ext-wrap .ext-day-header:first-child th{padding-top:9px}
@@ -159,9 +159,9 @@ td:last-child{white-space:normal}
 .b-cartao{background:#FAEEDA;color:#633806}
 .b-pendente{background:#FAEEDA;color:#633806}
 .b-vencido{background:#FCEBEB;color:#791F1F}
-.del{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:14px;padding:1px 4px;border-radius:4px}
+.del{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:12px;padding:0 2px;border-radius:4px}
 .del:hover{color:#A32D2D}
-.extrato-edit-btn{color:#9FE1CB;min-width:27px;min-height:30px;font-size:17px;font-weight:800}
+.extrato-edit-btn{color:#9FE1CB;min-width:18px;min-height:22px;font-size:13px;font-weight:800;padding:0 1px}
 .extrato-edit-btn:hover,.extrato-edit-btn:focus-visible{color:#fff;background:#224336;outline:1px solid #9FE1CB}
 #extrato-editor [hidden]{display:none!important}
 #extrato-edit-regular{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
