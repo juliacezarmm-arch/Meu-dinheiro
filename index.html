@@ -613,7 +613,10 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
         <input type="text" id="card-due-day" placeholder="O cartão vence dia" inputmode="numeric" maxlength="2" pattern="[0-9]*" title="Dia de vencimento da fatura (1 a 31)."/>
         <input type="number" id="card-payment-day" placeholder="Ex.: 17, mesmo se vencer dia 10" min="1" max="31" step="1" title="Dia em que você costuma pagar. A data efetiva será escolhida ao registrar cada pagamento."/>
       </div>
-      <p class="hint">A referência da fatura e o pagamento são datas diferentes. No Extrato, a fatura aparece no dia habitual de pagamento; ao pagar, você informa a data real em que o dinheiro saiu.</p>
+      <div class="row row1">
+        <input type="number" id="card-monthly-fee" placeholder="Mensalidade do cartão (R$) · opcional" min="0" step="0.01" inputmode="decimal" title="Se este cartão cobra mensalidade, informe o valor. Ela será incluída automaticamente em cada nova fatura."/>
+      </div>
+      <p class="hint">A referência da fatura e o pagamento são datas diferentes. No Extrato, a fatura aparece no dia habitual de pagamento. Se houver mensalidade, ela entra automaticamente em cada fatura, sem cadastrar como recorrente.</p>
       <button class="btn-green" onclick="addRegisteredCard()" title="Salva esse cartão para você escolher nas compras futuras."><i class="ti ti-plus" aria-hidden="true"></i> Registrar cartão</button>
     </div>
     <div id="bank-cards-wrap"><div class="empty">Nenhum cartão cadastrado ainda.</div></div>
@@ -787,7 +790,8 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <label class="site-field">Banco<select id="card-edit-bank" required></select></label>
   <label class="site-field">Nome do cartão (opcional)<input id="card-edit-name" type="text" maxlength="60" autocomplete="off" placeholder="Ex.: Black, Platinum, Azul, LATAM Pass"></label>
   <div class="site-fields-row"><label class="site-field">Vencimento (dia)<input id="card-edit-due" type="number" inputmode="numeric" min="1" max="31" step="1" required placeholder="10"></label><label class="site-field">Dia habitual de pagamento<input id="card-edit-payment" type="number" inputmode="numeric" min="1" max="31" step="1" placeholder="17 (opcional)"></label></div>
-  <p class="site-dialog-copy">Novos dados valem para compras futuras. Compras anteriores preservam os vencimentos já registrados.</p>
+  <label class="site-field">Mensalidade do cartão (R$) · opcional<input id="card-edit-monthly-fee" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00"></label>
+  <p class="site-dialog-copy">A mensalidade é vinculada ao cartão e entra automaticamente nas próximas faturas. Não precisa ser cadastrada em Recorrentes.</p>
   <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('card-editor')">Cancelar</button><button class="site-button primary" type="submit">Salvar cartão</button></div></form>
 </div></div>
 <div id="card-paid-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-paid-title" hidden><div class="site-dialog-panel">
@@ -979,6 +983,8 @@ function validarDadosImportados(arquivo){
       }
       if(key==='cartoes'&&r.nome!==undefined&&(typeof r.nome!=='string'||r.nome.length>60))throw Error('Nome de cartão inválido.');
       if(key==='cartoes'&&r.color!==undefined&&!/^#[0-9a-fA-F]{6}$/.test(r.color))throw Error('Cor de cartão inválida.');
+      if(key==='cartoes'&&r.monthlyFee!==undefined&&(!valorMonetarioValido(Number(r.monthlyFee))))throw Error('Mensalidade de cartão inválida.');
+      if(key==='cartoes'&&r.monthlyFeeStartMonth!==undefined&&r.monthlyFeeStartMonth!==null&&!/^\d{4}-\d{2}$/.test(String(r.monthlyFeeStartMonth)))throw Error('Início da mensalidade do cartão inválido.');
       if(key==='cartao'&&(!Number.isInteger(Number(r.parcelas||1))||Number(r.parcelas||1)<1||Number(r.parcelas||1)>120))throw Error('Parcelamento inválido.');
       if(key==='cartao'&&r.parcelasPagasInformadas!==undefined&&(!Number.isInteger(r.parcelasPagasInformadas)||r.parcelasPagasInformadas<0||r.parcelasPagasInformadas>Number(r.parcelas||1)))throw Error('Quantidade de parcelas pagas inválida.');
       if(key==='invest'&&r.historico!==undefined){
@@ -1486,15 +1492,20 @@ function editarCartaoCadastrado(id){
  const select=document.getElementById('card-edit-bank');select.innerHTML=document.getElementById('card-bank').innerHTML;select.value=card.bank;
  document.getElementById('card-edit-name').value=card.nome||'';
  document.getElementById('card-edit-due').value=String(card.dueDay||'');document.getElementById('card-edit-payment').value=card.paymentDay?String(card.paymentDay):'';
+ document.getElementById('card-edit-monthly-fee').value=Number(card.monthlyFee)>0?String(card.monthlyFee):'';
  abrirJanela('card-editor');
 }
 function diaDeCartaoValido(valor,obrigatorio){if(!obrigatorio&&(valor===null||valor===undefined||String(valor).trim()===''))return true;const n=Number(valor);return Number.isInteger(n)&&n>=1&&n<=31;}
 function salvarEdicaoCartao(){
  const card=S.cartoes.find(c=>String(c.id)===String(editingRegisteredCardId));if(!card)return fecharJanela('card-editor');
- const bank=document.getElementById('card-edit-bank').value,nome=document.getElementById('card-edit-name').value.trim(),dueText=document.getElementById('card-edit-due').value,paymentText=document.getElementById('card-edit-payment').value;
- if(!bank||!diaDeCartaoValido(dueText,true)||!diaDeCartaoValido(paymentText,false)){appAlert('Escolha o cartão e informe vencimento válido. O pagamento habitual pode ficar vazio.');return;}
- card.bank=bank;card.nome=nome;card.dueDay=Number(dueText);card.paymentDay=paymentText.trim()===''?null:Number(paymentText);card.closeDay=null;card.color=BANK_COLORS[bank]||BANK_COLORS.Outro;
- fecharJanela('card-editor');saveData();renderRegisteredCards();renderCartao();renderExtrato();updateResumo();appAlert('Cartão atualizado. Histórico e pagamentos já registrados foram preservados.');
+ const bank=document.getElementById('card-edit-bank').value,nome=document.getElementById('card-edit-name').value.trim(),dueText=document.getElementById('card-edit-due').value,paymentText=document.getElementById('card-edit-payment').value,feeText=document.getElementById('card-edit-monthly-fee').value;
+ const monthlyFee=feeText.trim()===''?0:Number(feeText);
+ if(!bank||!diaDeCartaoValido(dueText,true)||!diaDeCartaoValido(paymentText,false)||!valorMonetarioValido(monthlyFee)){appAlert('Confira banco, vencimento, pagamento habitual e mensalidade.');return;}
+ const tinhaMensalidade=Number(card.monthlyFee)>0;
+ card.bank=bank;card.nome=nome;card.dueDay=Number(dueText);card.paymentDay=paymentText.trim()===''?null:Number(paymentText);card.closeDay=null;card.color=BANK_COLORS[bank]||BANK_COLORS.Outro;card.monthlyFee=monthlyFee;
+ if(monthlyFee>0&&!tinhaMensalidade)card.monthlyFeeStartMonth=mesFaturaAtualDoCartao(card);
+ if(monthlyFee<=0)card.monthlyFeeStartMonth=null;
+ fecharJanela('card-editor');saveData();renderRegisteredCards();renderCartao();renderExtrato();updateResumo();appAlert(monthlyFee>0?'Cartão atualizado. A mensalidade entra automaticamente nas faturas a partir do ciclo atual.':'Cartão atualizado. Histórico e pagamentos já registrados foram preservados.');
 }
 function registrarPagamentoFatura(cardId,mes){
  if(!saldoInicialValido(S.saldoInicial)){appAlert('Informe primeiro seu saldo inicial no Extrato.');return;}
@@ -1533,6 +1544,57 @@ function dueDateFor(baseDate,dueDay,offset,closeDay){
   const lastDay=new Date(dueBase.getFullYear(),dueBase.getMonth()+1,0).getDate();
   return new Date(dueBase.getFullYear(),dueBase.getMonth(),Math.min(dueDay,lastDay),12);
 }
+
+function mesFaturaAtualDoCartao(card,referencia=today()){
+  const base=new Date(referencia+'T12:00:00');
+  const d=dueDateFor(base,Number(card.dueDay)||10,0,card.closeDay);
+  return monthKey(d.getFullYear(),d.getMonth());
+}
+function mensalidadeAtivaNoMes(card,y,m){
+  const valor=Number(card&&card.monthlyFee||0);
+  if(!valorMonetarioValido(valor)||valor<=0)return false;
+  const mes=monthKey(y,m);
+  const inicio=card.monthlyFeeStartMonth||mesFaturaAtualDoCartao(card);
+  return mes>=inicio;
+}
+function parcelaMensalidadeCartao(card,y,m){
+  if(!mensalidadeAtivaNoMes(card,y,m))return null;
+  const ultimo=new Date(y,m+1,0).getDate();
+  const dia=Math.min(Number(card.dueDay)||10,ultimo);
+  const key=monthKey(y,m);
+  return {
+    id:'mensalidade-'+card.id+'-'+key+'-0',
+    cardId:card.id,
+    data:isoDate(y,m,dia),
+    desc:'Mensalidade do cartão',
+    tipo:'cartao',
+    categoria:'Cartão de crédito',
+    subcategoria:'Mensalidade do cartão',
+    gastoTipo:'fixo',
+    val:Number(card.monthlyFee),
+    auto:true,
+    mensalidadeCartao:true
+  };
+}
+function mensalidadesCartaoNoMes(y,m){
+  return S.cartoes.filter(card=>cartaoPassaFiltro(card.id)&&mensalidadeAtivaNoMes(card,y,m)).map(card=>({
+    id:'mensalidade-'+card.id+'-'+monthKey(y,m),
+    cardId:card.id,
+    data:isoDate(y,m,Math.min(Number(card.dueDay)||10,new Date(y,m+1,0).getDate())),
+    desc:'Mensalidade do cartão',
+    tipo:'mensalidade',
+    banco:card.bank,
+    nomeCartao:card.nome||'',
+    vencDia:card.dueDay,
+    parcelas:1,
+    categoria:'Cartão de crédito',
+    subcategoria:'Mensalidade do cartão',
+    val:Number(card.monthlyFee),
+    mensalidadeCartao:true,
+    auto:true
+  }));
+}
+
 function isSameMonthDate(data,y,m){
   const d=new Date(data+'T12:00:00');
   return d.getFullYear()===y&&d.getMonth()===m;
@@ -1674,11 +1736,14 @@ function selectedCard(){
 }
 
 function addRegisteredCard(){
- const bank=document.getElementById('card-bank').value,nome=document.getElementById('card-name').value.trim(),dueText=document.getElementById('card-due-day').value,paymentText=document.getElementById('card-payment-day').value;
- if(!bank||!diaDeCartaoValido(dueText,true)||!diaDeCartaoValido(paymentText,false)){appAlert('Escolha o banco e informe o vencimento (1 a 31). O dia habitual do pagamento é opcional.');return;}
- S.cartoes.push({id:novoIdGlobal(),bank,nome,dueDay:Number(dueText),paymentDay:paymentText.trim()===''?null:Number(paymentText),closeDay:null,color:BANK_COLORS[bank]||BANK_COLORS.Outro});
- document.getElementById('card-bank').value='';document.getElementById('card-name').value='';document.getElementById('card-due-day').value='';document.getElementById('card-payment-day').value='';
- saveData();renderRegisteredCards();renderCartao();updatePreview();fecharPainelFlutuante();
+ const bank=document.getElementById('card-bank').value,nome=document.getElementById('card-name').value.trim(),dueText=document.getElementById('card-due-day').value,paymentText=document.getElementById('card-payment-day').value,feeText=document.getElementById('card-monthly-fee').value;
+ const monthlyFee=feeText.trim()===''?0:Number(feeText);
+ if(!bank||!diaDeCartaoValido(dueText,true)||!diaDeCartaoValido(paymentText,false)||!valorMonetarioValido(monthlyFee)){appAlert('Confira banco, vencimento, pagamento habitual e mensalidade.');return;}
+ const card={id:novoIdGlobal(),bank,nome,dueDay:Number(dueText),paymentDay:paymentText.trim()===''?null:Number(paymentText),closeDay:null,color:BANK_COLORS[bank]||BANK_COLORS.Outro,monthlyFee};
+ if(monthlyFee>0)card.monthlyFeeStartMonth=mesFaturaAtualDoCartao(card);
+ S.cartoes.push(card);
+ document.getElementById('card-bank').value='';document.getElementById('card-name').value='';document.getElementById('card-due-day').value='';document.getElementById('card-payment-day').value='';document.getElementById('card-monthly-fee').value='';
+ saveData();renderRegisteredCards();renderCartao();renderExtrato();updateResumo();updatePreview();fecharPainelFlutuante();
 }
 
 function delRegisteredCard(id){
@@ -1700,7 +1765,7 @@ function renderRegisteredCards(){
  <button class="del" type="button" onclick="editarCartaoCadastrado(${c.id})" aria-label="Editar cartão ${escHtml(c.bank)}${c.nome?' '+escHtml(c.nome):''}" title="Editar cartão"><svg class="bank-edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
  <button class="del" type="button" onclick="delRegisteredCard(${c.id})" aria-label="Remover cartão ${escHtml(c.bank)}${c.nome?' '+escHtml(c.nome):''}" title="Excluir cartão sem movimentações vinculadas">×</button>
  </div><div class="bank-chip"></div><div class="bank-title">${escHtml(c.bank==='Outro'&&c.nome?c.nome:[c.bank,c.nome].filter(Boolean).join(' · '))}</div>
- <div class="bank-due">Vence ${c.dueDay}${c.paymentDay?' · paga dia '+c.paymentDay:''}</div>
+ <div class="bank-due">Vence ${c.dueDay}${c.paymentDay?' · paga dia '+c.paymentDay:''}${Number(c.monthlyFee)>0?' · mensalidade '+fmt(c.monthlyFee):''}</div>
  </div>`).join('')+'</div>';
  renderFiltroCartoes();
 }
@@ -2422,7 +2487,6 @@ function getMesMap(){
   S.cartao.forEach(c=>{
     const d=new Date(c.data+'T12:00:00');
     const n=c.parcelas||1;
-    // Valores inteiros em centavos evitam perder ou criar dinheiro nas parcelas.
     const vencDia=c.vencDia||10;
     for(let i=0;i<n;i++){
       const parc=valorParcela(c,i);
@@ -2431,6 +2495,16 @@ function getMesMap(){
       map[key]=(map[key]||0)+parc;
     }
   });
+  const limite=new Date();limite.setFullYear(limite.getFullYear()+10);
+  for(const card of S.cartoes){
+    if(!(Number(card.monthlyFee)>0))continue;
+    const inicio=card.monthlyFeeStartMonth||mesFaturaAtualDoCartao(card);
+    const [iy,im]=inicio.split('-').map(Number);
+    for(let d=new Date(iy,im-1,1,12),n=0;d<=limite&&n<240;n++,d.setMonth(d.getMonth()+1)){
+      const key=monthKey(d.getFullYear(),d.getMonth());
+      map[key]=(map[key]||0)+Number(card.monthlyFee);
+    }
+  }
   return map;
 }
 
@@ -2440,7 +2514,6 @@ function getParcelasCartao(){
     const d=new Date(c.data+'T12:00:00');
     const n=c.parcelas||1;
     const nomeProduto=(S.cartoes.find(card=>String(card.id)===String(c.cardId))||{}).nome||c.nomeCartao||'';
-    // Cada parcela recebe centavos exatos.
     const vencDia=c.vencDia||10;
     for(let i=0;i<n;i++){
       const parc=valorParcela(c,i);
@@ -2458,6 +2531,18 @@ function getParcelasCartao(){
       });
     }
   });
+  const limite=new Date();
+  const alvo=[limite,new Date(cartaoMes),new Date(resumoMes)].reduce((max,d)=>d>max?d:max,limite);
+  const fim=new Date(alvo.getFullYear()+10,alvo.getMonth(),1,12);
+  for(const card of S.cartoes){
+    if(!(Number(card.monthlyFee)>0))continue;
+    const inicio=card.monthlyFeeStartMonth||mesFaturaAtualDoCartao(card);
+    const [iy,im]=inicio.split('-').map(Number);
+    for(let d=new Date(iy,im-1,1,12),n=0;d<=fim&&n<240;n++,d.setMonth(d.getMonth()+1)){
+      const fee=parcelaMensalidadeCartao(card,d.getFullYear(),d.getMonth());
+      if(fee)parcelas.push(fee);
+    }
+  }
   return parcelas;
 }
 
@@ -2657,17 +2742,20 @@ function renderCartao(){
   const rows=S.cartao.concat(forecasts)
     .filter(c=>cartaoPassaFiltro(c.cardId)&&cartaoTemMes(c,viewYear,viewMonth))
     .sort((a,b)=>b.data.localeCompare(a.data));
+  const mensalidades=mensalidadesCartaoNoMes(viewYear,viewMonth);
   const parcelasNesteMes=parcelasFiltradas.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth));
   const totalVisivel=somarValoresCartaoNoMes(rows,parcelasNesteMes);
   const totalTodosMes=parcelasTodas.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth))
     .reduce((centavos,x)=>centavos+Math.round(Number(x.val||0)*100),0)/100;
   renderResumoCartoes(parcelasTodas.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth)),totalTodosMes);
-  document.getElementById('cc-total-display').textContent=rows.length?'Total: '+fmt(totalVisivel):'';
-  if(!rows.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
+  const totalMensalidades=mensalidades.reduce((s,r)=>s+Number(r.val||0),0);
+  document.getElementById('cc-total-display').textContent=(rows.length||mensalidades.length)?'Total: '+fmt(totalVisivel+totalMensalidades):'';
+  if(!rows.length&&!mensalidades.length){wrap.innerHTML='<div class="empty">Nenhum lançamento no cartão em '+monthLabel+'.</div>';return;}
   // Separação somente visual: conserva as compras e todas as parcelas no JSON.
   // O valor da parcela corresponde ao mês da fatura que está sendo visualizado.
   const grupos=[
     ['À vista',rows.filter(r=>r.tipo!=='parcelado'&&!r.recorrenciaId)],
+    ['Mensalidade do cartão',mensalidades],
     ['Recorrentes',rows.filter(r=>r.tipo!=='parcelado'&&!!r.recorrenciaId)],
     ['Parcelamentos',rows.filter(r=>r.tipo==='parcelado')]
   ];
@@ -2678,16 +2766,21 @@ function renderCartao(){
         const d=new Date(r.data+'T12:00:00');
         const qtdParcelas=Number(r.parcelas)||1;
         const parcelado=r.tipo==='parcelado';
-        const tipoLabel=parcelado?'Parcelado':'À vista';
+        const mensalidade=!!r.mensalidadeCartao;
+        const tipoLabel=mensalidade?'Mensalidade':parcelado?'Parcelado':'À vista';
         const venc='dia '+(r.vencDia||10);
         const nomeProduto=(S.cartoes.find(card=>String(card.id)===String(r.cardId))||{}).nome||r.nomeCartao||'';
         const desc=r.banco?`${r.desc} (${r.banco}${nomeProduto?' · '+nomeProduto:''})`:r.desc;
-        const parcelaDoMes=parcelasNesteMes.find(x=>String(x.id).startsWith(String(r.id)+'-'));
+        const parcelaDoMes=mensalidade
+          ?parcelasNesteMes.find(x=>x.mensalidadeCartao&&String(x.cardId)===String(r.cardId))
+          :parcelasNesteMes.find(x=>String(x.id).startsWith(String(r.id)+'-'));
         const valorDoMes=parcelaDoMes?fmt(parcelaDoMes.val):'—';
         const historico=S.saldoInicial&&parcelaDoMes&&parcelaDoMes.data<S.saldoInicial.data;
         const cat=`${r.subcategoria||'Sem categoria'}${historico?' · Histórico anterior à abertura':''}`;
         let actions='';
-        if(r.recorrenciaId){
+        if(mensalidade){
+          actions='';
+        }else if(r.recorrenciaId){
           actions=r.previsto
             ?`<button class="del" type="button" onclick="editRecurringCardForecast(${Number(r.recorrenciaId)})" aria-label="Editar recorrência" title="Abre o cadastro da recorrência.">✎</button>`
             :`<button class="del" type="button" onclick="editCartao(${r.id})" aria-label="Editar recorrência" title="Abre o cadastro da recorrência.">✎</button>`;
@@ -2696,9 +2789,11 @@ function renderCartao(){
         }else{
           actions=`<button class="del" type="button" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra.">✎</button><button class="del" type="button" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra à vista do cartão."><i class="ti ti-x" aria-hidden="true"></i></button>`;
         }
-        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${r.previsto?'Previsto':r.recorrenciaId?'Recorrente':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
+        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${mensalidade?'Mensalidade':r.previsto?'Previsto':r.recorrenciaId?'Recorrente':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
       }).join('');
-      const subtotal=somarValoresCartaoNoMes(itens,parcelasNesteMes);
+      const subtotal=titulo==='Mensalidade do cartão'
+        ?itens.reduce((s,r)=>s+Number(r.val||0),0)
+        :somarValoresCartaoNoMes(itens,parcelasNesteMes);
       return `<tr class="cc-group-title"><th colspan="5" scope="rowgroup">${titulo}</th><th class="cc-money" scope="row">${fmt(subtotal)}</th><th></th></tr>`+linhas;
     }).join('')+
     '</tbody></table></div>';
