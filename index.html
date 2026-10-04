@@ -1521,9 +1521,9 @@ function salvarPagamentoFatura(){
 function dueDateFor(baseDate,dueDay,offset,closeDay){
   const fechamento=closeDay?Math.min(closeDay,new Date(baseDate.getFullYear(),baseDate.getMonth()+1,0).getDate()):0;
   // Regra do ciclo quando não há fechamento bancário cadastrado:
-  // compras/cobranças ANTES do dia de vencimento entram na fatura daquele mês;
-  // no PRÓPRIO dia do vencimento ou depois, entram na fatura do mês seguinte.
-  // Ex.: vence dia 10 -> 25/09 e 08/10 entram em 10/10; 10/10 entra em 10/11.
+  // o próprio dia de vencimento abre o NOVO ciclo da fatura.
+  // Ex.: vence dia 10 -> a fatura de 10/10 reúne cobranças de 10/09 a 09/10.
+  // Assim, 10/09 e 17/09 entram em outubro; 10/10 já entra em novembro.
   const ultimoDiaCompra=new Date(baseDate.getFullYear(),baseDate.getMonth()+1,0).getDate();
   const vencimentoNesteMes=Math.min(dueDay,ultimoDiaCompra);
   const startOffset=closeDay?((baseDate.getDate()>fechamento?1:0)+(dueDay<=closeDay?1:0)):(baseDate.getDate()>=vencimentoNesteMes?1:0);
@@ -3845,7 +3845,7 @@ setSaveStatus('Abra um arquivo JSON para começar.');
 setInterval(()=>{if(hasUnsavedChanges)void autoSaveDataFile();},10000);
 setInterval(updateResumo,5*60*1000);
 </script>
-<script src="js/recorrentes.js?v=20261003-card-context3"></script>
+<script src="js/recorrentes.js?v=20261003-ciclo-fatura-v3"></script>
 </body>
 </html>
 
