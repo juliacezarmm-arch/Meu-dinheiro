@@ -428,6 +428,7 @@ body.action-panel-open{overflow:hidden}
 /* Interface do site: não usar alert, confirm ou prompt do navegador. */
 .site-dialog[hidden],.site-toast[hidden]{display:none!important}
 .site-dialog{position:fixed;inset:0;z-index:15000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(5px)}
+#app-confirm-overlay{z-index:19000}
 .site-dialog-panel{width:min(100%,465px);max-height:min(90vh,720px);overflow:auto;background:#1b1b19;border:1px solid #46463e;border-radius:16px;box-shadow:0 24px 90px rgba(0,0,0,.65);padding:22px;color:#f5f5f2}
 .site-dialog-heading{display:flex;align-items:center;gap:11px;margin-bottom:12px}.site-dialog-heading h2{font-size:18px;font-weight:750}.site-dialog-icon{display:inline-grid;place-items:center;width:32px;height:32px;flex:none;border-radius:10px;background:#17392e;color:#9FE1CB;font-size:18px}
 .site-dialog-copy{font-size:13px;line-height:1.55;color:#c5c3ba;white-space:pre-line;margin:0 0 15px}
