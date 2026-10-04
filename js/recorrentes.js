@@ -231,7 +231,7 @@ function recurrenceTiming(){
  $('rec-date-label').firstChild.textContent=mensal?'Ativa desde':(recebimento?'Data do próximo recebimento':'Data da próxima cobrança');
  $('rec-guidance').textContent=mensal
   ?(editingRecMode==='cartao'
-    ?'Informe o dia da cobrança e desde quando essa recorrência existe. A fatura é definida pela data da cobrança: se cair no dia do vencimento ou depois, vai para o mês seguinte.'
+    ?'Informe o dia da cobrança e desde quando a recorrência existe. Ex.: cartão com vencimento dia 10: a fatura de outubro reúne cobranças de 10/09 a 09/10; uma cobrança em 10/10 já pertence à fatura de novembro.'
     :'Informe o dia e desde quando a recorrência existe. Boleto fica como conta a pagar até você confirmar; Pix e transferência podem exigir confirmação.')
   :(editingRecMode==='cartao'
     ?'Para frequência semanal ou anual, informe a data da próxima cobrança. O vencimento e o pagamento da fatura são separados.'
@@ -392,7 +392,7 @@ function saveRecEditor(event){
  if(metodo==='cartao'&&!S.cartoes.some(c=>String(c.id)===String(cartaoId))){appAlert('Cadastre e selecione um cartão antes de salvar.');return;}
  let novoId=novoIdGlobal();while(S.recorrentes.some(x=>String(x.id)===String(novoId)))novoId++;
  const exigirConfirmacao=metodo==='boleto'||(['pix','transferencia'].includes(metodo)&&!!($('rec-confirm')&&$('rec-confirm').checked));
- const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,cicloFaturaV2:true,...(exigirConfirmacao?{exigirConfirmacao:true}:{}),...(mensal?{diaCobranca}:{})};
+ const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,cicloFaturaV2:true,cicloFaturaV3:true,...(exigirConfirmacao?{exigirConfirmacao:true}:{}),...(mensal?{diaCobranca}:{})};
  if(existing){
   // Passado imutável: edição troca apenas ocorrências a partir de amanhã.
   newRecord.vigenteDesde=datePlusOne(today());
@@ -425,6 +425,7 @@ validarDadosImportados=function(file){
    if(!r||typeof r!=='object'||!Number.isSafeInteger(Number(r.id))||Number(r.id)<=0||ids.has(String(r.id))||typeof r.nome!=='string'||!r.nome.trim()||r.nome.length>75||!valorMonetarioValido(r.valor)||r.valor<=0||!['entrada','saida'].includes(r.tipo)||!['cartao','debito_automatico','debito','boleto','pix','transferencia','recebimento'].includes(r.metodo)||!['semanal','mensal','anual'].includes(r.frequencia)||!dataISOValida(r.inicio)||r.fim!==null&&r.fim!==undefined&&!dataISOValida(r.fim)||r.vigenteDesde&&!dataISOValida(r.vigenteDesde)||r.diaCobranca!==undefined&&r.diaCobranca!==null&&(!Number.isInteger(r.diaCobranca)||r.diaCobranca<1||r.diaCobranca>31||r.frequencia!=='mensal'))throw Error('Recorrência inválida no arquivo.');
    if(r.exigirConfirmacao!==undefined&&typeof r.exigirConfirmacao!=='boolean')throw Error('Confirmação de recorrência inválida.');
    if(r.cicloFaturaV2!==undefined&&typeof r.cicloFaturaV2!=='boolean')throw Error('Versão do ciclo da recorrência inválida.');
+   if(r.cicloFaturaV3!==undefined&&typeof r.cicloFaturaV3!=='boolean')throw Error('Versão atual do ciclo da recorrência inválida.');
    ids.add(String(r.id));
   }
  }
