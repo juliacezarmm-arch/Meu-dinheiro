@@ -1519,7 +1519,7 @@ function salvarEdicaoCartao(){
  }
  card.monthlyFee=monthlyFee;
  if(monthlyFee>0&&!card.monthlyFeeStartMonth)card.monthlyFeeStartMonth=mesEfeito;
- fecharJanela('card-editor');saveData();renderRegisteredCards();renderCartao();renderExtrato();updateResumo();appAlert(monthlyFee>0?'Cartão atualizado. A mensalidade entra automaticamente nas faturas a partir do ciclo atual.':'Cartão atualizado. Histórico e pagamentos já registrados foram preservados.');
+ fecharJanela('card-editor');saveData();renderRegisteredCards();renderCartao();renderExtrato();updateResumo();appAlert(monthlyFee>0?'Cartão atualizado. A mensalidade entra automaticamente nas faturas a partir do ciclo atual.':'Mensalidade encerrada a partir do ciclo atual. As faturas anteriores foram preservadas.');
 }
 function registrarPagamentoFatura(cardId,mes){
  if(!saldoInicialValido(S.saldoInicial)){appAlert('Informe primeiro seu saldo inicial no Extrato.');return;}
@@ -1578,6 +1578,15 @@ function valorMensalidadeNoMes(card,y,m){
   if(!valorMonetarioValido(valor)||valor<=0)return 0;
   const inicio=card.monthlyFeeStartMonth||mesFaturaAtualDoCartao(card);
   return mes>=inicio?valor:0;
+}
+function primeiroMesMensalidadeCartao(card){
+  if(!card)return null;
+  const historico=Array.isArray(card.monthlyFeeHistory)
+    ?card.monthlyFeeHistory.filter(x=>x&&/^\d{4}-\d{2}$/.test(String(x.startMonth))).map(x=>String(x.startMonth)).sort()
+    :[];
+  if(historico.length)return historico[0];
+  if(card.monthlyFeeStartMonth&&/^\d{4}-\d{2}$/.test(String(card.monthlyFeeStartMonth)))return String(card.monthlyFeeStartMonth);
+  return Number(card.monthlyFee)>0?mesFaturaAtualDoCartao(card):null;
 }
 function mensalidadeAtivaNoMes(card,y,m){
   return valorMensalidadeNoMes(card,y,m)>0;
@@ -2526,8 +2535,8 @@ function getMesMap(){
   });
   const limite=new Date();limite.setFullYear(limite.getFullYear()+10);
   for(const card of S.cartoes){
-    if(!(Number(card.monthlyFee)>0))continue;
-    const inicio=card.monthlyFeeStartMonth||mesFaturaAtualDoCartao(card);
+    const inicio=primeiroMesMensalidadeCartao(card);
+    if(!inicio)continue;
     const [iy,im]=inicio.split('-').map(Number);
     for(let d=new Date(iy,im-1,1,12),n=0;d<=limite&&n<240;n++,d.setMonth(d.getMonth()+1)){
       const key=monthKey(d.getFullYear(),d.getMonth());
@@ -2565,8 +2574,8 @@ function getParcelasCartao(){
   const alvo=[limite,new Date(cartaoMes),new Date(resumoMes)].reduce((max,d)=>d>max?d:max,limite);
   const fim=new Date(alvo.getFullYear()+10,alvo.getMonth(),1,12);
   for(const card of S.cartoes){
-    if(!(Number(card.monthlyFee)>0))continue;
-    const inicio=card.monthlyFeeStartMonth||mesFaturaAtualDoCartao(card);
+    const inicio=primeiroMesMensalidadeCartao(card);
+    if(!inicio)continue;
     const [iy,im]=inicio.split('-').map(Number);
     for(let d=new Date(iy,im-1,1,12),n=0;d<=fim&&n<240;n++,d.setMonth(d.getMonth()+1)){
       const fee=parcelaMensalidadeCartao(card,d.getFullYear(),d.getMonth());
