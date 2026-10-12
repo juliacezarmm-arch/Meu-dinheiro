@@ -410,16 +410,22 @@ td:last-child{white-space:normal}
   height:32px;background:#101514;border:1px solid #36423e;border-radius:8px;padding:0 9px;color:#bfc7c3}
 .invest-search input{height:30px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;font-size:11px!important}
 .invest-search input:focus{box-shadow:none!important}
-.invest-summary-cards{grid-template-columns:repeat(3,minmax(0,1fr));margin:.65rem 0 .75rem;gap:10px}
-.invest-summary-card{display:grid;grid-template-columns:42px minmax(0,1fr) 90px;align-items:center;gap:9px;text-align:left;padding:.75rem .8rem;border:1px solid #27322f;background:#111716}
-.invest-summary-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:20px;background:#123047;color:#4fa7f5}
-.invest-summary-icon.green{background:#12372b;color:#30d9a1}
+/* Segunda linha de investimentos: cards aprovados, sem minigraficos. */
+.invest-summary-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:.65rem 0 .75rem;gap:10px}
+.invest-summary-card{min-width:0;min-height:112px;display:grid;grid-template-columns:43px minmax(0,1fr);align-items:center;gap:10px;text-align:left;padding:13px 11px;border:1px solid #2a4147;border-radius:13px;background:linear-gradient(135deg,#0d171b 0%,#0b1316 100%);box-shadow:inset 0 0 0 1px rgba(27,57,61,.12)}
+.invest-summary-icon{width:43px;height:43px;border-radius:13px;display:grid;place-items:center;flex:none;background:#10334b;color:#1ca9fa}
+.invest-summary-icon.green{background:#064132;color:#12e2ac}
+.invest-summary-icon svg{width:25px;height:25px;display:block}
 .invest-summary-copy{min-width:0}
-.invest-summary-copy .label{text-align:left;margin:0 0 2px}
-.invest-summary-copy .value{font-size:20px;font-weight:800;white-space:nowrap}
-.invest-summary-copy small{display:block;color:var(--color-text-secondary);font-size:9.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.invest-summary-spark{width:90px;color:#26d39e;align-self:center}
-.invest-summary-spark svg{width:100%;height:34px;display:block}
+.invest-summary-copy .label{display:flex;align-items:center;gap:5px;text-align:left;margin:0 0 6px;color:#e8f0f0;font-size:11px;line-height:1.2;white-space:normal}
+.invest-summary-info{color:#bcc9c9;font-size:13px;line-height:1;flex:none}
+.invest-summary-copy .value{font-size:19px;font-weight:850;line-height:1.1;white-space:nowrap;letter-spacing:-.03em}
+.invest-summary-copy .value.blue{color:#21adff}
+.invest-summary-copy .value.green{color:#15dca2}
+.invest-summary-copy small{display:block;color:#c0cace;font-size:10px;line-height:1.25;margin-top:6px;white-space:normal;overflow-wrap:break-word}
+.invest-summary-card .inv-rend-summary{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:4px 6px}
+.invest-summary-card .inv-rend-summary .value{font-size:16px;letter-spacing:-.025em}
+.invest-summary-card .inv-rend-percent{font-size:9px;font-weight:850;padding:3px 5px;border-radius:99px;background:#074932;border-color:#12664b;color:#23edb3;white-space:nowrap}
 .invest-type-summary{background:#101514;border-color:#293632;padding:.65rem;margin:.65rem 0}
 .invest-type-summary-head{align-items:center;margin-bottom:.45rem}
 .invest-type-title{display:flex;align-items:center;gap:10px}
@@ -480,8 +486,8 @@ td:last-child{white-space:normal}
   #invest-action-buttons{overflow-x:auto;overflow-y:hidden}
   .invest-search{min-width:180px;width:220px}
   #inv-wrap .goal-list.inv-grade{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .invest-summary-card{grid-template-columns:38px minmax(0,1fr) 70px}
-  .invest-summary-spark{width:70px}
+  .invest-summary-card{grid-template-columns:40px minmax(0,1fr);gap:8px}
+  .invest-summary-icon{width:40px;height:40px}
 }
 @media(max-width:680px){
   .invest-summary-cards{grid-template-columns:1fr}
@@ -969,19 +975,16 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     </div>
     <div class="cards invest-summary-cards">
       <div class="card invest-summary-card" title="Patrimônio no fim do período selecionado.">
-        <span class="invest-summary-icon blue">◔</span>
-        <div class="invest-summary-copy"><div class="label">Patrimônio atual</div><div class="value blue" id="inv-total">R$ 0</div><small id="inv-total-note">Valor no período</small></div>
-        <span class="invest-summary-spark" id="inv-total-spark"></span>
+        <span class="invest-summary-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" opacity=".24"/><path d="M12 2a10 10 0 1 1-10 10h10V2Z" fill="currentColor"/><path d="M2 10A10 10 0 0 1 10 2v8Z" fill="currentColor" opacity=".62"/></svg></span>
+        <div class="invest-summary-copy"><div class="label">Patrimônio atual <span class="invest-summary-info" aria-hidden="true">ⓘ</span></div><div class="value blue" id="inv-total">R$ 0,00</div><small id="inv-total-note">Valor total investido</small></div>
       </div>
       <div class="card invest-summary-card" title="Rendimento somente do período selecionado, sem confundir aportes e resgates com rendimento.">
-        <span class="invest-summary-icon green">▥</span>
-        <div class="invest-summary-copy"><div class="label">Rendimento do período</div><div class="inv-rend-summary"><span class="value green" id="inv-rend">R$ 0</span><span class="inv-rend-percent" id="inv-rend-pct">—</span></div><small id="inv-rend-note">Resultado do período</small></div>
-        <span class="invest-summary-spark" id="inv-rend-spark"></span>
+        <span class="invest-summary-icon green" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="13" width="4" height="9" rx="1.3" fill="currentColor"/><rect x="10" y="8" width="4" height="14" rx="1.3" fill="currentColor"/><rect x="17" y="3" width="4" height="19" rx="1.3" fill="currentColor"/></svg></span>
+        <div class="invest-summary-copy"><div class="label">Rendimento do período <span class="invest-summary-info" aria-hidden="true">ⓘ</span></div><div class="inv-rend-summary"><span class="value green" id="inv-rend">R$ 0,00</span><span class="inv-rend-percent" id="inv-rend-pct">—</span></div><small id="inv-rend-note">Resultado do período</small></div>
       </div>
       <div class="card invest-summary-card" title="Quantidade de investimentos cadastrados.">
-        <span class="invest-summary-icon green">◆</span>
-        <div class="invest-summary-copy"><div class="label">Investimentos</div><div class="value" id="inv-qtd">0</div><small>Cadastros ativos</small></div>
-        <span class="invest-summary-spark" id="inv-count-spark"></span>
+        <span class="invest-summary-icon green" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 2 10 5.5L12 13 2 7.5 12 2Z" fill="currentColor"/><path d="m2.5 12 9.5 5.5 9.5-5.5M2.5 17 12 22l9.5-5" stroke="currentColor" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div class="invest-summary-copy"><div class="label">Investimentos <span class="invest-summary-info" aria-hidden="true">ⓘ</span></div><div class="value" id="inv-qtd">0</div><small>Investimentos cadastrados</small></div>
       </div>
     </div>
     <div id="inv-type-summary"></div>
@@ -4028,11 +4031,8 @@ function renderInvest(){
   document.getElementById('inv-rend').textContent=(geral.rendimento>0?'+':'')+fmt(geral.rendimento);
   document.getElementById('inv-rend-pct').textContent=geral.pct===null?'—':(geral.pct>0?'+':'')+fmtInvestPct(geral.pct);
   document.getElementById('inv-qtd').textContent=investimentos.length;
-  const totalNote=document.getElementById('inv-total-note');if(totalNote)totalNote.textContent='Valor no período '+periodoLabel;
-  const rendNote=document.getElementById('inv-rend-note');if(rendNote)rendNote.textContent='Resultado em '+periodoLabel;
-  const totalSpark=document.getElementById('inv-total-spark');if(totalSpark)totalSpark.innerHTML=investSparkline(investimentos);
-  const rendSpark=document.getElementById('inv-rend-spark');if(rendSpark)rendSpark.innerHTML=investSparkline(investimentos);
-  const countSpark=document.getElementById('inv-count-spark');if(countSpark)countSpark.innerHTML=investSparkline(investimentos);
+  const totalNote=document.getElementById('inv-total-note');if(totalNote)totalNote.textContent='Valor total investido';
+  const rendNote=document.getElementById('inv-rend-note');if(rendNote)rendNote.textContent='Resultado no '+(investPeriodo==='ano'?'ano de ':'mês de ')+periodoLabel;
 
   const pMonth=document.getElementById('inv-period-month'),pYear=document.getElementById('inv-period-year');
   if(pMonth)pMonth.classList.toggle('active',investPeriodo==='mes');
