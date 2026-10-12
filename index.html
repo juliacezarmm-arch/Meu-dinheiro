@@ -1113,8 +1113,8 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 .invest-type-summary-head .invest-collapse{margin-left:4px;display:inline-flex;align-items:center;justify-content:center;gap:5px;line-height:1.2;white-space:nowrap}
 .invest-type-summary-head .invest-collapse svg{width:13px;height:13px;display:block;flex:none;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .invest-type-summary-head .invest-collapse span{display:inline-block;line-height:1.2}
-.invest-type-chart-wrap{height:228px;min-width:0;display:block}
-.invest-type-chart-wrap svg{display:block;min-width:0;width:100%;height:100%}
+.invest-type-chart-wrap{height:238px;min-width:0;display:block}
+.invest-type-chart-wrap svg{display:block;width:100%;height:100%;min-width:0;overflow:visible}
 .inflacao-overlay[hidden]{display:none!important}
 .inflacao-overlay{position:fixed;inset:0;z-index:20000;padding:12px;display:grid;place-items:center;background:rgba(0,0,0,.75);backdrop-filter:blur(4px)}
 .inflacao-modal{width:min(100%,390px);max-height:91dvh;overflow-y:auto;background:#111b19;color:#f0faf4;border:1px solid #386050;border-radius:14px;padding:15px;box-shadow:0 18px 65px rgba(0,0,0,.7)}
@@ -4543,9 +4543,12 @@ function renderInvestTypeChart(linhas){
   const misto=lo<0&&hi>0;
   const minimo=misto?-extremo*1.2:lo<0?lo*1.18:0;
   const maximo=misto?extremo*1.2:hi>0?hi*1.18:0.01;
-  const W=780,H=240,L=48,R=90,T=14,B=181;
+  // O SVG ocupa todo o espaço útil do quadro aprovado, sem bordas vazias.
+  const W=840,H=245,L=56,R=20,T=14,B=194;
+  const plotDireita=W-88;
+  const nomeY=238;
   const Y=v=>B-(v-minimo)/(maximo-minimo)*(B-T);
-  const zero=Y(0),quant=Math.max(linhas.length,1),w=(W-L-R)/quant;
+  const zero=Y(0),quant=Math.max(linhas.length,1),w=(plotDireita-L)/quant;
   const bars=linhas.map((r,i)=>{
     const centro=L+(i+.5)*w,preco=r.pct;
     const label=preco===null?'—':(preco>0?'+':'')+pctInflacao(preco);
@@ -4554,24 +4557,24 @@ function renderInvestTypeChart(linhas){
     const barY=Math.min(zero,pos),barH=valido?Math.max(1,Math.abs(zero-pos)):0;
     const cor=valido&&preco<0?'#f06474':r.tipo.toLowerCase().includes('fundo')?'#a36ae3':'#15d8a5';
     const tipo=r.tipo.toLowerCase().includes('fundo')?'Fundos':r.tipo;
-    const labelY=!valido?zero-10:preco>=0?Math.max(T+12,barY-8):Math.min(206,barY+barH+17);
+    const labelY=!valido?zero-11:preco>=0?Math.max(T+13,barY-9):Math.min(B+20,barY+barH+18);
     return `<g>
-      ${valido?`<rect x="${(centro-w*.18).toFixed(1)}" y="${barY.toFixed(1)}" width="${(w*.36).toFixed(1)}" height="${barH.toFixed(1)}" rx="4" fill="${cor}"/>`:''}
-      <text x="${centro.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${cor}" font-size="12" font-weight="800" text-anchor="middle">${label}</text>
-      <text x="${centro.toFixed(1)}" y="229" fill="#dae9e2" font-size="12" font-weight="800" text-anchor="middle">${escHtml(tipo)}</text>
+      ${valido?`<rect x="${(centro-w*.17).toFixed(1)}" y="${barY.toFixed(1)}" width="${(w*.34).toFixed(1)}" height="${barH.toFixed(1)}" rx="4" fill="${cor}"/>`:''}
+      <text x="${centro.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${cor}" font-size="14" font-weight="800" text-anchor="middle">${label}</text>
+      <text x="${centro.toFixed(1)}" y="${nomeY}" fill="#e7f1ed" font-size="13" font-weight="800" text-anchor="middle">${escHtml(tipo)}</text>
       <title>${escHtml(r.tipo)} · ${label}</title>
     </g>`;
   }).join('');
-  // A inflação cruza as barras por linha tracejada, terminando no indicador vermelho.
+  // A linha é a referência da inflação; apenas o valor aparece na cápsula vermelha.
   const ipcaLinha=ref===null?'':`<g aria-label="Inflação do ${anual?'ano':'mês'}: ${pctInflacao(ref)}">
-    <line x1="${L}" y1="${Y(ref).toFixed(1)}" x2="${W-4}" y2="${Y(ref).toFixed(1)}" stroke="#e7ebed" stroke-width="2" stroke-dasharray="9 6"/>
-    <rect x="${W-86}" y="${(Y(ref)-14).toFixed(1)}" width="82" height="28" rx="10" fill="#ed5c70"/>
-    <text x="${W-45}" y="${(Y(ref)+4).toFixed(1)}" font-size="13" text-anchor="middle" fill="#fff" font-weight="850">${pctInflacao(ref)}</text>
+    <line x1="${L}" y1="${Y(ref).toFixed(1)}" x2="${W-13}" y2="${Y(ref).toFixed(1)}" stroke="#e7ebed" stroke-width="2" stroke-dasharray="9 6"/>
+    <rect x="${W-75}" y="${(Y(ref)-11).toFixed(1)}" width="62" height="22" rx="8" fill="#ed5c70"/>
+    <text x="${W-44}" y="${(Y(ref)+4).toFixed(1)}" font-size="11" text-anchor="middle" fill="#fff" font-weight="800">${pctInflacao(ref)}</text>
     <title>Inflação do ${anual?'ano':'mês'}: ${pctInflacao(ref)}</title>
   </g>`;
   const svg=`<svg viewBox="0 0 ${W} ${H}" aria-label="Rentabilidade por tipo de investimento" role="img">
-    ${Array.from({length:8},(_,i)=>{const v=minimo+(maximo-minimo)*i/7;return `<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#23443a" stroke-dasharray="3 4"/><text x="${L-6}" y="${(Y(v)+3).toFixed(1)}" text-anchor="end" font-size="10" fill="#9fc4b5">${v.toFixed(1).replace('.',',')}%</text>`;}).join('')}
-    <line x1="${L}" x2="${W-R}" y1="${zero.toFixed(1)}" y2="${zero.toFixed(1)}" stroke="#80998f"/>
+    ${Array.from({length:7},(_,i)=>{const v=minimo+(maximo-minimo)*i/6;return `<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#285048" stroke-width=".8" stroke-dasharray="4 6"/><text x="${L-8}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="12" fill="#bbd6cd">${v.toFixed(1).replace('.',',')}%</text>`;}).join('')}
+    <line x1="${L}" x2="${W-R}" y1="${zero.toFixed(1)}" y2="${zero.toFixed(1)}" stroke="#80998f" stroke-width="1.3"/>
     ${bars}${ipcaLinha}
   </svg>`;
   const info=anual?(ref===null?'Inflação não cadastrada para o ano.':ipca.n===12?'Inflação acumulada do ano: '+pctInflacao(ref):'Inflação parcial ('+ipca.n+'/12 meses): '+pctInflacao(ref)+' · Não representa o ano inteiro.'):
