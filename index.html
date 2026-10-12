@@ -28,9 +28,14 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .header h1{font-size:19px;font-weight:650}
 .brand-logo{width:38px;height:38px;object-fit:contain;flex:none;border:0;background:transparent;padding:0;margin:0}
 .today-label{margin-left:auto;font-size:11px;color:var(--color-text-secondary);background:#171716;border:1px solid #3a3934;border-radius:999px;padding:5px 9px;white-space:nowrap}
-.data-tools{grid-column:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:.42rem .45rem .48rem 1rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.data-tools{grid-column:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:.42rem .45rem .48rem 1rem;border-bottom:0.5px solid var(--color-border-tertiary)}
 .data-tools button,.data-tools label{background:#111716;color:var(--color-text-primary);border:1px solid #343d39;border-radius:8px;padding:6px 7px;font-size:10.5px;font-weight:800;text-align:center;cursor:pointer;white-space:nowrap}
 .data-tools button:hover,.data-tools label:hover{border-color:#9FE1CB}
+.autosave-toggle{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.autosave-dot{width:8px;height:8px;border-radius:50%;background:#28d39f;box-shadow:0 0 0 2px rgba(40,211,159,.14)}
+.autosave-toggle.autosave-off{border-color:#654946!important;color:#e7c2bd!important;background:#211716!important}
+.autosave-toggle.autosave-off .autosave-dot{background:#d56b62;box-shadow:0 0 0 2px rgba(213,107,98,.12)}
+.autosave-toggle.autosave-on{border-color:#315f4b!important;background:#12241d!important;color:#baf2dc!important}
 .data-tools input{display:none}
 .save-status{position:fixed;top:18px;right:18px;z-index:20500;display:flex;align-items:center;gap:10px;width:min(330px,calc(100vw - 28px));min-height:42px;padding:9px 10px 9px 12px;border:1px solid #333b35;border-radius:12px;background:#151c18;color:#c5c3ba;font-size:11px;line-height:1.35;text-align:left;overflow-wrap:anywhere;box-shadow:0 14px 34px rgba(0,0,0,.55)}
 .save-status[hidden]{display:none!important}
@@ -59,7 +64,7 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
   .header{padding:.55rem .7rem}
   .header h1{font-size:16px}
   .brand-logo{width:34px;height:34px}
-  .data-tools{grid-template-columns:repeat(4,minmax(80px,1fr));overflow-x:auto;padding:.35rem .7rem}
+  .data-tools{grid-template-columns:repeat(5,minmax(86px,1fr));overflow-x:auto;padding:.35rem .7rem}
   .nav{padding:0 .7rem}
   .nav button{min-width:66px;font-size:9.5px}
 }
@@ -680,7 +685,8 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <div class="data-tools">
     <button type="button" onclick="openDataFile()" title="Abra um JSON para consultar e editar seus registros.">Abrir dados</button>
     <button type="button" id="json-permission-button" onclick="autorizarJsonPendente()" title="Pedir autorização do Chrome para editar o JSON selecionado." hidden>Autorizar edição do JSON</button>
-    <button type="button" onclick="manualSave()" title="Grava diretamente as alteracoes no arquivo JSON aberto.">Salvar</button>
+    <button type="button" onclick="manualSave()" title="Grava diretamente as alterações no arquivo JSON aberto.">Salvar</button>
+    <button type="button" id="autosave-toggle" class="autosave-toggle" onclick="toggleAutoSave()" aria-pressed="true" title="Liga ou desliga o salvamento automático no JSON aberto. O botão Salvar continua funcionando normalmente."><span class="autosave-dot" aria-hidden="true"></span><span id="autosave-toggle-label">Auto: ligado</span></button>
     <button type="button" onclick="saveAsDataFile()" title="Cria um JSON novo ou salva os dados em outro arquivo.">Salvar como</button>
     <button type="button" onclick="atualizarAplicativo()" title="Atualiza o aplicativo, fechando o arquivo atual.">Atualizar</button>
 
@@ -1081,6 +1087,8 @@ let appReady=false;
 let isApplyingData=false;
 let dataRevision=0;
 let diskSaveTimer=null;
+const AUTO_SAVE_DELAY=10000;
+let autoSaveEnabled=(()=>{try{return localStorage.getItem('meuDinheiroAutoSave')!=='off';}catch{return true;}})();
 let diskSaveQueue=Promise.resolve();
 let fileSaveQueue=Promise.resolve();
 let knownFileSignature=null;
@@ -1445,12 +1453,40 @@ async function finishFileSave(handle,write){
  setSaveStatus(hasUnsavedChanges?'Não salvo':'Salvo');
  return !hasUnsavedChanges;
 }
+function renderAutoSaveControl(){
+ const button=document.getElementById('autosave-toggle');
+ const label=document.getElementById('autosave-toggle-label');
+ if(!button||!label)return;
+ button.classList.toggle('autosave-on',autoSaveEnabled);
+ button.classList.toggle('autosave-off',!autoSaveEnabled);
+ button.setAttribute('aria-pressed',String(autoSaveEnabled));
+ label.textContent=autoSaveEnabled?'Auto: ligado':'Auto: desligado';
+ button.title=autoSaveEnabled
+   ?'Salvamento automático ligado: alterações pendentes são gravadas no JSON após cerca de 10 segundos. Clique para desligar.'
+   :'Salvamento automático desligado: alterações ficam somente nesta tela até você clicar em Salvar. Clique para ligar.';
+}
+function toggleAutoSave(){
+ autoSaveEnabled=!autoSaveEnabled;
+ try{localStorage.setItem('meuDinheiroAutoSave',autoSaveEnabled?'on':'off');}catch{}
+ clearTimeout(diskSaveTimer);
+ renderAutoSaveControl();
+ if(autoSaveEnabled){
+   if(hasUnsavedChanges&&dataFileHandle){
+     setSaveStatus('Não salvo · automático ligado');
+     diskSaveTimer=setTimeout(()=>{void autoSaveDataFile();},AUTO_SAVE_DELAY);
+   }
+   appAlert('Salvamento automático ligado. Alterações pendentes serão gravadas após cerca de 10 segundos.');
+ }else{
+   setSaveStatus(hasUnsavedChanges?'Não salvo · automático desligado':'Salvamento automático desligado');
+   appAlert('Salvamento automático desligado. Use o botão Salvar quando quiser gravar o JSON.');
+ }
+}
 function saveData(){
  if(!appReady||isApplyingData||!dataFileHandle)return;
  hasUnsavedChanges=true;dataRevision++;
- setSaveStatus('Não salvo');
+ setSaveStatus(autoSaveEnabled?'Não salvo':'Não salvo · automático desligado');
  clearTimeout(diskSaveTimer);
- diskSaveTimer=setTimeout(()=>{void autoSaveDataFile();},10000);
+ if(autoSaveEnabled)diskSaveTimer=setTimeout(()=>{void autoSaveDataFile();},AUTO_SAVE_DELAY);
 }
 let saveStatusTimer=null;
 function hideSaveStatus(){clearTimeout(saveStatusTimer);saveStatusTimer=null;const el=document.getElementById('save-status');if(el)el.hidden=true;}
@@ -1576,7 +1612,7 @@ async function saveAsDataFile(){
  }
 }
 async function autoSaveDataFile(){
- if(!appReady||isApplyingData||!hasUnsavedChanges||!dataFileHandle)return false;
+ if(!autoSaveEnabled||!appReady||isApplyingData||!hasUnsavedChanges||!dataFileHandle)return false;
  const handle=dataFileHandle;
  return await queueFileSave(handle,false);
 }
@@ -4533,8 +4569,9 @@ renderMetas();
 updateResumo();
 appReady=true;
 setFileAccessState(false);
+renderAutoSaveControl();
 setSaveStatus('Abra um arquivo JSON para começar.');
-setInterval(()=>{if(hasUnsavedChanges)void autoSaveDataFile();},10000);
+setInterval(()=>{if(autoSaveEnabled&&hasUnsavedChanges)void autoSaveDataFile();},AUTO_SAVE_DELAY);
 setInterval(updateResumo,5*60*1000);
 </script>
 <script src="js/recorrentes.js?v=20261012-rec-diagnostic3"></script>
