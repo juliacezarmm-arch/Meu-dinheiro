@@ -18,7 +18,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-sans);color:var(--color-text-primary);background:var(--color-background-primary);min-height:100vh;color-scheme:dark;scroll-padding-top:185px}
-.app{max-width:1040px;margin:0 auto;padding:0 0 1rem}
+.app{max-width:980px;margin:0 auto;padding:0 0 1rem}
 .app-topbar{
   position:sticky;top:0;z-index:12000;background:linear-gradient(180deg,#08100f 0%,#070b0a 100%);
   border:1px solid #1f2b28;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.42);
@@ -28,8 +28,12 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .header{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:.5rem .9rem;border-bottom:1px solid #26322f}
 .header h1{font-size:18px;font-weight:700;letter-spacing:-.01em}
 .brand-logo{width:36px;height:36px;object-fit:contain;flex:none;border:0;background:transparent;padding:0;margin:0}
-.today-label{margin-left:auto;font-size:10px;color:#d4d7d5;background:#111716;border:1px solid #36403d;border-radius:999px;padding:4px 8px;white-space:nowrap}
-.data-tools{grid-column:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:.42rem .5rem .48rem .9rem}
+.today-label{font-size:10px;color:#d4d7d5;background:#111716;border:1px solid #36403d;border-radius:999px;padding:4px 8px;white-space:nowrap}
+.header-meta{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
+.header .autosave-toggle{min-height:26px;padding:4px 8px;background:#111716;color:#eef2f0;border:1px solid #33403c;border-radius:8px;font-size:10px;font-weight:750;cursor:pointer;white-space:nowrap;gap:5px}
+.header .autosave-toggle .menu-svg{width:14px;height:14px}
+.header .autosave-toggle:hover{border-color:#5e8075}
+.data-tools{grid-column:1;display:grid;grid-template-columns:repeat(3,minmax(0,116px));gap:6px;padding:.42rem .5rem .48rem .9rem}
 .data-tools button,.data-tools label{
   min-height:36px;background:#111716;color:#eef2f0;border:1px solid #33403c;border-radius:8px;padding:5px 8px;
   font-size:10px;font-weight:750;text-align:center;cursor:pointer;white-space:nowrap;
@@ -58,12 +62,12 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .save-status[data-state="idle"]{background:#171716;border-color:#46463e;color:#e0ded6}
 @media(max-width:600px){.save-status{top:10px;right:10px;width:min(330px,calc(100vw - 20px))}}
 .nav{
-  grid-column:2;display:flex;align-items:stretch;overflow-x:auto;padding:0 .45rem;
+  grid-column:2;display:flex;align-items:stretch;justify-content:center;overflow-x:auto;padding:0 .35rem;
   border-left:1px solid #26322f
 }
 .nav button{
-  position:relative;flex:1;min-width:74px;padding:6px 5px 7px;font-size:9.5px;background:transparent;border:0;border-bottom:3px solid transparent;
-  cursor:pointer;color:#b9c0bd;white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px
+  position:relative;flex:0 0 85px;min-width:74px;padding:5px 4px 6px;font-size:9.5px;background:transparent;border:0;border-bottom:3px solid transparent;
+  cursor:pointer;color:#b9c0bd;white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px
 }
 .nav button+button::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:#26322f}
 .nav .menu-svg{width:18px;height:18px;stroke-width:1.75;color:#c5cfcb}
@@ -78,13 +82,15 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 @media(max-width:560px){
   .app{max-width:100%}
   .app-topbar{margin-top:0;border-left:0;border-right:0;border-radius:0}
-  .header{padding:.55rem .7rem}
+  .header{padding:.55rem .7rem;flex-wrap:wrap;row-gap:6px}
   .header h1{font-size:16px}
+  .header-meta{max-width:100%;gap:6px}
+  .header .autosave-toggle{font-size:9.5px;padding:4px 7px}
   .brand-logo{width:34px;height:34px}
-  .data-tools{grid-template-columns:repeat(4,minmax(100px,1fr));overflow-x:auto;padding:.38rem .7rem}
+  .data-tools{grid-template-columns:repeat(3,minmax(100px,1fr));overflow-x:auto;padding:.38rem .7rem}
   .data-tools button,.data-tools label{min-height:34px;font-size:9.5px;padding:5px 7px}
   .nav{padding:0 .7rem}
-  .nav button{min-width:66px;font-size:9.5px}
+  .nav button{flex-basis:76px;min-width:66px;font-size:9.5px}
 }
 .page{display:none;padding:1rem 1.25rem}
 .page.active{display:block}
@@ -698,7 +704,13 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <div class="header">
     <img class="brand-logo" src="assets/favicon.svg" alt="" aria-hidden="true">
     <h1>Meu dinheiro organizado</h1>
-    <div class="today-label" id="today-label"></div>
+    <div class="header-meta">
+    <button type="button" id="autosave-toggle" class="autosave-toggle" onclick="toggleAutoSave()" aria-pressed="true" title="Liga ou desliga o salvamento automático no JSON aberto. O botão Salvar continua funcionando normalmente.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M19 12a7 7 0 1 1-2-5"/><path d="M17 4.5l2 2.5 2.5-2"/></svg>
+      <span class="autosave-dot" aria-hidden="true"></span><span id="autosave-toggle-label">Auto: ligado</span>
+    </button>
+      <div class="today-label" id="today-label"></div>
+    </div>
   </div>
   <div class="data-tools">
     <button type="button" onclick="openDataFile()" title="Abra um JSON para consultar e editar seus registros.">
@@ -713,10 +725,6 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     <button type="button" onclick="saveAsDataFile()" title="Cria um JSON novo ou salva os dados em outro arquivo.">
       <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9l3 3V20.5H6z"/><path d="M9 3.5v5.5h6"/><path d="M12 12v6"/><path d="M9 15h6"/></svg>
       <span>Salvar como</span>
-    </button>
-    <button type="button" id="autosave-toggle" class="autosave-toggle" onclick="toggleAutoSave()" aria-pressed="true" title="Liga ou desliga o salvamento automático no JSON aberto. O botão Salvar continua funcionando normalmente.">
-      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M19 12a7 7 0 1 1-2-5"/><path d="M17 4.5l2 2.5 2.5-2"/></svg>
-      <span class="autosave-dot" aria-hidden="true"></span><span id="autosave-toggle-label">Auto: ligado</span>
     </button>
   </div>
   <nav class="nav">
