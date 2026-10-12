@@ -1113,7 +1113,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 .invest-type-summary-head .invest-collapse{margin-left:4px;display:inline-flex;align-items:center;justify-content:center;gap:5px;line-height:1.2;white-space:nowrap}
 .invest-type-summary-head .invest-collapse svg{width:13px;height:13px;display:block;flex:none;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .invest-type-summary-head .invest-collapse span{display:inline-block;line-height:1.2}
-.invest-type-chart-wrap{height:212px;min-width:0;display:block}
+.invest-type-chart-wrap{height:228px;min-width:0;display:block}
 .invest-type-chart-wrap svg{display:block;min-width:0;width:100%;height:100%}
 .inflacao-overlay[hidden]{display:none!important}
 .inflacao-overlay{position:fixed;inset:0;z-index:20000;padding:12px;display:grid;place-items:center;background:rgba(0,0,0,.75);backdrop-filter:blur(4px)}
@@ -4537,9 +4537,13 @@ function renderInvestTypeChart(linhas){
     (typeof S.inflacao?.[chaveMes]==='number'&&Number.isFinite(S.inflacao[chaveMes])?S.inflacao[chaveMes]:null);
   const valores=linhas.map(l=>l.pct).filter(v=>Number.isFinite(v));
   if(ref!==null)valores.push(ref);
-  const lo=Math.min(0,...valores),hi=Math.max(0,...valores),margem=Math.max(1,(hi-lo)*.12);
-  const minimo=lo-margem,maximo=hi+margem;
-  const W=780,H=228,L=48,R=17,T=12,B=171;
+  const lo=Math.min(0,...valores),hi=Math.max(0,...valores);
+  const extremo=Math.max(0.01,Math.abs(lo),Math.abs(hi));
+  // Escala equilibrada quando há resultados positivos e negativos: zero no centro.
+  const misto=lo<0&&hi>0;
+  const minimo=misto?-extremo*1.2:lo<0?lo*1.18:0;
+  const maximo=misto?extremo*1.2:hi>0?hi*1.18:0.01;
+  const W=780,H=240,L=48,R=90,T=14,B=181;
   const Y=v=>B-(v-minimo)/(maximo-minimo)*(B-T);
   const zero=Y(0),quant=Math.max(linhas.length,1),w=(W-L-R)/quant;
   const bars=linhas.map((r,i)=>{
@@ -4550,24 +4554,23 @@ function renderInvestTypeChart(linhas){
     const barY=Math.min(zero,pos),barH=valido?Math.max(1,Math.abs(zero-pos)):0;
     const cor=valido&&preco<0?'#f06474':r.tipo.toLowerCase().includes('fundo')?'#a36ae3':'#15d8a5';
     const tipo=r.tipo.toLowerCase().includes('fundo')?'Fundos':r.tipo;
+    const labelY=!valido?zero-10:preco>=0?Math.max(T+12,barY-8):Math.min(206,barY+barH+17);
     return `<g>
       ${valido?`<rect x="${(centro-w*.18).toFixed(1)}" y="${barY.toFixed(1)}" width="${(w*.36).toFixed(1)}" height="${barH.toFixed(1)}" rx="4" fill="${cor}"/>`:''}
-      <text x="${centro.toFixed(1)}" y="195" fill="#dae9e2" font-size="11" font-weight="800" text-anchor="middle">${escHtml(tipo)}</text>
-      <text x="${centro.toFixed(1)}" y="215" fill="${cor}" font-size="12" font-weight="800" text-anchor="middle">${label}</text>
+      <text x="${centro.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${cor}" font-size="12" font-weight="800" text-anchor="middle">${label}</text>
+      <text x="${centro.toFixed(1)}" y="229" fill="#dae9e2" font-size="12" font-weight="800" text-anchor="middle">${escHtml(tipo)}</text>
       <title>${escHtml(r.tipo)} · ${label}</title>
     </g>`;
   }).join('');
-  // Linha tracejada = inflação; legenda fixa acima das barras para não sobrepor os dados.
+  // A inflação cruza as barras por linha tracejada, terminando no indicador vermelho.
   const ipcaLinha=ref===null?'':`<g aria-label="Inflação do ${anual?'ano':'mês'}: ${pctInflacao(ref)}">
-    <line x1="${L}" y1="${Y(ref).toFixed(1)}" x2="${W-R}" y2="${Y(ref).toFixed(1)}" stroke="#e7ebed" stroke-width="1.8" stroke-dasharray="7 5"/>
-    <rect x="${W-R-115}" y="${T-7}" width="112" height="27" rx="8" fill="#12201d" stroke="#3b514b"/>
-    <line x1="${W-R-107}" y1="${T+6}" x2="${W-R-88}" y2="${T+6}" stroke="#e7ebed" stroke-width="1.8" stroke-dasharray="5 3"/>
-    <circle cx="${W-R-78}" cy="${T+6}" r="4" fill="#ff5c70"/>
-    <text x="${W-R-69}" y="${T+10}" font-size="12" text-anchor="start" fill="#f3f8f4" font-weight="800">${pctInflacao(ref)}</text>
+    <line x1="${L}" y1="${Y(ref).toFixed(1)}" x2="${W-4}" y2="${Y(ref).toFixed(1)}" stroke="#e7ebed" stroke-width="2" stroke-dasharray="9 6"/>
+    <rect x="${W-86}" y="${(Y(ref)-14).toFixed(1)}" width="82" height="28" rx="10" fill="#ed5c70"/>
+    <text x="${W-45}" y="${(Y(ref)+4).toFixed(1)}" font-size="13" text-anchor="middle" fill="#fff" font-weight="850">${pctInflacao(ref)}</text>
     <title>Inflação do ${anual?'ano':'mês'}: ${pctInflacao(ref)}</title>
   </g>`;
   const svg=`<svg viewBox="0 0 ${W} ${H}" aria-label="Rentabilidade por tipo de investimento" role="img">
-    ${Array.from({length:5},(_,i)=>{const v=minimo+(maximo-minimo)*i/4;return `<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#23443a" stroke-dasharray="3 4"/><text x="${L-6}" y="${(Y(v)+3).toFixed(1)}" text-anchor="end" font-size="10" fill="#9fc4b5">${v.toFixed(1).replace('.',',')}%</text>`;}).join('')}
+    ${Array.from({length:8},(_,i)=>{const v=minimo+(maximo-minimo)*i/7;return `<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#23443a" stroke-dasharray="3 4"/><text x="${L-6}" y="${(Y(v)+3).toFixed(1)}" text-anchor="end" font-size="10" fill="#9fc4b5">${v.toFixed(1).replace('.',',')}%</text>`;}).join('')}
     <line x1="${L}" x2="${W-R}" y1="${zero.toFixed(1)}" y2="${zero.toFixed(1)}" stroke="#80998f"/>
     ${bars}${ipcaLinha}
   </svg>`;
