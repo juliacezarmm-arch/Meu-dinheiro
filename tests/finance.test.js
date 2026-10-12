@@ -63,6 +63,10 @@ assert(chart.includes('Inflação do mês: 1,09%'),'Gráfico mensal deve mostrar
 assert(chart.includes('fill="#ed5c70"')&&chart.includes('stroke-dasharray="9 6"'),'Linha tracejada e etiqueta vermelha com o percentual da inflação devem aparecer');
 assert(!chart.includes('<circle '),'A etiqueta da inflação não deve exibir bolinha nem minilegenda');
 assert(chart.includes('viewBox="0 0 840 245"'),'Gráfico por tipo deve aproveitar a largura e a altura aprovadas');
+assert(chart.includes('>2,5%</text>')&&chart.includes('>-12,5%</text>'),'Escala assimétrica deve evitar eixo negativo/positivo espelhado');
+assert(!chart.includes('>12,5%</text>'),'A parte positiva não pode usar a amplitude da perda maior');
+assert(chart.includes('>0,0%</text>'),'Referência zero deve continuar visível no eixo');
+
 assert(chart.includes('width="62" height="22"'),'Etiqueta da inflação deve ser pequena, sem dominar as barras');
 assert(chart.includes('font-size="11" text-anchor="middle" fill="#fff"'),'Percentual da inflação deve ser discreto');
 assert(chart.includes('>CDB</text>')&&chart.includes('font-size="14" font-weight="800"'),'Rótulos e porcentagens devem permanecer legíveis');
