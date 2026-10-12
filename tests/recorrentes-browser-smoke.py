@@ -64,6 +64,7 @@ try{
  el('rec-toggle').click();
  if(el('recorrentes-area').hidden||el('rec-body').hidden)throw Error('Expandir painel flutuante não funciona');
  if(!el('rec-list').querySelector('.rec-item-head .rec-inline-actions'))throw Error('Ações fora do cabeçalho compacto');
+ fecharPainelFlutuante(false);
  el('rec-card-open').click();
  if(el('rec-form').parentElement.id!=='rec-card-body')throw Error('Assinatura não está na aba Cartão');
  if(el('rec-card-row').hidden||el('rec-method').value!=='cartao')throw Error('Assinatura sem seleção exclusiva de cartão');
