@@ -67,13 +67,12 @@ const extratoToggle=anchor.previousElementSibling;
 if(!extratoToggle||!extratoToggle.classList.contains('form-toggle'))throw Error('Botao Adicionar no extrato ausente');
 anchor.parentNode.insertBefore(section,anchor);
 const saldoPanel=document.getElementById('saldo-setup');
-const saldoToggle=document.getElementById('saldo-toggle');
 const controls=document.createElement('div');
 controls.id='extrato-action-buttons';
 controls.setAttribute('role','group');
 controls.setAttribute('aria-label','Comandos do Extrato');
 saldoPanel.parentNode.insertBefore(controls,saldoPanel);
-controls.append(saldoToggle,extratoToggle,section.querySelector('#rec-toggle'));
+controls.append(extratoToggle,section.querySelector('#rec-toggle'));
 const extratoMonthSwitch=document.querySelector('#page-extrato .month-switch');
 if(extratoMonthSwitch)controls.appendChild(extratoMonthSwitch);
 section.querySelector('.rec-top').remove();
@@ -89,6 +88,8 @@ if(cardControls){
   if(registerToggle)cardControls.appendChild(registerToggle);
   if(purchaseToggle)cardControls.appendChild(purchaseToggle);
   cardControls.appendChild(cardSection.querySelector('#rec-card-toggle'));
+  const cardMonthSwitch=document.querySelector('#page-cartao .month-switch');
+  if(cardMonthSwitch)cardControls.appendChild(cardMonthSwitch);
   cardSection.querySelector('.rec-top').remove();
   cardSection.hidden=true;
 }
@@ -318,6 +319,7 @@ function closeRecEditor(){
  editingRecId=null;
  editingRecMode='conta';
  editingRecReactivation=false;
+ editingRecPriceUpdate=false;
  const accountRow=$('rec-account-mode-row');
  if(accountRow){accountRow.hidden=false;accountRow.style.display='';}
  placeCardRow();
@@ -541,7 +543,7 @@ applyDataFile=function(file){
  try{oldApply(file);}catch(error){S.recorrentes=former;throw error;}
  S.recorrentes=Array.isArray(dados.recorrentes)?dados.recorrentes:[];
  S.recorrenciaIgnoradas=Array.isArray(dados.recorrenciaIgnoradas)?dados.recorrenciaIgnoradas:[];
- const added=syncRecurring();renderCartao();renderExtrato();updateResumo();
+ const added=syncRecurring();renderRecurring();renderCartao();renderExtrato();updateResumo();
  // Restauração assíncrona pode reaplicar o status antigo de salvamento após o cadastro ser gerado.
  if(added)setTimeout(()=>{hasUnsavedChanges=true;saveData();},0);
 };
