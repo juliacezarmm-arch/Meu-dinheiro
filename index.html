@@ -813,10 +813,22 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       </div>
       <button class="btn-green" onclick="addInvest()" title="Cadastra esse investimento para receber dinheiro pelo extrato."><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar investimento</button>
     </div>
-    <div class="cards">
-      <div class="card" title="Valor atual somado dos investimentos cadastrados."><div class="label">Patrimônio atual</div><div class="value blue" id="inv-total">R$ 0</div></div>
-      <div class="card" title="Quanto os investimentos renderam em relação ao total aportado."><div class="label">Rendimento</div><div class="inv-rend-summary"><span class="value green" id="inv-rend">R$ 0</span><span class="inv-rend-percent" id="inv-rend-pct" title="Rendimento acumulado dividido pelo total aportado. Indicador aproximado: não considera o tempo de cada aporte.">—</span></div></div>
-      <div class="card" title="Quantidade de investimentos cadastrados."><div class="label">Investimentos</div><div class="value" id="inv-qtd">0</div></div>
+    <div class="cards invest-summary-cards">
+      <div class="card invest-summary-card" title="Patrimônio no fim do período selecionado.">
+        <span class="invest-summary-icon blue">◔</span>
+        <div class="invest-summary-copy"><div class="label">Patrimônio atual</div><div class="value blue" id="inv-total">R$ 0</div><small id="inv-total-note">Valor no período</small></div>
+        <span class="invest-summary-spark" id="inv-total-spark"></span>
+      </div>
+      <div class="card invest-summary-card" title="Rendimento somente do período selecionado, sem confundir aportes e resgates com rendimento.">
+        <span class="invest-summary-icon green">▥</span>
+        <div class="invest-summary-copy"><div class="label">Rendimento do período</div><div class="inv-rend-summary"><span class="value green" id="inv-rend">R$ 0</span><span class="inv-rend-percent" id="inv-rend-pct">—</span></div><small id="inv-rend-note">Resultado do período</small></div>
+        <span class="invest-summary-spark" id="inv-rend-spark"></span>
+      </div>
+      <div class="card invest-summary-card" title="Quantidade de investimentos cadastrados.">
+        <span class="invest-summary-icon green">◆</span>
+        <div class="invest-summary-copy"><div class="label">Investimentos</div><div class="value" id="inv-qtd">0</div><small>Cadastros ativos</small></div>
+        <span class="invest-summary-spark" id="inv-count-spark"></span>
+      </div>
     </div>
     <div id="inv-type-summary"></div>
     <div class="month-switch" aria-label="Escolher mês dos investimentos" title="Filtra histórico e rendimento de todos os investimentos pelo mesmo mês.">
@@ -824,7 +836,27 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       <div class="current-month" id="inv-month-label" title="Mês mostrado nos investimentos.">Mês atual</div>
       <button onclick="changeInvestMonth(1)" aria-label="Próximo mês" title="Ver investimentos do próximo mês.">›</button>
       <button class="today-btn" onclick="goInvestCurrentMonth()" title="Volta os investimentos para o mês atual.">Mês atual</button>
-    </div>    <div id="inv-wrap"><div class="empty">Nenhum investimento ainda.</div></div>
+    </div>
+    <section class="invest-list-shell">
+      <div class="invest-list-head">
+        <div><strong>Meus investimentos <span id="inv-list-count">(0)</span></strong><span>Acompanhe seus investimentos individualmente.</span></div>
+        <div class="invest-list-tools">
+          <div class="invest-view-toggle" role="group" aria-label="Forma de exibição">
+            <button type="button" id="inv-view-grade" class="active" onclick="setInvestVisual('grade')">▦ Grade</button>
+            <button type="button" id="inv-view-lista" onclick="setInvestVisual('lista')">☷ Lista</button>
+          </div>
+          <label class="invest-sort-label">Ordenar por
+            <select id="inv-sort" onchange="setInvestOrdem(this.value)">
+              <option value="valor">Valor atual</option>
+              <option value="nome">Nome (A-Z)</option>
+              <option value="rendimento">Rendimento</option>
+              <option value="tipo">Tipo</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div id="inv-wrap"><div class="empty">Nenhum investimento ainda.</div></div>
+    </section>
   </div>
 
   <!-- METAS -->
@@ -992,6 +1024,12 @@ let extratoMes=new Date();
 let cartaoMes=new Date();
 let cartaoFiltroId='todos';
 let investMes=new Date();
+let investPeriodo='mes';
+let investBusca='';
+let investVisual='grade';
+let investOrdem='valor';
+let investTypeOpen=true;
+let investMenuId=null;
 let metaMes=new Date();
 let editingCartaoId=null;
 let editingExtratoId=null;
@@ -1843,6 +1881,17 @@ function setupCompactMonthBars(){
   if(investBar){
     if(investToggle)investBar.appendChild(investToggle);
     if(investSwitch)investBar.appendChild(investSwitch);
+    if(!document.getElementById('inv-period-controls')){
+      const periodo=document.createElement('div');
+      periodo.id='inv-period-controls';
+      periodo.className='invest-period-controls';
+      periodo.innerHTML='<span>Período:</span><button type="button" id="inv-period-month" class="active" onclick="setInvestPeriodo(\'mes\')">Mês</button><button type="button" id="inv-period-year" onclick="setInvestPeriodo(\'ano\')">Ano</button>';
+      investBar.appendChild(periodo);
+      const search=document.createElement('label');
+      search.className='invest-search';
+      search.innerHTML='<span aria-hidden="true">⌕</span><input id="inv-search" type="search" placeholder="Buscar investimento..." autocomplete="off" oninput="setInvestBusca(this.value)">';
+      investBar.appendChild(search);
+    }
   }
   const metaBar=document.getElementById('meta-action-buttons');
   const metaToggle=document.querySelector('[data-floating-target="meta-add-form"]');
@@ -3103,6 +3152,26 @@ function recalcInvestFromHistory(item){
   item.totalResgatado=totalResgatado;
 }
 
+function calcInvestPeriodResult(item,periodo=investPeriodo,referencia=investMes){
+  const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
+  const ano=referencia.getFullYear();
+  const mes=referencia.getMonth();
+  const inicio=periodo==='ano'
+    ?ano+'-01-01'
+    :ano+'-'+String(mes+1).padStart(2,'0')+'-01';
+  const fimDate=periodo==='ano'?new Date(ano+1,0,1,12):new Date(ano,mes+1,1,12);
+  const fim=isoDate(fimDate.getFullYear(),fimDate.getMonth(),fimDate.getDate());
+  const antes=hist.filter(h=>(h.data||'')<inicio).slice(-1)[0];
+  const dentro=hist.filter(h=>(h.data||'')>=inicio&&(h.data||'')<fim);
+  const ultimo=dentro.slice(-1)[0];
+  const base=antes?Number(antes.saldo||0):0;
+  const final=ultimo?Number(ultimo.saldo||0):base;
+  const aportes=dentro.filter(h=>h.tipo==='aporte').reduce((s,h)=>s+Number(h.valor||0),0);
+  const resgates=dentro.filter(h=>h.tipo==='resgate').reduce((s,h)=>s+Number(h.valor||0),0);
+  const rendimento=final-base-aportes+resgates;
+  const capital=base+aportes;
+  return {base,final,aportes,resgates,rendimento,pct:capital>0?rendimento/capital*100:0,inicio,fim};
+}
 function calcInvestMonthResult(item,mes){
   const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
   const inicio=mes+'-01';
@@ -3208,6 +3277,37 @@ function goInvestCurrentMonth(){
   investMes=new Date();
   renderInvest();
 }
+function setInvestPeriodo(periodo){
+  investPeriodo=periodo==='ano'?'ano':'mes';
+  renderInvest();
+}
+function setInvestBusca(valor){
+  investBusca=String(valor||'').trim().toLocaleLowerCase('pt-BR');
+  renderInvest();
+}
+function setInvestVisual(modo){
+  investVisual=modo==='lista'?'lista':'grade';
+  renderInvest();
+}
+function setInvestOrdem(ordem){
+  investOrdem=['valor','nome','rendimento','tipo'].includes(ordem)?ordem:'valor';
+  renderInvest();
+}
+function toggleInvestTypeSummary(){
+  investTypeOpen=!investTypeOpen;
+  renderInvest();
+}
+function toggleInvestCardMenu(id,event){
+  if(event){event.preventDefault();event.stopPropagation();}
+  investMenuId=String(investMenuId)===String(id)?null:id;
+  renderInvest();
+}
+document.addEventListener('click',event=>{
+  if(!event.target.closest('.inv-card-menu')&&!event.target.closest('.inv-more-btn')&&investMenuId!==null){
+    investMenuId=null;
+    if(document.getElementById('page-invest').classList.contains('active'))renderInvest();
+  }
+});
 function changeMetaMonth(delta){
   metaMes=new Date(metaMes.getFullYear(),metaMes.getMonth()+delta,1);
   renderMetas();
@@ -3658,6 +3758,37 @@ function resumoGrupoInvestimentos(items){
   const rendimento=patrimonio+resgatado-aportado;
   const inicial=items.reduce((s,x)=>s+valorInicialInvestimento(x),0);
   return {inicial,patrimonio,aportado,resgatado,rendimento,pct:aportado>0?rendimento/aportado*100:null};
+}
+function resumoGrupoInvestimentosPeriodo(items){
+  const resultados=items.map(item=>calcInvestPeriodResult(item));
+  const base=resultados.reduce((s,x)=>s+x.base,0);
+  const patrimonio=resultados.reduce((s,x)=>s+x.final,0);
+  const aportes=resultados.reduce((s,x)=>s+x.aportes,0);
+  const resgates=resultados.reduce((s,x)=>s+x.resgates,0);
+  const rendimento=resultados.reduce((s,x)=>s+x.rendimento,0);
+  const capital=base+aportes;
+  return {base,patrimonio,aportes,resgates,rendimento,pct:capital>0?rendimento/capital*100:null};
+}
+function investTipoVisual(tipo){
+  const t=String(tipo||'Outro').toLocaleLowerCase('pt-BR');
+  if(t.includes('poup'))return {icon:'●',cls:'poupanca'};
+  if(t.includes('cripto'))return {icon:'₿',cls:'cripto'};
+  if(t==='cdi'||t.includes('cdi'))return {icon:'%',cls:'cdi'};
+  if(t.includes('fundo'))return {icon:'▥',cls:'fundos'};
+  if(t.includes('cdb')||t.includes('lci')||t.includes('lca')||t.includes('tesouro'))return {icon:'▤',cls:'cdb'};
+  return {icon:'◆',cls:'outro'};
+}
+function investSparkline(items){
+  const pontos=[];
+  for(let offset=5;offset>=0;offset--){
+    const d=new Date(investMes.getFullYear(),investMes.getMonth()-offset,1,12);
+    const total=items.reduce((s,item)=>s+calcInvestPeriodResult(item,'mes',d).final,0);
+    pontos.push(total);
+  }
+  const min=Math.min(...pontos),max=Math.max(...pontos),span=Math.max(1,max-min);
+  const coords=pontos.map((v,i)=>[(i/(pontos.length-1))*82,24-((v-min)/span)*20+2]);
+  const path=coords.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  return '<svg viewBox="0 0 82 28" aria-hidden="true"><path d="'+path+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
 function renderInvestTypeSummary(investimentos){
   const host=document.getElementById('inv-type-summary');
