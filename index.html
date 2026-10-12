@@ -468,9 +468,10 @@ body.action-panel-open{overflow:hidden}
 .site-dialog-copy{font-size:13px;line-height:1.55;color:#c5c3ba;white-space:pre-line;margin:0 0 15px}
 .site-field{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:700;color:#e6e3d9;margin:0 0 14px}.site-fields-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .site-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.site-button{border:1px solid #46463e;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer}.site-button.quiet{background:#2a2a28;color:#f5f5f2}.site-button.primary{background:#9FE1CB;border-color:#9FE1CB;color:#0b3329}.site-button:hover{filter:brightness(1.09)}
-.site-toast{position:fixed;top:18px;right:18px;left:auto;transform:none;z-index:20400;display:flex;align-items:center;gap:12px;width:min(360px,calc(100vw - 28px));background:#1a2924;color:#f5f5f2;border:1px solid #69cda9;border-radius:12px;padding:12px 13px;box-shadow:0 18px 45px rgba(0,0,0,.6);font-size:13px;line-height:1.4}.site-toast span{flex:1}.site-toast button{background:transparent;color:#f5f5f2;border:0;font-size:22px;cursor:pointer}
+.site-toast{position:fixed;top:18px;right:18px;left:auto;transform:none;z-index:20400;display:flex;align-items:center;gap:12px;width:min(360px,calc(100vw - 28px));background:#1a2924;color:#f5f5f2;border:1px solid #69cda9;border-radius:12px;padding:12px 13px;box-shadow:0 18px 45px rgba(0,0,0,.6);font-size:13px;line-height:1.4}
+.save-status:not([hidden]) + .site-toast:not([hidden]){top:72px}.site-toast span{flex:1}.site-toast button{background:transparent;color:#f5f5f2;border:0;font-size:22px;cursor:pointer}
 .input-caption{display:block;font-size:12px;color:#c5c3ba;margin-bottom:5px}.bank-card-actions{position:absolute;right:7px;top:7px;z-index:2;display:flex;gap:4px}.bank-card .bank-card-actions .del{position:static;min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);border-radius:6px;color:#fff;cursor:pointer;padding:0 4px}.bank-card .bank-card-actions .del:hover{background:rgba(0,0,0,.42);border-color:white}.bank-edit-icon{width:13px;height:13px;display:block}
-@media(max-width:520px){.site-dialog-panel{padding:17px}.site-fields-row{grid-template-columns:1fr}.site-dialog-actions button{flex:1}.site-toast{top:10px;right:10px;width:calc(100vw - 20px)}}
+@media(max-width:520px){.site-dialog-panel{padding:17px}.site-fields-row{grid-template-columns:1fr}.site-dialog-actions button{flex:1}.site-toast{top:10px;right:10px;width:calc(100vw - 20px)}.save-status:not([hidden]) + .site-toast:not([hidden]){top:64px}}
 /* O documento JSON e a unica fonte ativa. Nenhum formulario e editavel sem arquivo. */
 body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 #refresh-file-name{font-size:13px;color:#9FE1CB;overflow-wrap:anywhere}
@@ -521,7 +522,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     <button type="button" onclick="manualSave()" title="Grava diretamente as alteracoes no arquivo JSON aberto.">Salvar</button>
     <button type="button" onclick="saveAsDataFile()" title="Cria um JSON novo ou salva os dados em outro arquivo.">Salvar como</button>
     <button type="button" onclick="atualizarAplicativo()" title="Atualiza o aplicativo, fechando o arquivo atual.">Atualizar</button>
-    <div class="save-status" id="save-status" role="status" aria-live="polite" hidden onmouseenter="pauseSaveStatus()" onmouseleave="resumeSaveStatus()"><span id="save-status-message">Abra um arquivo JSON para começar.</span><button type="button" onclick="hideSaveStatus()" aria-label="Fechar notificação">×</button></div>
+
   </div>
   <nav class="nav">
     <button onclick="showPage('resumo',this)" class="active" title="Mostra o resumo do mês: saldo, entradas, saídas, metas, investimentos e gráficos."><i class="ti ti-home" aria-hidden="true"></i> Resumo</button>
@@ -795,6 +796,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   </div>
 </div>
 <!-- Caixas de diálogo exclusivas do próprio aplicativo. -->
+<div class="save-status" id="save-status" role="status" aria-live="polite" hidden onmouseenter="pauseSaveStatus()" onmouseleave="resumeSaveStatus()"><span id="save-status-message">Abra um arquivo JSON para começar.</span><button type="button" onclick="hideSaveStatus()" aria-label="Fechar notificação">×</button></div>
 <div id="app-toast" class="site-toast" role="status" aria-live="polite" hidden onmouseenter="pausarAviso()" onmouseleave="retomarAviso()"><span id="app-toast-message"></span><button type="button" onclick="fecharAviso()" aria-label="Dispensar aviso">×</button></div>
 <div id="app-confirm-overlay" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title" hidden><div class="site-dialog-panel"><div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">?</span><h2 id="app-confirm-title">Confirmar operação</h2></div><p id="app-confirm-message" class="site-dialog-copy"></p><div class="site-dialog-actions"><button type="button" class="site-button quiet" id="app-confirm-cancel">Cancelar</button><button type="button" class="site-button primary" id="app-confirm-accept">Confirmar</button></div></div></div>
 <div id="refresh-overlay" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="refresh-title" hidden><div class="site-dialog-panel">
