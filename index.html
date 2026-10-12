@@ -1053,6 +1053,57 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
  #inv-wrap .inv-grade .inv-card-yield{padding-left:8px;padding-right:6px}
  #inv-wrap .inv-grade .inv-card-stats>.inv-card-spark{padding-left:6px}
 }
+
+/* Gráfico de evolução personalizado com duas visualizações e cartões responsivos. */
+#invest-modal.invest-chart-open .invest-modal-panel{width:min(96vw,900px);max-height:92dvh}
+#invest-modal.invest-chart-open .chart-options{margin:0 0 12px}
+#invest-modal.invest-chart-open .chart-period{gap:4px;padding:3px;border-radius:10px;border:1px solid #384440;background:#151b1b}
+#invest-modal.invest-chart-open .chart-period button{border:0;border-radius:8px;background:transparent;color:#d2ddd8;padding:7px 14px}
+#invest-modal.invest-chart-open .chart-period button.active{background:#9fe1cb;color:#103b31}
+#invest-modal-content .inv-evolution{max-width:100%;background:transparent;border:0;padding:0;overflow:visible}
+.inv-evolution-plot{padding:10px 6px 0;border:1px solid #30453f;background:linear-gradient(180deg,#0d1616,#090e0e);border-radius:12px;min-width:0}
+#invest-modal-content .inv-evolution-svg{display:block;width:100%;height:auto;max-height:300px}
+.inv-evolution-grid{stroke:#345049;stroke-width:.8;stroke-dasharray:3 4;opacity:.8}
+.inv-evolution-axis{fill:#b5c9c4;font-size:11px;font-weight:500;font-family:Inter,system-ui,sans-serif}
+.inv-evolution-summary{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:0;border:1px solid #30453f;background:#0c1716;border-radius:12px;margin:11px 0 18px;padding:12px 9px}
+.inv-evolution-summary>div{display:flex;flex-direction:column;gap:6px;padding:3px 12px;min-width:0}
+.inv-evolution-summary>div+div{border-left:1px solid #2c4940}
+.inv-evolution-summary span{color:#b5c9c4;font-size:11px;line-height:1.35}
+.inv-evolution-summary span small{font-size:9px}
+.inv-evolution-summary strong{font-size:14px;color:#f6f9f7;font-weight:850;font-variant-numeric:tabular-nums}
+.inv-evolution .positive{color:#21dfa8!important}
+.inv-evolution .negative{color:#ff7380!important}
+.inv-evolution-heading{display:flex;align-items:baseline;flex-wrap:wrap;justify-content:space-between;gap:5px 10px;margin-bottom:10px}
+.inv-evolution-heading strong{font-size:14px;color:#f1f6f2}
+.inv-evolution-heading span{font-size:10px;color:#9fb8b0}
+.inv-evolution-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
+.inv-evolution-items>div{min-width:0}
+.inv-evolution-items.scrollable{max-height:220px;overflow-y:auto;overscroll-behavior:contain;padding:1px 5px 4px 1px;scrollbar-width:thin;scrollbar-color:#39675c #0d1716}
+.inv-evolution-items.scrollable::-webkit-scrollbar{width:7px}
+.inv-evolution-items.scrollable::-webkit-scrollbar-thumb{border-radius:8px;background:#39675c}
+.inv-evolution-item{min-width:0;min-height:85px;height:100%;display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid #2b4941;border-radius:10px;background:#0c1516}
+.inv-evolution-item.no-activity{border-color:#2b3634;background:#101616}
+.inv-evolution-item-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
+.inv-evolution-item-head strong{font-size:12px;color:#edf7f2}
+.inv-evolution-item-head span{font-size:9px;color:#acc4bc}
+.inv-evolution-item-numbers{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px;font-size:11px}
+.inv-evolution-item-numbers span{font-weight:800}
+.inv-evolution-item-numbers b{font-size:10px;font-weight:800;font-variant-numeric:tabular-nums}
+.inv-evolution-item small{font-size:10px;color:#aabeb6}
+.inv-evolution-empty{border:1px dashed #34554c;padding:12px;border-radius:10px;color:#a9c9bd;font-size:11px;margin-bottom:8px}
+@media(max-width:690px){
+ .inv-evolution-items{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .inv-evolution-summary{grid-template-columns:1fr 1fr}
+ .inv-evolution-summary>div:last-child{grid-column:1/-1;border-left:0;border-top:1px solid #2c4940;padding-top:10px}
+}
+@media(max-width:420px){
+ #invest-modal.invest-chart-open .invest-modal-panel{padding:12px}
+ .inv-evolution-summary{grid-template-columns:1fr}
+ .inv-evolution-summary>div+div{border-left:0;border-top:1px solid #2c4940;padding-top:10px}
+ .inv-evolution-summary>div:last-child{grid-column:auto}
+ .inv-evolution-items{grid-template-columns:1fr}
+ .inv-evolution-items.scrollable{max-height:260px}
+}
 </style>
 </head>
 <body>
@@ -3753,7 +3804,7 @@ function fecharPainelInvestimento(devolverFoco=true){
   }
   investModalAtivo=null;
   const overlay=document.getElementById('invest-modal');
-  if(overlay)overlay.hidden=true;
+  if(overlay){overlay.hidden=true;overlay.classList.remove('invest-chart-open');}
   const content=document.getElementById('invest-modal-content');
   if(content)content.replaceChildren();
   document.body.classList.remove('invest-modal-open');
@@ -3773,6 +3824,7 @@ function sincronizarPainelInvestimento(){
   const item=S.invest.find(x=>String(x.id)===String(id));
   const overlay=document.getElementById('invest-modal');
   const content=document.getElementById('invest-modal-content');
+  overlay.classList.toggle('invest-chart-open',tipo==='grafico');
   const titulo=document.getElementById('invest-modal-title');
   const novo=!overlay.hidden;
   titulo.textContent=(item?item.nome:'Investimento')+' · '+({dados:'Editar dados','editar-meta':'Editar meta',atualizar:'Atualizar valor',resgatar:'Resgatar',reservar:'Reservar saldo',liberar:'Liberar reserva',aportar:'Aportar',historico:'Histórico',grafico:'Gráfico'}[tipo]||'Detalhes');
@@ -3979,65 +4031,97 @@ function delInvestHistory(itemId,histId){
   saveData();refreshInvestViews();
 }
 
+/* Painel de evolução profissional: mês e ano */
 function renderStockChart(item,mes,periodo){
   const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
-  const ano=Number(mes.slice(0,4));
-  const mesNum=Number(mes.slice(5,7));
-  const inicio=periodo==='ano'?ano+'-01-01':mes+'-01';
-  const fim=periodo==='ano'?(ano+1)+'-01-01':(mesNum===12?ano+1:ano)+'-'+String(mesNum===12?1:mesNum+1).padStart(2,'0')+'-01';
-  const anterior=hist.filter(h=>(h.data||'')<inicio).slice(-1)[0];
-  const dentro=hist.filter(h=>(h.data||'')>=inicio&&(h.data||'')<fim);
-  const pontos=[{label:'Início',valor:anterior?Number(anterior.saldo||0):0}]
-    .concat(dentro.map(h=>{
-      const d=new Date(h.data+'T12:00:00');
-      const label=periodo==='ano'?MESES[d.getMonth()]:String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
-      return {label,valor:Number(h.saldo||0)};
-    }));
-  if(!dentro.length&&(!anterior||Number(anterior.saldo||0)===0)){
-    return '<div class="empty">Sem dados para desenhar o gráfico neste período.</div>';
-  }
-  const mesesResumo=periodo==='ano'
-    ? Array.from({length:12},(_,i)=>{
-        const key=ano+'-'+String(i+1).padStart(2,'0');
-        return {label:MESES[i],...calcInvestMonthResult(item,key)};
-      })
-    : [{label:mesStr(ano,mesNum-1),...calcInvestMonthResult(item,mes)}];
-  const w=320,h=130,pad=16;
-  const valores=pontos.map(p=>p.valor);
-  const min=Math.min(...valores);
-  const max=Math.max(...valores);
-  const range=max-min||1;
-  const coords=pontos.map((p,i)=>{
-    const x=pontos.length===1?w/2:pad+(i*(w-pad*2)/(pontos.length-1));
-    const y=h-pad-((p.valor-min)/range*(h-pad*2));
-    return {x,y,...p};
+  const ano=Number(mes.slice(0,4)),mesNum=Number(mes.slice(5,7)),anual=periodo==='ano';
+  const inicio=anual?ano+'-01-01':mes+'-01';
+  const fim=anual?String(ano+1)+'-01-01':(mesNum===12?ano+1:ano)+'-'+String(mesNum===12?1:mesNum+1).padStart(2,'0')+'-01';
+  const anterior=hist.filter(ev=>(ev.data||'')<inicio).slice(-1)[0];
+  const dentro=hist.filter(ev=>(ev.data||'')>=inicio&&(ev.data||'')<fim);
+  if(!anterior&&!dentro.length)return '<div class="empty">Ainda não há registros para este período.</div>';
+  const base=anterior?Number(anterior.saldo||0):0;
+  const ultimo=dentro.length?Number(dentro[dentro.length-1].saldo||0):base;
+  const variacao=ultimo-base,cor=variacao>=0?'#20dea7':'#ff6b7d';
+  const agruparDia=evs=>{
+    const map=new Map();evs.forEach(ev=>{if(ev.data)map.set(ev.data,ev);});
+    return [...map.values()];
+  };
+  const mesesAno=Array.from({length:12},(_,i)=>{
+    const key=ano+'-'+String(i+1).padStart(2,'0');
+    const proximo=i===11?(ano+1)+'-01-01':ano+'-'+String(i+2).padStart(2,'0')+'-01';
+    const historicoAnterior=hist.filter(ev=>(ev.data||'')<proximo);
+    const reg=historicoAnterior.slice(-1)[0];
+    const registrado=hist.some(ev=>(ev.data||'').slice(0,7)===key);
+    return {label:MESES[i],key,valor:reg?Number(reg.saldo||0):null,registrado,...calcInvestMonthResult(item,key)};
   });
-  const line=coords.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
-  const ultimo=pontos[pontos.length-1].valor;
-  const primeiro=pontos[0].valor;
-  const variacao=ultimo-primeiro;
-  const cor=variacao>=0?'#1D9E75':'#A32D2D';
-  return `<div class="stock-chart">
-    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Gráfico de evolução">
-      <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="#31302c" stroke-width="1"/>
-      <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${h-pad}" stroke="#31302c" stroke-width="1"/>
-      <polyline points="${line}" fill="none" stroke="${cor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      ${coords.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${cor}"></circle>`).join('')}
-    </svg>
-    <div class="stock-chart-meta">
-      <span>${pontos[0].label}: ${fmt(primeiro)}</span>
-      <span>Variação patrimonial (inclui aportes/resgates): ${variacao>=0?'+':''}${fmt(variacao)}</span>
-      <span>${pontos[pontos.length-1].label}: ${fmt(ultimo)}</span>
+  const dias=agruparDia(dentro);
+  const totalDias=new Date(ano,mesNum,0).getDate();
+  const pontos=anual
+    ?mesesAno.map((m,i)=>({x:i,label:m.label,valor:m.valor})).filter(p=>p.valor!==null&&ano+'-'+String(p.x+1).padStart(2,'0')<=today().slice(0,7))
+    :[{x:0,label:'01/'+String(mesNum).padStart(2,'0'),valor:base},...dias.map(ev=>({x:Number(ev.data.slice(8,10))-1,label:ev.data.slice(8,10)+'/'+ev.data.slice(5,7),valor:Number(ev.saldo||0)}))];
+  const width=720,height=258,left=92,right=21,top=22,bottom=44;
+  const plotHeight=height-top-bottom,plotWidth=width-left-right;
+  const valores=pontos.length?pontos.map(p=>p.valor):[base];
+  const min=Math.min(...valores),max=Math.max(...valores),span=Math.max(1,max-min);
+  const margem=Math.max(span*.18,(min===max?Math.abs(max)*.012:0),.25);
+  const yMin=Math.max(0,min-margem),yMax=max+margem,yRange=Math.max(1,yMax-yMin);
+  const maxX=anual?11:Math.max(1,totalDias-1);
+  const xAt=x=>left+Math.max(0,Math.min(maxX,x))/maxX*plotWidth;
+  const yAt=y=>top+plotHeight-(y-yMin)/yRange*plotHeight;
+  const coords=pontos.map(p=>({...p,px:xAt(p.x),py:yAt(p.valor)}));
+  const linha=coords.map((p,i)=>(i?'L':'M')+p.px.toFixed(1)+' '+p.py.toFixed(1)).join(' ');
+  const area=coords.length?linha+' L'+coords[coords.length-1].px.toFixed(1)+' '+(top+plotHeight)+' L'+coords[0].px.toFixed(1)+' '+(top+plotHeight)+' Z':'';
+  const gid='inv-evol-'+String(item.id).replace(/[^a-zA-Z0-9_-]/g,'');
+  const linhasY=Array.from({length:5},(_,i)=>yMin+yRange*i/4);
+  const ticksX=anual?mesesAno.map((m,i)=>({x:i,label:m.label})):Array.from({length:6},(_,i)=>{
+    const dia=1+Math.round(i*(totalDias-1)/5);
+    return {x:dia-1,label:String(dia).padStart(2,'0')+'/'+String(mesNum).padStart(2,'0')};
+  });
+  const svg=`<svg class="inv-evolution-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução patrimonial de ${anual?'cada mês do ano':'cada dia com registros no mês'}">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${cor}" stop-opacity=".34"/><stop offset="100%" stop-color="${cor}" stop-opacity=".02"/></linearGradient></defs>
+    ${linhasY.map(v=>`<line x1="${left}" y1="${yAt(v).toFixed(1)}" x2="${width-right}" y2="${yAt(v).toFixed(1)}" class="inv-evolution-grid"/><text x="${left-10}" y="${(yAt(v)+4).toFixed(1)}" text-anchor="end" class="inv-evolution-axis">${fmt(v)}</text>`).join('')}
+    ${ticksX.map(p=>`<text x="${xAt(p.x).toFixed(1)}" y="${height-14}" text-anchor="middle" class="inv-evolution-axis">${escHtml(p.label)}</text>`).join('')}
+    ${area?`<path d="${area}" fill="url(#${gid})"/>`:''}
+    ${linha?`<path d="${linha}" fill="none" stroke="${cor}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`:''}
+    ${coords.map(p=>`<circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="4.3" fill="#0c1919" stroke="${cor}" stroke-width="2.3"><title>${escHtml(p.label)}: ${fmt(p.valor)}</title></circle>`).join('')}
+  </svg>`;
+  const updates=agruparDia(dentro.filter(ev=>ev.tipo==='atualizacao'));
+  const resumidos=updates.map(ev=>{
+    const ate=dentro.filter(h=>(h.data||'')<=ev.data);
+    const aportes=ate.filter(h=>h.tipo==='aporte').reduce((sum,h)=>sum+Number(h.valor||0),0);
+    const resgates=ate.filter(h=>h.tipo==='resgate').reduce((sum,h)=>sum+Number(h.valor||0),0);
+    const valor=Number(ev.saldo||0),rendimento=valor-base-aportes+resgates;
+    const capital=base+aportes;
+    return {label:ev.data.slice(8,10)+'/'+ev.data.slice(5,7),valor,rendimento,pct:capital>0?rendimento/capital*100:0};
+  });
+  const cards=anual?mesesAno.map(m=>{
+    const cls=m.rendimento>=0?'positive':'negative';
+    return `<div class="inv-evolution-item ${m.registrado?'':'no-activity'}">
+      <div class="inv-evolution-item-head"><strong>${escHtml(m.label)}</strong><span>${m.registrado?'Com registro':'Sem registro no mês'}</span></div>
+      <div class="inv-evolution-item-numbers"><span class="${cls}">${m.rendimento>0?'+':''}${fmt(m.rendimento)}</span><b class="${cls}">${fmtInvestPct(m.pct)}</b></div>
+      <small>Saldo final: ${m.valor===null?'—':fmt(m.valor)}</small>
+    </div>`;
+  }):resumidos.map(m=>{
+    const cls=m.rendimento>=0?'positive':'negative';
+    return `<div class="inv-evolution-item">
+      <div class="inv-evolution-item-head"><strong>${m.label}</strong><span>Atualização</span></div>
+      <div class="inv-evolution-item-numbers"><span class="${cls}">${m.rendimento>0?'+':''}${fmt(m.rendimento)}</span><b class="${cls}">${fmtInvestPct(m.pct)}</b></div>
+      <small>Saldo: ${fmt(m.valor)}</small>
+    </div>`;
+  });
+  const rolavel=!anual&&resumidos.length>=6;
+  return `<div class="stock-chart inv-evolution">
+    <div class="inv-evolution-plot">${svg}</div>
+    <div class="inv-evolution-summary">
+      <div><span>Início do período</span><strong>${fmt(base)}</strong></div>
+      <div><span>Variação patrimonial <small>(inclui aportes/resgates)</small></span><strong class="${variacao>=0?'positive':'negative'}">${variacao>0?'+':''}${fmt(variacao)}</strong></div>
+      <div><span>Último saldo</span><strong>${fmt(ultimo)}</strong></div>
     </div>
-    <div class="yield-list">
-      ${mesesResumo.map(r=>{
-        const cor=r.rendimento>=0?'#1D9E75':'#A32D2D';
-        return `<div class="yield-row">
-          <span>${r.label}</span>
-          <span>Rendeu ${r.rendimento>=0?'+':''}${fmt(r.rendimento)}</span>
-          <strong style="color:${cor}">${fmtInvestPct(r.pct)}</strong>
-        </div>`;
-      }).join('')}
+    <div class="inv-evolution-heading"><strong>${anual?'Rendimento de janeiro a dezembro':'Atualizações de valor no mês'}</strong><span>${anual?'Último saldo disponível de cada mês':'Rendimento acumulado até cada atualização'}</span></div>
+    ${!anual&&!cards.length?'<div class="inv-evolution-empty">Nenhuma atualização de valor neste mês. O gráfico mostra as movimentações disponíveis.</div>':''}
+    <div class="inv-evolution-items ${anual?'annual':'monthly'} ${rolavel?'scrollable':''}" role="list">
+      ${cards.map(c=>`<div role="listitem">${c}</div>`).join('')}
     </div>
   </div>`;
 }
