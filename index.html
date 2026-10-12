@@ -17,9 +17,9 @@
   --border-radius-lg:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-sans);color:var(--color-text-primary);background:var(--color-background-primary);min-height:100vh;color-scheme:dark}
+body{font-family:var(--font-sans);color:var(--color-text-primary);background:var(--color-background-primary);min-height:100vh;color-scheme:dark;scroll-padding-top:170px}
 .app{max-width:870px;margin:0 auto;padding:1rem 0}
-.app-topbar{position:sticky;top:1rem;z-index:12000;background:rgba(5,5,5,.98);backdrop-filter:blur(10px);box-shadow:0 8px 18px rgba(0,0,0,.24)}
+.app-topbar{position:sticky;top:1rem;z-index:12000;background:#050505;box-shadow:0 8px 18px rgba(0,0,0,.42);isolation:isolate}
 .header{display:flex;align-items:center;gap:10px;padding:1rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)}
 .header h1{font-size:20px;font-weight:500}
 .brand-logo{width:42px;height:42px;object-fit:contain;flex:none;border:0;background:transparent;padding:0;margin:0}
@@ -373,7 +373,7 @@ td:last-child{white-space:normal}
 
 /* Comandos de cadastro compactos: uma unica linha, no estilo de status.
    O + / - abre e fecha o painel correspondente sem ocupar uma faixa inteira. */
-#extrato-action-buttons,#cartao-action-buttons{
+#extrato-action-buttons,#cartao-action-buttons,.page-action-buttons{
   display:flex;align-items:center;gap:6px;margin-bottom:10px;overflow-x:auto;overflow-y:hidden;
   scrollbar-width:thin;padding:1px 0 2px
 }
@@ -381,7 +381,8 @@ td:last-child{white-space:normal}
 #extrato-action-buttons .form-toggle,
 #extrato-action-buttons #rec-toggle,
 #cartao-action-buttons .form-toggle,
-#cartao-action-buttons #rec-card-toggle{
+#cartao-action-buttons #rec-card-toggle,
+.page-action-buttons .form-toggle{
   width:auto;min-width:max-content;min-height:30px;box-sizing:border-box;margin:0;padding:5px 9px;
   display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#171716;color:#f5f5f2;
   border:1px solid #3a3934;border-radius:999px;font-size:11px;font-weight:800;text-align:left;
@@ -391,28 +392,38 @@ td:last-child{white-space:normal}
 #extrato-action-buttons .form-toggle:hover,
 #extrato-action-buttons #rec-toggle:hover,
 #cartao-action-buttons .form-toggle:hover,
-#cartao-action-buttons #rec-card-toggle:hover{border-color:#9FE1CB;background:#1b211e}
+#cartao-action-buttons #rec-card-toggle:hover,
+.page-action-buttons .form-toggle:hover{border-color:#9FE1CB;background:#1b211e}
 #extrato-action-buttons #saldo-toggle span,
 #extrato-action-buttons .form-toggle span:last-child,
 #extrato-action-buttons #rec-toggle span,
 #cartao-action-buttons .form-toggle span:last-child,
-#cartao-action-buttons #rec-card-toggle span{
+#cartao-action-buttons #rec-card-toggle span,
+.page-action-buttons .form-toggle span:last-child{
   flex:none;font-size:14px;line-height:1;color:#9FE1CB;font-weight:900
 }
 #extrato-action-buttons #saldo-toggle span{
   display:inline-grid;place-items:center;width:14px;height:14px;line-height:14px;font-size:11px;transform:translateY(-.5px)
 }
 /* O seletor do mês divide a mesma linha dos comandos do Extrato. */
-#extrato-action-buttons .month-switch{
+#extrato-action-buttons .month-switch,
+#cartao-action-buttons .month-switch,
+.page-action-buttons .month-switch{
   flex:0 0 auto;margin:0 0 0 auto;padding:0;background:transparent;border:0;gap:5px;overflow:visible
 }
-#extrato-action-buttons .month-switch button{
+#extrato-action-buttons .month-switch button,
+#cartao-action-buttons .month-switch button,
+.page-action-buttons .month-switch button{
   flex:none;min-width:30px;width:30px;height:30px;padding:0;display:inline-grid;place-items:center;margin:0
 }
-#extrato-action-buttons .month-switch .current-month{
+#extrato-action-buttons .month-switch .current-month,
+#cartao-action-buttons .month-switch .current-month,
+.page-action-buttons .month-switch .current-month{
   flex:none;min-width:66px;padding:0 7px;font-size:11px;white-space:nowrap
 }
-#extrato-action-buttons .month-switch .today-btn{
+#extrato-action-buttons .month-switch .today-btn,
+#cartao-action-buttons .month-switch .today-btn,
+.page-action-buttons .month-switch .today-btn{
   width:auto;min-width:max-content;padding:0 10px;font-size:10px
 }
 /* Saldo realizado e sobra prevista ocupam uma única faixa no desktop. */
@@ -431,8 +442,8 @@ td:last-child{white-space:normal}
 #page-extrato #saldo-content{border-top:0}
 @media(max-width:520px){
   .saldo-setup .row2{grid-template-columns:1fr}
-  #extrato-action-buttons,#cartao-action-buttons{gap:5px}
-  #extrato-action-buttons .month-switch{margin-left:6px}
+  #extrato-action-buttons,#cartao-action-buttons,.page-action-buttons{gap:5px}
+  #extrato-action-buttons .month-switch,#cartao-action-buttons .month-switch,.page-action-buttons .month-switch{margin-left:6px}
   #extrato-action-buttons #saldo-toggle,
   #extrato-action-buttons .form-toggle,
   #extrato-action-buttons #rec-toggle,
@@ -719,6 +730,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 
   <!-- INVESTIMENTOS -->
   <div id="page-invest" class="page">
+    <div id="invest-action-buttons" class="page-action-buttons" role="group" aria-label="Comandos dos Investimentos"></div>
     <div class="add-form">
       <div class="row row2">
         <select id="inv-tipo" onchange="toggleInvestCryptoFields()" title="Tipo de investimento, como poupança, CDB, Tesouro ou ações."><option>Poupança</option><option>CDB</option><option>CDI</option><option>Tesouro Direto</option><option>Ações</option><option>Fundos de investimento</option><option>Fundos imobiliários</option><option>ETF</option><option>Previdência privada</option><option>LCI/LCA</option><option>Debêntures</option><option>Cripto</option><option>Conta remunerada</option><option>Outro</option></select>
@@ -764,6 +776,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 
   <!-- METAS -->
   <div id="page-metas" class="page">
+    <div id="meta-action-buttons" class="page-action-buttons" role="group" aria-label="Comandos das Metas"></div>
     <div class="add-form">
       <div class="row row1">
         <label class="input-caption" for="meta-modo">Como funciona essa meta?</label>
@@ -784,6 +797,12 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       <div class="card" title="Total que já foi guardado em todas as metas."><div class="label">Reservado em metas</div><div class="value blue" id="meta-total">R$ 0</div></div>
       <div class="card" title="Quantidade de metas que você cadastrou."><div class="label">Metas cadastradas</div><div class="value" id="meta-qtd">0</div></div>
       <div class="card" title="Média de quanto suas metas já avançaram em porcentagem."><div class="label">Progresso médio</div><div class="value green" id="meta-progresso">0%</div></div>
+    </div>
+    <div class="month-switch" aria-label="Escolher mês das metas" title="Escolhe o mês usado no histórico e nos gráficos das metas.">
+      <button onclick="changeMetaMonth(-1)" aria-label="Mês anterior" title="Ver metas no mês anterior.">‹</button>
+      <div class="current-month" id="meta-month-label" title="Mês mostrado no histórico das metas.">Mês atual</div>
+      <button onclick="changeMetaMonth(1)" aria-label="Próximo mês" title="Ver metas no próximo mês.">›</button>
+      <button class="today-btn" onclick="goMetaCurrentMonth()" title="Volta as metas para o mês atual.">Mês atual</button>
     </div>
     <div id="meta-wrap"><div class="empty">Nenhuma meta ainda.</div></div>
   </div>
@@ -891,6 +910,7 @@ const BANK_COLORS={
 };
 const CATEGORIAS={
   entrada:{
+    'Saldo inicial':['Saldo inicial'],
     'Trabalho':['Salário','Freelance','Comissão','Hora extra','Bônus','Décimo terceiro'],
     'Renda extra':['Venda de produtos','Venda online','Artesanato','Delivery','Motorista de aplicativo','Afiliados','Criação de conteúdo','Aulas particulares','Consultoria'],
     'Benefícios':['Vale alimentação','Vale refeição','Vale transporte','Auxílio','Bolsa','Pensão','Aposentadoria'],
@@ -919,6 +939,7 @@ let extratoMes=new Date();
 let cartaoMes=new Date();
 let cartaoFiltroId='todos';
 let investMes=new Date();
+let metaMes=new Date();
 let editingCartaoId=null;
 let editingExtratoId=null;
 let editingRegisteredCardId=null;
@@ -1179,9 +1200,17 @@ async function confirmarSaldoInicial(){
 function goToSaldoInicial(){
   const botao=document.querySelectorAll('.nav button')[1];
   showPage('extrato',botao);
-  toggleSaldoInicial(true);
-  document.getElementById('saldo-setup').scrollIntoView({behavior:'smooth',block:'start'});
-  (saldoInicialValido(S.saldoInicial)?document.querySelector('#saldo-start-saved .saldo-corrigir'):document.getElementById('saldo-inicial-valor')).focus();
+  if(saldoInicialValido(S.saldoInicial)){appAlert('O saldo inicial já existe. O saldo de cada novo mês vem automaticamente do mês anterior.');return;}
+  const form=document.getElementById('extrato-add-form');
+  const opener=document.querySelector('[data-floating-target="extrato-add-form"]');
+  if(form)abrirFormularioFlutuante(form,'Adicionar no extrato',opener);
+  document.getElementById('ext-data').value=today();
+  document.getElementById('ext-tipo').value='entrada';
+  updateCategories();toggleSaidaCampos();
+  document.getElementById('ext-categoria').value='Saldo inicial';
+  updateSubcategorias();
+  document.getElementById('ext-subcategoria').value='Saldo inicial';
+  document.getElementById('ext-val').focus();
 }
 
 // O JSON e a unica fonte ativa. Os backups antigos do navegador nao sao lidos,
@@ -1754,6 +1783,22 @@ function setupCollapsibleForms(){
   });
 }
 
+function setupCompactMonthBars(){
+  const investBar=document.getElementById('invest-action-buttons');
+  const investToggle=document.querySelector('[data-floating-target="invest-add-form"]');
+  const investSwitch=document.querySelector('#page-invest .month-switch');
+  if(investBar){
+    if(investToggle)investBar.appendChild(investToggle);
+    if(investSwitch)investBar.appendChild(investSwitch);
+  }
+  const metaBar=document.getElementById('meta-action-buttons');
+  const metaToggle=document.querySelector('[data-floating-target="meta-add-form"]');
+  const metaSwitch=document.querySelector('#page-metas .month-switch');
+  if(metaBar){
+    if(metaToggle)metaBar.appendChild(metaToggle);
+    if(metaSwitch)metaBar.appendChild(metaSwitch);
+  }
+}
 function updateCategories(){
   const tipo=document.getElementById('ext-tipo').value;
   const categoriaSelect=document.getElementById('ext-categoria');
@@ -1765,7 +1810,8 @@ function updateCategories(){
     return;
   }
   const categorias=CATEGORIAS[tipo]||{};
-  categoriaSelect.innerHTML='<option value="">Selecione categoria</option>'+Object.keys(categorias).map(cat=>`<option value="${cat}">${cat}</option>`).join('');
+  const nomes=Object.keys(categorias).filter(cat=>!(tipo==='entrada'&&cat==='Saldo inicial'&&saldoInicialValido(S.saldoInicial)));
+  categoriaSelect.innerHTML='<option value="">Selecione categoria</option>'+nomes.map(cat=>`<option value="${cat}">${cat}</option>`).join('');
   subcategoriaSelect.innerHTML='<option value="">Selecione subcategoria</option>';
 }
 
@@ -2195,6 +2241,18 @@ function addExtrato(){
   const pagamento=document.getElementById('ext-pagamento').value;
   const investDestId=parseInt(document.getElementById('ext-invest-dest').value);
   const val=parseFloat(document.getElementById('ext-val').value);
+  if(tipo==='entrada'&&categoria==='Saldo inicial'&&subcategoria==='Saldo inicial'){
+    if(saldoInicialValido(S.saldoInicial)){appAlert('O saldo inicial do controle já foi informado. Nos meses seguintes o aplicativo transporta automaticamente o saldo do mês anterior.');return;}
+    if(!dataISOValida(data)||!valorMonetarioValido(val)){appAlert('Informe a data de início e um saldo válido em reais. Pode ser zero.');return;}
+    S.saldoInicial={valor:Math.round(val*100)/100,data,idsIgnorados:S.extrato.filter(x=>x.data&&x.data<=data).map(x=>String(x.id))};
+    document.getElementById('ext-desc').value='';
+    document.getElementById('ext-val').value='';
+    document.getElementById('ext-categoria').value='';
+    document.getElementById('ext-subcategoria').innerHTML='<option value="">Selecione subcategoria</option>';
+    saveData();renderSaldoInicial();updateCategories();renderExtrato();updateResumo();fecharPainelFlutuante();
+    appAlert('Saldo inicial do controle registrado. A partir dos próximos meses, o saldo anterior é transportado automaticamente.');
+    return;
+  }
   if(S.saldoInicial&&tipo==='saida'&&categoria==='Cartão de crédito'&&subcategoria==='Pagamento de fatura'){
     appAlert('Registre o pagamento na aba Cartão, na fatura correspondente, para evitar duplicidade.');return;
   }
@@ -3096,7 +3154,16 @@ function changeInvestMonth(delta){
 function goInvestCurrentMonth(){
   investMes=new Date();
   renderInvest();
-}function changeInvestHistoryMonth(id,mes){
+}
+function changeMetaMonth(delta){
+  metaMes=new Date(metaMes.getFullYear(),metaMes.getMonth()+delta,1);
+  renderMetas();
+}
+function goMetaCurrentMonth(){
+  metaMes=new Date();
+  renderMetas();
+}
+function changeInvestHistoryMonth(id,mes){
   investUi.mes[id]=mes;
   refreshInvestViews();
 }
@@ -3464,7 +3531,20 @@ function renderExtrato(){
   const sobra=calcularSobraPrevistaAte(fimMes);
   const textoSaldoMes=mesFuturo?'Saldo do mês indisponível':'Saldo do mês: '+fmt(saldoMes);
   const detalheSaldoMes=mesFuturo?'Esse mês ainda não começou.':(fimMes<today()?'Saldo ao final de '+monthLabel+'.':'Saldo realizado no mês até hoje.');
-  const projecao=saldoInicialValido(S.saldoInicial)?`<div class="plain-summary compact-summary extrato-balance-summary"><div class="plain-card"><strong>${textoSaldoMes}</strong><span>${detalheSaldoMes}</span></div><div class="plain-card"><strong style="color:${sobra===null?'#c5c3ba':sobra<0?'#efaba4':'#9FE1CB'}">${sobra===null?'Sobra prevista indisponível':'Sobra prevista até '+fimMes.slice(8,10)+'/'+fimMes.slice(5,7)+': '+fmt(sobra)}</strong><span>Inclui entradas e contas programadas e faturas em aberto, sem descontar compras duas vezes.</span></div></div>`:'';
+  let textoAbertura='';
+  if(saldoInicialValido(S.saldoInicial)){
+    const mesSelecionado=monthKey(viewYear,viewMonth);
+    const mesBase=S.saldoInicial.data.slice(0,7);
+    if(mesSelecionado===mesBase){
+      textoAbertura='Saldo inicial do controle: '+fmt(S.saldoInicial.valor)+' em '+S.saldoInicial.data.split('-').reverse().join('/');
+    }else if(mesSelecionado>mesBase){
+      const anterior=new Date(viewYear,viewMonth,0,12);
+      const fimAnterior=isoDate(anterior.getFullYear(),anterior.getMonth(),anterior.getDate());
+      const saldoAbertura=fimAnterior<=today()?calcularSaldoDisponivelAte(fimAnterior):calcularSobraPrevistaAte(fimAnterior);
+      if(saldoAbertura!==null)textoAbertura='Saldo vindo do mês anterior: '+fmt(saldoAbertura);
+    }else textoAbertura='Controle iniciado em '+S.saldoInicial.data.split('-').reverse().join('/');
+  }
+  const projecao=saldoInicialValido(S.saldoInicial)?`<div class="plain-summary compact-summary extrato-balance-summary"><div class="plain-card"><strong>${textoSaldoMes}</strong><span>${textoAbertura+(textoAbertura?' · ':'')+detalheSaldoMes}</span></div><div class="plain-card"><strong style="color:${sobra===null?'#c5c3ba':sobra<0?'#efaba4':'#9FE1CB'}">${sobra===null?'Sobra prevista indisponível':'Sobra prevista até '+fimMes.slice(8,10)+'/'+fimMes.slice(5,7)+': '+fmt(sobra)}</strong><span>Inclui entradas e contas programadas e faturas em aberto, sem descontar compras duas vezes.</span></div></div>`:'';
   if(!rows.length){wrap.innerHTML=resumo+projecao+avisoSaldo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
   const hoje=new Date(today()+'T12:00:00');
   const nomesMes=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -3575,6 +3655,8 @@ function renderInvest(){
 }
 
 function renderMetas(){
+  const metaMonthLabel=document.getElementById('meta-month-label');
+  if(metaMonthLabel)metaMonthLabel.textContent=mesStr(metaMes.getFullYear(),metaMes.getMonth());
   S.invest.forEach(recalcInvestFromHistory);
   const metas=S.invest.filter(x=>x.kind==='meta');
   const total=metas.filter(x=>x.modo!=='acompanhar').reduce((s,x)=>s+Math.round(x.valorAtual*100),0)/100;
@@ -3604,7 +3686,8 @@ function renderDestinoCard(item){
   const acao=investUi.acao[item.id]||'';
   const historicoAberto=!!investUi.historico[item.id];
   const graficoAberto=!!investUi.grafico[item.id];
-  const mesHist=monthKey(investMes.getFullYear(),investMes.getMonth()+1);
+  const mesReferencia=item.kind==='meta'?metaMes:investMes;
+  const mesHist=monthKey(mesReferencia.getFullYear(),mesReferencia.getMonth()+1);
   const periodoGrafico=investUi.periodo[item.id]||'mes';
   const resultadoMes=calcInvestMonthResult(item,mesHist);
   const histOrdenado=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
@@ -3892,7 +3975,7 @@ function updateResumo(){
   document.getElementById('saldo-total').textContent=S.saldoInicial?fmt(saldo):'—';
   document.getElementById('saldo-note').textContent=S.saldoInicial
     ? 'Saldo de hoje, calculado a partir de '+S.saldoInicial.data.split('-').reverse().join('/')+'. O cartão só reduz esse valor após lançar o pagamento no extrato.'
-    : 'Informe seu saldo inicial no Extrato para começar o controle automático.';
+    : 'No Extrato, use Adicionar no extrato → Entrada → Saldo inicial para começar o controle automático.';
   document.getElementById('saldo-link').hidden=!!S.saldoInicial;
   document.getElementById('res-cc').parentElement.querySelector('.label').textContent=S.saldoInicial?'Cartão (previsto)':'Cartão (mês atual)';
   document.getElementById('res-ent').textContent=fmt(entradas);
@@ -4077,6 +4160,7 @@ updateCategories();
 updateCartaoCategories();
 toggleSaidaCampos();
 setupCollapsibleForms();
+setupCompactMonthBars();
 setupHelpTooltips();
 renderRegisteredCards();
 renderSaldoInicial();
@@ -4091,7 +4175,7 @@ setSaveStatus('Abra um arquivo JSON para começar.');
 setInterval(()=>{if(hasUnsavedChanges)void autoSaveDataFile();},10000);
 setInterval(updateResumo,5*60*1000);
 </script>
-<script src="js/recorrentes.js?v=20261012-toolbar-fix2"></script>
+<script src="js/recorrentes.js?v=20261012-layout-saldo-recurrents2"></script>
 </body>
 </html>
 
@@ -4140,3 +4224,5 @@ setInterval(updateResumo,5*60*1000);
 
 
 
+
+<style>#page-extrato #saldo-setup{display:none!important}</style>
