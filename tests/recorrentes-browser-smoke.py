@@ -41,7 +41,8 @@ try{
  el('rec-name').value='Salário smoke';el('rec-value').value='100';el('rec-type').value='entrada';el('rec-type').dispatchEvent(new Event('change'));
  el('rec-category').value='Trabalho';el('rec-category').dispatchEvent(new Event('change'));el('rec-subcategory').value='Salário';
  el('rec-frequency').value='mensal';el('rec-frequency').dispatchEvent(new Event('change'));el('rec-day').value=String(Number(today().slice(8)));
- if(el('rec-day-label').hidden||!el('rec-date-label').hidden)throw Error('Dia do mês não aparece no Extrato');
+ if(el('rec-day-label').hidden||el('rec-date-label').hidden)throw Error('Dia mensal e data de início devem ficar visíveis no Extrato');
+ el('rec-start').value=today();
  if(el('rec-day-label').textContent.indexOf('Dia do recebimento')<0)throw Error('Rótulo de recebimento incorreto');
  el('rec-form').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));
  if(S.recorrentes.length!==1)throw Error('Cadastro não criado');
