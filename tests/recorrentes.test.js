@@ -37,7 +37,7 @@ assert(!js.includes('Assinaturas programadas (ainda não cobradas)'),'Não separ
 assert(html.includes('>Valor</th>')&&html.includes('>Parcelas</th>')&&!html.includes('Valor total</th>'),'Uma coluna Valor mensal e indicador de parcelas em coluna separada');
 assert(html.includes('calcularSobraPrevistaAte')&&html.includes('faturasPendentesDoMes'),'Sobra prevista deve considerar faturas sem contaminar saldo de hoje');
 assert(!html.includes('onclick=\"registrarPagamentoFatura(${card.id}'),'Pagamento não deve ficar na aba Cartão');
-assert(html.includes('Marcar como pago</button>'),'Extrato deve ter ação de pagamento da fatura');
+assert(html.includes('class="extrato-pagar"')&&html.includes('registrarPagamentoFatura(${Number(r.cardId)}'),'Extrato deve oferecer ação para pagar fatura');
 assert(!js.includes('id=\"rec-end\"'),'Encerramento não pertence ao cadastro inicial');
 assert(js.includes('data-recdelete=\"${r.id}\">Excluir agora'),'Exclusão deve estar na lista dos registros criados');
 assert(js.includes('id=\"rec-toggle\"')&&js.includes('setRecAreaExpanded'),'Registros precisam abrir e fechar');
