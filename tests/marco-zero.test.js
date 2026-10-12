@@ -8,9 +8,9 @@ function fn(name){
  const fim=script[1].indexOf('\nfunction ',ini+10);
  return script[1].slice(ini,fim<0?script[1].length:fim);
 }
-const names=['isoDate','monthKey','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','valorParcela','dueDateFor','vencimentoDaCompra','getParcelasCartao','getMesMap','getResumoCartaoExtrato','isSameMonthDate','totalDaFaturaFinanceira','pagoNaFaturaFinanceira'];
+const names=['isoDate','monthKey','saldoInicialValido','movimentoRealizado','movimentoNoControleFinanceiro','parcelaNoControleFinanceiro','parcelasCartaoFinanceiras','valorParcela','dueDateFor','vencimentoDaCompra','primeiroMesMensalidadeCartao','valorMensalidadeNoMes','parcelaMensalidadeCartao','getParcelasCartao','getMesMap','getResumoCartaoExtrato','isSameMonthDate','totalDaFaturaFinanceira','pagoNaFaturaFinanceira'];
 const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error});
-vm.runInContext("let hoje='2026-09-18'; function today(){return hoje;} const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];"+names.map(fn).join('\n'),ctx);
+vm.runInContext("let hoje='2026-09-18'; function today(){return hoje;} let cartaoMes=new Date(),resumoMes=new Date();const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];"+names.map(fn).join('\n'),ctx);
 const run=s=>vm.runInContext(s,ctx);
 run("S.saldoInicial={valor:2000,data:'2026-09-18',idsIgnorados:['50']};S.cartao=[{id:101,cardId:7,data:'2026-08-02',desc:'Compra parcelada',val:900,parcelas:3,vencDia:25,closeDay:10,categoria:'Compras',subcategoria:'Outros'},{id:102,cardId:7,data:'2026-09-01',desc:'Anterior no mesmo mês',val:100,parcelas:1,vencDia:10,closeDay:5}]");
 assert.strictEqual(run("getMesMap()['2026-07']"),300,'O cartão preserva a parcela de agosto no histórico');

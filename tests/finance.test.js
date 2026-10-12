@@ -9,9 +9,9 @@ function get(name){
  const end=body[1].indexOf('\nfunction ',start+10);
  return body[1].slice(start,end<0?body[1].length:end);
 }
-const names=['isoDate','monthKey','valorMonetarioValido','valorParcela','novoIdExtrato','saldoInicialValido','calcularSaldoDisponivelAte','receitaReal','movimentoRealizado','dueDateFor','vencimentoDaCompra','getMesMap','getParcelasCartao','pagoNaFatura','totalDaFatura','reservadoEmMetas','dataISOValida','validarDadosImportados','escHtml'];
+const names=['isoDate','monthKey','valorMonetarioValido','valorParcela','novoIdExtrato','saldoInicialValido','calcularSaldoDisponivelAte','receitaReal','movimentoRealizado','dueDateFor','vencimentoDaCompra','getMesMap','primeiroMesMensalidadeCartao','valorMensalidadeNoMes','parcelaMensalidadeCartao','getParcelasCartao','pagoNaFatura','totalDaFatura','reservadoEmMetas','dataISOValida','validarDadosImportados','escHtml'];
 const env=vm.createContext({console,Date,Set,Number,Math,String,Array,Error});
-vm.runInContext("let hoje='2026-09-19';function today(){return hoje;} const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];"+names.map(get).join('\n'),env);
+vm.runInContext("let hoje='2026-09-19';function today(){return hoje;} let cartaoMes=new Date(),resumoMes=new Date();const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];"+names.map(get).join('\n'),env);
 const run=x=>vm.runInContext(x,env);
 assert.strictEqual(run('calcularSaldoDisponivelAte(today())'),null);
 run("S.saldoInicial={valor:1000,data:'2026-09-19',idsIgnorados:['1']};S.extrato=[{id:1,data:'2026-09-19',tipo:'entrada',val:999},{id:2,data:'2026-09-20',tipo:'entrada',val:200},{id:3,data:'2026-09-19',tipo:'saida',val:50},{id:4,data:'2026-09-19',tipo:'entrada',categoria:'Resgate',val:20}]");

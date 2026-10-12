@@ -8,9 +8,9 @@ function fn(name){
  const rest=src.slice(start+10),next=/\n(?:async )?function [A-Za-z]/.exec(rest);
  return src.slice(start,next?start+10+next.index:src.length);
 }
-const names=['isoDate','monthKey','valorParcela','dueDateFor','vencimentoDaCompra','getParcelasCartao','totalDaFatura','parcelasPagasPorFaturas','parcelasHistoricasConfirmadas','parcelasPagasConfirmadas','dataISOValida','saldoInicialValido','validarDadosImportados'];
+const names=['isoDate','monthKey','valorParcela','dueDateFor','vencimentoDaCompra','primeiroMesMensalidadeCartao','valorMensalidadeNoMes','parcelaMensalidadeCartao','getParcelasCartao','totalDaFatura','parcelasPagasPorFaturas','parcelasHistoricasConfirmadas','parcelasPagasConfirmadas','dataISOValida','saldoInicialValido','validarDadosImportados'];
 const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error});
-vm.runInContext("const S={cartao:[],cartoes:[],extrato:[],invest:[],saldoInicial:{valor:1000,data:'2026-09-18',idsIgnorados:[]}};let hoje='2026-09-20';function today(){return hoje;};"+names.map(fn).join('\n'),ctx);
+vm.runInContext("let cartaoMes=new Date(),resumoMes=new Date();const S={cartao:[],cartoes:[],extrato:[],invest:[],saldoInicial:{valor:1000,data:'2026-09-18',idsIgnorados:[]}};let hoje='2026-09-20';function today(){return hoje;};"+names.map(fn).join('\n'),ctx);
 const run=code=>vm.runInContext(code,ctx);
 assert(html.includes('id="cc-mes"')&&html.includes('#cc-mes{color:#f2b75e'),'Fatura do mes precisa de contraste mais claro');
 assert(html.includes('>Parcelas</th>')&&!html.includes('>Pagas</th>')&&html.includes('class="cc-paid-status"')&&!html.includes('onclick="editarParcelasPagas(${r.id})"')&&html.includes('colspan="5"'),'Progresso exibido na unica coluna Parcelas, sem clique e com total na linha do grupo');
