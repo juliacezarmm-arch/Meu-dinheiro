@@ -26,10 +26,10 @@ assert(!js.includes('Data da primeira ocorrência'),'Rótulo antigo não deve ap
 assert(js.includes('id=\"rec-day\"')&&js.includes('recurrenceTiming()'),'Formulário mensal do cartão deve pedir somente dia');
 assert.deepStrictEqual(Array.from(datasRecorrentes({inicio:'2026-08-05',frequencia:'mensal',fim:'2026-11-01'},'2026-12-31')),['2026-08-05','2026-09-05','2026-10-05']);
 assert.deepStrictEqual(Array.from(datasRecorrentes({inicio:'2026-08-05',frequencia:'mensal',vigenteDesde:'2026-09-19'},'2026-11-30')),['2026-10-05','2026-11-05']);
-for(const token of ['recorrenciaData','recorrenciaIgnoradas','saldoInicial.data','originalJaRegistrado','syncRecurring','cardForecasts','cashForecastsForMonth','deleteRec','openRecEditor','confirmarExclusao'])assert(js.includes(token),'Regra ausente: '+token);
+for(const token of ['recorrenciaData','recorrenciaIgnoradas','saldoInicial.data','originalJaRegistrado','syncRecurring','cardForecasts','cashForecastsForMonth','endRecurring','deleteEndedRecurring','openRecEditor','appConfirm'])assert(js.includes(token),'Regra ausente: '+token);
 assert(js.includes("cardSection.id='rec-cartao-area'"),'Assinaturas precisam de área própria na aba Cartão');
 assert(js.includes('id=\"rec-card-open\"'),'Botão de assinatura ausente');
-assert(js.includes('r.excluida=true;r.fim=today()'),'Excluir deve suspender o futuro e preservar histórico');
+assert(js.includes('r.fim=today()')&&js.includes('r.excluida=true')&&js.includes('deleteEndedRecurring'),'Encerrar deve suspender ocorrências futuras; excluir só após encerramento, preservando histórico');
 assert(!js.includes('id=\"rec-end\"')&&!js.includes('data-reccancel'),'Campos duplicados de encerramento não devem aparecer');
 assert(js.includes('cardRow.hidden=true;cardRow.remove()'),'Campo de cartão precisa sair fisicamente do formulário da conta');
 assert(js.includes('id=\"rec-card-toggle\"')&&js.includes('setCardRecAreaExpanded'),'Assinaturas precisam ser minimizáveis');
