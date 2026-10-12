@@ -3800,44 +3800,79 @@ function renderInvestTypeSummary(investimentos){
     if(!grupos.has(tipo))grupos.set(tipo,[]);
     grupos.get(tipo).push(item);
   });
-  const linhas=[...grupos.entries()].map(([tipo,items])=>({tipo,qtd:items.length,...resumoGrupoInvestimentos(items)}))
+  const linhas=[...grupos.entries()].map(([tipo,items])=>({tipo,qtd:items.length,...resumoGrupoInvestimentosPeriodo(items)}))
     .sort((a,b)=>b.patrimonio-a.patrimonio||a.tipo.localeCompare(b.tipo,'pt-BR'));
+  const ano=investMes.getFullYear(),mes=investMes.getMonth();
+  const mesLabel=mesStr(ano,mes);
+  const inicioAnterior=new Date(ano,mes,0,12);
+  const fimMes=new Date(ano,mes+1,0,12);
+  const inicioLabel=investPeriodo==='ano'?'Início '+ano:'Valor em '+String(inicioAnterior.getDate()).padStart(2,'0')+'/'+String(inicioAnterior.getMonth()+1).padStart(2,'0')+'/'+String(inicioAnterior.getFullYear()).slice(2);
+  const fimLabel=investPeriodo==='ano'?'Final/atual '+ano:'Valor em '+String(fimMes.getDate()).padStart(2,'0')+'/'+String(fimMes.getMonth()+1).padStart(2,'0')+'/'+String(fimMes.getFullYear()).slice(2);
+  const periodoLabel=investPeriodo==='ano'?String(ano):mesLabel;
   host.innerHTML=`<section class="invest-type-summary">
     <div class="invest-type-summary-head">
-      <strong>Por tipo de investimento</strong>
-      <span>Valor inicial = valor informado quando o investimento entrou no app. Rendimento considera também aportes e resgates posteriores.</span>
+      <div class="invest-type-title"><span class="invest-type-title-icon">◔</span><div><strong>Por tipo de investimento</strong><span>Desempenho no período selecionado (${periodoLabel}).</span></div></div>
+      <button class="invest-collapse" type="button" onclick="toggleInvestTypeSummary()">${investTypeOpen?'⌃ Recolher':'⌄ Expandir'}</button>
     </div>
-    <div class="invest-type-table-wrap">
+    ${investTypeOpen?`<div class="invest-type-table-wrap">
       <table class="invest-type-table">
-        <thead><tr><th>Tipo</th><th>Valor inicial</th><th>Patrimônio atual</th><th>Rendimento</th><th>Rentabilidade</th></tr></thead>
+        <thead><tr><th>Tipo</th><th>${inicioLabel}</th><th>Aportes (${periodoLabel})</th><th>Resgates (${periodoLabel})</th><th>Rendimento (${periodoLabel})</th><th>${fimLabel}</th><th>Rentabilidade (${investPeriodo==='ano'?'ano':'mês'})</th></tr></thead>
         <tbody>${linhas.map(r=>{
           const cls=r.rendimento>0?'positive':r.rendimento<0?'negative':'neutral';
           const pct=r.pct===null?'—':(r.pct>0?'+':'')+fmtInvestPct(r.pct);
-          return `<tr><td>${escHtml(r.tipo)}${r.qtd>1?` <span style="color:var(--color-text-secondary);font-weight:600">(${r.qtd})</span>`:''}</td><td>${fmt(r.inicial)}</td><td>${fmt(r.patrimonio)}</td><td class="${cls}">${r.rendimento>0?'+':''}${fmt(r.rendimento)}</td><td class="${cls}">${pct}</td></tr>`;
+          const visual=investTipoVisual(r.tipo);
+          return `<tr><td><span class="invest-type-cell"><span class="invest-type-icon ${visual.cls}">${visual.icon}</span><span>${escHtml(r.tipo)}${r.qtd>1?'<small> ('+r.qtd+')</small>':''}</span></span></td><td>${fmt(r.base)}</td><td>${fmt(r.aportes)}</td><td>${fmt(r.resgates)}</td><td class="${cls}">${r.rendimento>0?'+':''}${fmt(r.rendimento)}</td><td>${fmt(r.patrimonio)}</td><td class="${cls}">${pct}</td></tr>`;
         }).join('')}</tbody>
       </table>
-    </div>
+    </div>`:''}
   </section>`;
 }
-
 function renderInvest(){
   const invMonthLabel=document.getElementById('inv-month-label');
   if(invMonthLabel)invMonthLabel.textContent=mesStr(investMes.getFullYear(),investMes.getMonth());
   S.invest.forEach(recalcInvestFromHistory);
   const investimentos=S.invest.filter(x=>x.kind==='investimento');
-  const geral=resumoGrupoInvestimentos(investimentos);
+  const geral=resumoGrupoInvestimentosPeriodo(investimentos);
+  const periodoLabel=investPeriodo==='ano'?String(investMes.getFullYear()):mesStr(investMes.getFullYear(),investMes.getMonth());
+
   document.getElementById('inv-total').textContent=fmt(geral.patrimonio);
   document.getElementById('inv-rend').textContent=(geral.rendimento>0?'+':'')+fmt(geral.rendimento);
   document.getElementById('inv-rend-pct').textContent=geral.pct===null?'—':(geral.pct>0?'+':'')+fmtInvestPct(geral.pct);
   document.getElementById('inv-qtd').textContent=investimentos.length;
+  const totalNote=document.getElementById('inv-total-note');if(totalNote)totalNote.textContent='Valor no período '+periodoLabel;
+  const rendNote=document.getElementById('inv-rend-note');if(rendNote)rendNote.textContent='Resultado em '+periodoLabel;
+  const totalSpark=document.getElementById('inv-total-spark');if(totalSpark)totalSpark.innerHTML=investSparkline(investimentos);
+  const rendSpark=document.getElementById('inv-rend-spark');if(rendSpark)rendSpark.innerHTML=investSparkline(investimentos);
+  const countSpark=document.getElementById('inv-count-spark');if(countSpark)countSpark.innerHTML=investSparkline(investimentos);
+
+  const pMonth=document.getElementById('inv-period-month'),pYear=document.getElementById('inv-period-year');
+  if(pMonth)pMonth.classList.toggle('active',investPeriodo==='mes');
+  if(pYear)pYear.classList.toggle('active',investPeriodo==='ano');
+  const busca=document.getElementById('inv-search');if(busca&&busca.value!==investBusca)busca.value=investBusca;
+  const sort=document.getElementById('inv-sort');if(sort&&sort.value!==investOrdem)sort.value=investOrdem;
+  const grade=document.getElementById('inv-view-grade'),lista=document.getElementById('inv-view-lista');
+  if(grade)grade.classList.toggle('active',investVisual==='grade');
+  if(lista)lista.classList.toggle('active',investVisual==='lista');
+
   renderInvestTypeSummary(investimentos);
+
+  let filtrados=investimentos.filter(item=>{
+    if(!investBusca)return true;
+    return [item.nome,item.tipo,item.banco,item.rentIndice].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(investBusca));
+  });
+  filtrados.sort((a,b)=>{
+    if(investOrdem==='nome')return String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR');
+    if(investOrdem==='tipo')return String(a.tipo||'').localeCompare(String(b.tipo||''),'pt-BR')||String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR');
+    if(investOrdem==='rendimento')return calcInvestPeriodResult(b).rendimento-calcInvestPeriodResult(a).rendimento;
+    return calcInvestPeriodResult(b).final-calcInvestPeriodResult(a).final;
+  });
+  const count=document.getElementById('inv-list-count');if(count)count.textContent='('+filtrados.length+')';
+
   const wrap=document.getElementById('inv-wrap');
   if(!investimentos.length){wrap.innerHTML='<div class="empty">Cadastre um investimento e depois registre o dinheiro pelo Extrato.</div>';return;}
-  wrap.innerHTML='<div class="goal-list">'+investimentos.map(item=>{
-    return renderDestinoCard(item);
-  }).join('')+'</div>';
+  if(!filtrados.length){wrap.innerHTML='<div class="empty">Nenhum investimento encontrado nessa busca.</div>';return;}
+  wrap.innerHTML='<div class="goal-list '+(investVisual==='lista'?'inv-list':'inv-grade')+'">'+filtrados.map(item=>renderDestinoCard(item)).join('')+'</div>';
 }
-
 function renderMetas(){
   const metaMonthLabel=document.getElementById('meta-month-label');
   if(metaMonthLabel)metaMonthLabel.textContent=mesStr(metaMes.getFullYear(),metaMes.getMonth());
@@ -3984,6 +4019,35 @@ function renderDestinoCard(item){
       <div class="month-track"><div class="month-fill" style="width:${metaPct.toFixed(1)}%;background:#2378D4"></div></div>
       <div class="month-value">${metaPct.toFixed(0)}%</div>
     </div>`:'';
+  if(item.kind==='investimento'){
+    const periodo=calcInvestPeriodResult(item);
+    const visual=investTipoVisual(item.tipo);
+    const cls=periodo.rendimento>0?'positive':periodo.rendimento<0?'negative':'neutral';
+    const pct=(periodo.pct>0?'+':'')+fmtInvestPct(periodo.pct);
+    const periodoLabel=investPeriodo==='ano'?String(investMes.getFullYear()):mesStr(investMes.getFullYear(),investMes.getMonth());
+    const menuAberto=String(investMenuId)===String(item.id);
+    const menu=`<div class="inv-card-menu${menuAberto?' open':''}">
+      <button onclick="investMenuId=null;toggleInvestAction(${item.id},'dados')">Editar dados</button>
+      <button onclick="investMenuId=null;toggleInvestAction(${item.id},'atualizar')">Atualizar valor</button>
+      <button onclick="investMenuId=null;toggleInvestAction(${item.id},'resgatar')">Resgatar</button>
+      <button onclick="investMenuId=null;toggleInvestHistory(${item.id})">Histórico</button>
+      <button onclick="investMenuId=null;toggleInvestChart(${item.id})">Gráfico</button>
+      <button onclick="investMenuId=null;iniciarMetaParaInvestimento(${item.id})">Criar meta</button>
+      <button class="danger" onclick="investMenuId=null;delInv(${item.id})">Excluir</button>
+    </div>`;
+    return `<div class="goal-card inv-compact-card" data-invest-id="${item.id}">
+      <div class="inv-card-main">
+        <span class="invest-type-icon ${visual.cls}">${visual.icon}</span>
+        <div class="inv-card-name"><strong>${escHtml(item.nome)}</strong><span>${escHtml(item.tipo)}${item.banco?' · '+escHtml(item.banco):''}</span></div>
+        <div class="inv-card-metric"><span>Valor atual</span><strong>${fmt(periodo.final)}</strong></div>
+        <div class="inv-card-metric"><span>Rendimento (${periodoLabel})</span><strong class="${cls}">${periodo.rendimento>0?'+':''}${fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div>
+        <span class="inv-card-spark">${investSparkline([item])}</span>
+        <div class="inv-card-menu-wrap"><button class="inv-more-btn" type="button" onclick="toggleInvestCardMenu(${item.id},event)" aria-label="Mais opções">⋮</button>${menu}</div>
+      </div>
+      ${painelAcao}${historicoHtml}${graficoHtml}
+    </div>`;
+  }
+
   return `<div class="goal-card" data-invest-id="${item.id}">
     <button class="goal-delete" onclick="delInv(${item.id})" aria-label="Excluir" title="Exclui este investimento ou meta. Se já tiver histórico, o app pede confirmação.">×</button>
     <div class="goal-top">
