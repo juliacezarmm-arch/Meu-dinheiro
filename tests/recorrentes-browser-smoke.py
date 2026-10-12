@@ -68,7 +68,7 @@ try{
  el('rec-card-open').click();
  if(el('rec-form').parentElement.id!=='rec-card-body')throw Error('Assinatura não está na aba Cartão');
  if(el('rec-card-row').hidden||el('rec-method').value!=='cartao')throw Error('Assinatura sem seleção exclusiva de cartão');
- if(!el('rec-method').closest('label').hidden)throw Error('Forma de pagamento redundante na assinatura');
+ if(!el('rec-account-mode-row').hidden)throw Error('Forma de pagamento redundante na assinatura');
  if(el('rec-card-row').parentElement.id!=='rec-form')throw Error('Cartão exclusivo não inserido no formulário da assinatura');
  report(true,'Cadastro separado para conta e cartão, entrada automática, saldo e idempotência');
 }catch(e){report(false,e.stack||e.message);}
