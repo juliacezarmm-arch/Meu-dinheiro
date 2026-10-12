@@ -41,15 +41,17 @@ S.recorrenciaIgnoradas=Array.isArray(S.recorrenciaIgnoradas)?S.recorrenciaIgnora
 let editingRecId=null;
 let editingRecMode="conta";
 let editingRecReactivation=false;
+ editingRecPriceUpdate=false;
+let editingRecPriceUpdate=false;
 const style=document.createElement('style');
-style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-list-section-title{font-size:11px;font-weight:800;color:#9FE1CB;text-transform:uppercase;letter-spacing:.04em;margin:3px 2px 0}.rec-list-section-title.inactive{color:#d5bca8;margin-top:8px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}#rec-card-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-card-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-card-body[hidden]{display:none!important}#rec-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-body[hidden]{display:none!important}.rec-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px}.rec-item-date{font-size:12px;color:#c5c3ba;line-height:1.45;flex:1 1 225px}.rec-inline-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0}.rec-inline-actions .rec-button{padding:6px 8px;font-size:11px;white-space:nowrap}.rec-form [hidden]{display:none!important}#rec-account-mode-row[hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
+style.textContent=`.rec-area{background:#171716;border:1px solid #3a3934;border-radius:14px;padding:14px;margin:0 0 17px}.rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rec-top strong{font-size:15px}.rec-top p,.rec-caption{font-size:12px;color:#c5c3ba;line-height:1.5;margin:6px 0 10px}.rec-button{background:#242423;border:1px solid #5b625b;color:#d9f7ea;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:750}.rec-button.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.rec-button.danger{color:#ffc1bc}.rec-button.delete{color:#ffc1bc;border-color:#76433f}.rec-form{margin:13px 0;padding:13px;border:1px solid #3a3934;border-radius:11px;background:#111110}.rec-form[hidden]{display:none}.rec-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c5c3ba}.rec-form .row{margin-bottom:10px}.rec-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}.rec-list{display:flex;flex-direction:column;gap:9px}.rec-list-section-title{font-size:11px;font-weight:800;color:#9FE1CB;text-transform:uppercase;letter-spacing:.04em;margin:3px 2px 0}.rec-list-section-title.inactive{color:#d5bca8;margin-top:8px}.rec-item{background:#0f0f0e;border:1px solid #363631;border-radius:11px;padding:12px}.rec-item-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.rec-item-name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.rec-tag{font-size:11px;border-radius:100px;padding:3px 8px;background:#19352a;color:#a0eed0;white-space:nowrap}.rec-tag.inactive{background:#35302b;color:#e6c9b3}.rec-item-sub{font-size:12px;color:#c5c3ba;line-height:1.55;margin-top:6px}.rec-shortcut{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#171716;border:1px solid #3a3934;border-radius:10px}.rec-shortcut span{font-size:12px;color:#c5c3ba}.rec-predictions{background:#171716;border:1px solid #3a3934;border-radius:10px;padding:11px;margin:10px 0;font-size:12px}.rec-predictions strong{display:block;color:#9FE1CB;margin-bottom:5px}.rec-prediction{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #2b2b28}.rec-prediction small{color:#c5c3ba}.rec-card-prediction{font-size:12px;color:#c5c3ba;padding:5px 0}.rec-form input,.rec-form select{width:100%}#rec-card-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-card-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-card-body[hidden]{display:none!important}#rec-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;color:#f5f5f2;padding:0;text-align:left;font-size:15px;font-weight:750;cursor:pointer}#rec-toggle span{font-size:20px;color:#9FE1CB;line-height:1}#rec-body[hidden]{display:none!important}.rec-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px}.rec-item-date{font-size:12px;color:#c5c3ba;line-height:1.45;flex:1 1 225px}.rec-inline-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0}.rec-inline-actions .rec-button{padding:6px 8px;font-size:11px;white-space:nowrap}.rec-form [hidden]{display:none!important}#rec-account-mode-row[hidden]{display:none!important}@media(max-width:520px){.rec-form .row2{grid-template-columns:1fr}.rec-shortcut{align-items:flex-start;flex-direction:column}}`;
 style.textContent+=`#rec-card-list{gap:6px}#rec-card-list .rec-item{padding:8px 10px}#rec-card-list .rec-item-head{gap:7px;flex-wrap:wrap}#rec-card-list .rec-item-head .rec-inline-actions{margin-left:auto}#rec-card-list .rec-item-sub{margin-top:4px;font-size:11px;line-height:1.4}#rec-card-list .rec-item-date-inline{color:#c5c3ba}#rec-card-list .rec-inline-actions .rec-button{font-size:10px;padding:4px 6px}#rec-card-open{margin:8px 0}#rec-card-list .rec-item-name{min-width:0}@media(max-width:520px){#rec-card-list .rec-item-head{row-gap:5px}#rec-card-list .rec-item-head .rec-inline-actions{margin-left:0}}`;
 // Extrato: mesma densidade e disposicao de linhas que a lista do Cartao.
 style.textContent+=`#rec-list{gap:6px}#rec-list .rec-item{padding:8px 10px}#rec-list .rec-item-head{gap:7px;flex-wrap:wrap}#rec-list .rec-item-head .rec-inline-actions{margin-left:auto}#rec-list .rec-item-sub{margin-top:4px;font-size:11px;line-height:1.4}#rec-list .rec-item-date-inline{color:#c5c3ba}#rec-list .rec-inline-actions .rec-button{font-size:10px;padding:4px 6px}#rec-list .rec-item-name{min-width:0}@media(max-width:520px){#rec-list .rec-item-head{row-gap:5px}#rec-list .rec-item-head .rec-inline-actions{margin-left:0}}`;
 document.head.appendChild(style);
 const section=document.createElement('section');section.id='recorrentes-area';section.className='rec-area';
 section.innerHTML=`<div class="rec-top"><button type="button" id="rec-toggle" aria-expanded="true" aria-controls="rec-body">Registros recorrentes <span id="rec-toggle-symbol" aria-hidden="true">−</span></button></div>
-<div id="rec-body"><p class="rec-caption">Cadastre salário, débito automático, Pix ou transferência. Exclua o cadastro quando quiser; os lançamentos anteriores permanecem.</p><button type="button" class="rec-button primary" id="rec-open">+ Novo registro</button>
+<div id="rec-body"><p class="rec-caption">Cadastre valores previsíveis como salário, débito automático, Pix ou transferência. Você pode atualizar o valor quando houver reajuste; lançamentos anteriores permanecem.</p><button type="button" class="rec-button primary" id="rec-open">+ Novo registro</button>
 <form class="rec-form" id="rec-form" hidden novalidate><strong id="rec-form-title">Novo registro recorrente</strong>
 <div class="row row2" style="margin-top:12px"><label>Descrição<input id="rec-name" type="text" maxlength="75" placeholder="Ex.: Office, salário, academia" required></label><label>Valor (R$)<input id="rec-value" type="number" min="0.01" step="0.01" required placeholder="60,00"></label></div>
 <div class="row row2" id="rec-account-mode-row"><label>Tipo<select id="rec-type"><option value="saida">Despesa</option><option value="entrada">Entrada / salário</option></select></label><label>Forma de movimentação<select id="rec-method"><option value="debito_automatico">Débito automático</option><option value="debito">Débito</option><option value="boleto">Boleto</option><option value="pix">Pix</option><option value="transferencia">Transferência</option></select></label></div>
@@ -172,6 +174,15 @@ function migrarCicloRecorrentesCartao(){
  }
  return changed;
 }
+function valorRecorrenteNaData(r,data){
+ const base=Number(r&&r.valor||0);
+ if(!r||!dataISOValida(data)||!Array.isArray(r.valorHistorico)||!r.valorHistorico.length)return base;
+ const vigente=r.valorHistorico
+  .filter(x=>x&&dataISOValida(x.desde)&&x.desde<=data&&valorMonetarioValido(Number(x.valor))&&Number(x.valor)>0)
+  .sort((a,b)=>a.desde.localeCompare(b.desde))
+  .slice(-1)[0];
+ return vigente?Number(vigente.valor):base;
+}
 function ocorrencias(r,ate){return datasRecorrentes(r,ate).filter(data=>!S.recorrenciaIgnoradas.includes(key(r,data)));}
 function cardOptions(){
  const sel=cardSelect;const previous=sel.value;
@@ -242,17 +253,20 @@ function recurrenceTiming(){
     ?'Para frequência semanal ou anual, informe a data da próxima cobrança. O vencimento e o pagamento da fatura são separados.'
     :'Para frequência semanal ou anual, informe a data do próximo pagamento ou recebimento. O aplicativo não consulta bancos: confira a movimentação efetiva.');
 }
-function openRecEditor(id=null,mode='conta',reactivate=false){
+function openRecEditor(id=null,mode='conta',reactivate=false,priceUpdate=false){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));editingRecId=r?r.id:null;
  editingRecMode=r?(r.metodo==='cartao'?'cartao':'conta'):mode;
  editingRecReactivation=!!(reactivate&&r&&r.fim&&r.fim<=today());
+ editingRecPriceUpdate=!!(priceUpdate&&r&&!editingRecReactivation);
  const area=$(editingRecMode==='cartao'?'rec-cartao-area':'recorrentes-area');
  const list=area.querySelector('.rec-list');
  list.parentNode.insertBefore($('rec-form'),list);
  $('rec-form').hidden=false;
  $('rec-form-title').textContent=editingRecReactivation
   ?'Reativar '+(editingRecMode==='cartao'?'recorrência do cartão':'registro recorrente')
-  :r?'Editar '+(editingRecMode==='cartao'?'recorrência do cartão':'registro recorrente'):(editingRecMode==='cartao'?'Nova recorrência do cartão':'Novo registro recorrente');
+  :editingRecPriceUpdate
+    ?'Atualizar valor · '+(editingRecMode==='cartao'?'recorrência do cartão':'registro recorrente')
+    :r?'Editar '+(editingRecMode==='cartao'?'recorrência do cartão':'registro recorrente'):(editingRecMode==='cartao'?'Nova recorrência do cartão':'Novo registro recorrente');
  $('rec-name').value=r?r.nome:'';$('rec-value').value=r?r.valor:'';
  $('rec-type').value=editingRecMode==='cartao'?'saida':r?r.tipo:'saida';
  recurrenceType();
@@ -261,11 +275,12 @@ function openRecEditor(id=null,mode='conta',reactivate=false){
  recurrenceConfirmation();
  if($('rec-confirm')&&r&&r.metodo!=='boleto')$('rec-confirm').checked=!!r.exigirConfirmacao;
  $('rec-category').value=r?r.categoria:'';recurrenceSubcategories();$('rec-subcategory').value=r?r.subcategoria:'';
- $('rec-frequency').value=r?r.frequencia:'mensal';$('rec-start').value=editingRecReactivation?today():r?r.inicio:today();
+ $('rec-frequency').value=r?r.frequencia:'mensal';$('rec-start').value=editingRecReactivation||editingRecPriceUpdate?today():r?r.inicio:today();
  $('rec-day').value=r&&r.frequencia==='mensal'?String(r.diaCobranca||Number(r.inicio.slice(8))):'';
  recurrenceTiming();
  if(editingRecReactivation)$('rec-date-label').firstChild.textContent='Reativar desde';
- $('rec-submit').textContent=editingRecReactivation?'Reativar':r?'Salvar alterações':'Salvar recorrência';
+ if(editingRecPriceUpdate)$('rec-date-label').firstChild.textContent='Novo valor a partir de';
+ $('rec-submit').textContent=editingRecReactivation?'Reativar':editingRecPriceUpdate?'Atualizar valor':r?'Salvar alterações':'Salvar recorrência';
 
  // Só depois de o formulário estar pronto a janela é aberta.
  if(editingRecMode==='conta')setRecAreaExpanded(true);
@@ -317,7 +332,7 @@ function cardForecasts(){
  const fim=isoDate(horizon.getFullYear(),horizon.getMonth(),horizon.getDate());
  return S.recorrentes.filter(r=>r.metodo==='cartao'&&!r.excluida).flatMap(r=>ocorrencias(r,fim).filter(d=>d>hoje&&!originalJaRegistrado(r,d)).map(data=>{
   const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));if(!card)return null;
-  return {id:'rec-prev-'+r.id+'-'+data,data,desc:r.nome,tipo:'compra',val:r.valor,parcelas:1,vencDia:card.dueDay,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',recorrenciaId:r.id,recorrenciaData:data,previsto:true};
+  return {id:'rec-prev-'+r.id+'-'+data,data,desc:r.nome,tipo:'compra',val:valorRecorrenteNaData(r,data),parcelas:1,vencDia:card.dueDay,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',recorrenciaId:r.id,recorrenciaData:data,previsto:true};
  }).filter(Boolean));
 }
 function cashForecastsForMonth(y,m){
@@ -327,14 +342,14 @@ function cashForecastsForMonth(y,m){
   .map(data=>{
     const manual=exigeConfirmacao(r);
     if(!manual&&data<=today())return null;
-    return {id:'rec-futuro-'+r.id+'-'+data,data,desc:r.nome,val:r.valor,tipo:r.tipo,categoria:r.categoria,subcategoria:r.subcategoria,pagamento:r.metodo,auto:true,previsto:data>today(),recorrenciaPendente:manual,recorrenciaId:r.id,recorrenciaData:data};
+    return {id:'rec-futuro-'+r.id+'-'+data,data,desc:r.nome,val:valorRecorrenteNaData(r,data),tipo:r.tipo,categoria:r.categoria,subcategoria:r.subcategoria,pagamento:r.metodo,auto:true,previsto:data>today(),recorrenciaPendente:manual,recorrenciaId:r.id,recorrenciaData:data};
   }).filter(Boolean)).sort((a,b)=>a.data.localeCompare(b.data));
 }
 function pendingRecurringObligationsUntil(fim){
  if(!dataISOValida(fim))return [];
  return S.recorrentes.filter(r=>!r.excluida&&r.metodo!=='cartao'&&exigeConfirmacao(r)).flatMap(r=>
    ocorrencias(r,fim).filter(data=>(!saldoInicialValido(S.saldoInicial)||data>S.saldoInicial.data)&&!originalJaRegistrado(r,data))
-    .map(data=>({data,desc:r.nome,val:r.valor,tipo:r.tipo,recorrenciaId:r.id,recorrenciaData:data}))
+    .map(data=>({data,desc:r.nome,val:valorRecorrenteNaData(r,data),tipo:r.tipo,recorrenciaId:r.id,recorrenciaData:data}))
  );
 }
 // O Extrato exibe previsões e contas a pagar; só o pagamento confirmado entra no saldo real.
@@ -353,10 +368,10 @@ function syncRecurring(){
    if(originalJaRegistrado(r,data))continue;
    if(r.metodo==='cartao'){
     if(!card)continue;
-    S.cartao.push({id:novoIdGlobal(),data,desc:r.nome,tipo:'compra',val:r.valor,parcelas:1,vencDia:card.dueDay,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',recorrenciaId:r.id,recorrenciaData:data});changed=true;
+    S.cartao.push({id:novoIdGlobal(),data,desc:r.nome,tipo:'compra',val:valorRecorrenteNaData(r,data),parcelas:1,vencDia:card.dueDay,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',recorrenciaId:r.id,recorrenciaData:data});changed=true;
    }else{
     if(saldoInicialValido(S.saldoInicial)&&data<=S.saldoInicial.data)continue;
-    S.extrato.push({id:novoIdExtrato(),data,desc:r.nome,tipo:r.tipo,val:r.valor,categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',pagamento:r.metodo,recorrenciaId:r.id,recorrenciaData:data,geradoAutomaticamente:true});changed=true;
+    S.extrato.push({id:novoIdExtrato(),data,desc:r.nome,tipo:r.tipo,val:valorRecorrenteNaData(r,data),categoria:r.categoria,subcategoria:r.subcategoria,gastoTipo:'',pagamento:r.metodo,recorrenciaId:r.id,recorrenciaData:data,geradoAutomaticamente:true});changed=true;
    }
   }
  }
@@ -366,7 +381,7 @@ function syncRecurring(){
 window.abrirPagamentoRecorrente=function(id,data){
  const rec=S.recorrentes.find(x=>String(x.id)===String(id));
  if(!rec||!exigeConfirmacao(rec)||!dataISOValida(data)||originalJaRegistrado(rec,data))return;
- abrirPagamentoPendente({kind:'recorrente',recorrenciaId:rec.id,nome:rec.nome,valor:rec.valor,vencimento:data,metodo:rec.metodo});
+ abrirPagamentoPendente({kind:'recorrente',recorrenciaId:rec.id,nome:rec.nome,valor:valorRecorrenteNaData(rec,data),vencimento:data,metodo:rec.metodo});
 };
 window.confirmRecurringPayment=function(id,vencimento,pagamento){
  const rec=S.recorrentes.find(x=>String(x.id)===String(id));
@@ -388,18 +403,20 @@ function renderRecurring(){
    const freq={semanal:'Semanal',mensal:'Mensal',anual:'Anual'}[r.frequencia]||r.frequencia;
    const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));
    const action=ended
-    ?'<button class="rec-button primary" type="button" data-recreactivate="'+r.id+'">Reativar</button>'
-    :'<button class="rec-button danger" type="button" data-recend="'+r.id+'">Encerrar</button>';
+    ?'<button class="rec-button primary" type="button" data-recreactivate="'+r.id+'">Reativar</button><button class="rec-button delete" type="button" data-recdelete="'+r.id+'">Excluir</button>'
+    :'<button class="rec-button" type="button" data-recprice="'+r.id+'">Atualizar valor</button><button class="rec-button danger" type="button" data-recend="'+r.id+'">Encerrar</button>';
    const actions='<span class="rec-inline-actions"><button class="rec-button" type="button" data-recedit="'+r.id+'" aria-label="Editar '+escHtml(r.nome)+'">✎ Editar</button>'+action+'</span>';
    if(r.metodo==='cartao'){
     const cobranca=r.frequencia==='mensal'?'Dia da cobrança: '+(r.diaCobranca||Number(r.inicio.slice(8))):'Desde: '+displayDate(r.inicio);
+    const valorAtual=valorRecorrenteNaData(r,today());
     return '<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">'+escHtml(r.nome)+'</span><span class="rec-tag'+(ended?' inactive':'')+'">'+(ended?'Encerrada':'Ativa')+'</span>'+actions+'</div>'+
-    '<div class="rec-item-sub"><strong style="color:#f5f5f2">−'+fmt(r.valor)+'</strong> · '+freq+' · '+escHtml(kindLabel[r.metodo])+(card?' ('+escHtml(card.bank)+(card.nome?' · '+escHtml(card.nome):'')+')':'')+' · <span class="rec-item-date-inline">'+cobranca+(ended&&r.fim?' · Encerrada em: '+displayDate(r.fim):next?' · Próxima: '+displayDate(next):'')+'</span></div></div>';
+    '<div class="rec-item-sub"><strong style="color:#f5f5f2">−'+fmt(valorAtual)+'</strong> · '+freq+' · '+escHtml(kindLabel[r.metodo])+(card?' ('+escHtml(card.bank)+(card.nome?' · '+escHtml(card.nome):'')+')':'')+' · <span class="rec-item-date-inline">'+cobranca+(ended&&r.fim?' · Encerrada em: '+displayDate(r.fim):next?' · Próxima: '+displayDate(next):'')+'</span></div></div>';
    }
    const dia=r.frequencia==='mensal'?(r.tipo==='entrada'?'Dia do recebimento: ':'Dia da cobrança: ')+(r.diaCobranca||Number(r.inicio.slice(8))):'Desde: '+displayDate(r.inicio);
    const confirmacao=exigeConfirmacao(r)?' · confirmação manual':'';
+   const valorAtual=valorRecorrenteNaData(r,today());
    return '<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">'+escHtml(r.nome)+'</span><span class="rec-tag'+(ended?' inactive':'')+'">'+(ended?'Encerrada':'Ativa')+'</span>'+actions+'</div>'+
-    '<div class="rec-item-sub"><strong style="color:#f5f5f2">'+(r.tipo==='saida'?'−':'+')+fmt(r.valor)+'</strong> · '+freq+' · '+escHtml(kindLabel[r.metodo]||r.metodo)+confirmacao+' · <span class="rec-item-date-inline">'+dia+(ended&&r.fim?' · Encerrada em: '+displayDate(r.fim):next?' · Próxima: '+displayDate(next):'')+'</span></div></div>';
+    '<div class="rec-item-sub"><strong style="color:#f5f5f2">'+(r.tipo==='saida'?'−':'+')+fmt(valorAtual)+'</strong> · '+freq+' · '+escHtml(kindLabel[r.metodo]||r.metodo)+confirmacao+' · <span class="rec-item-date-inline">'+dia+(ended&&r.fim?' · Encerrada em: '+displayDate(r.fim):next?' · Próxima: '+displayDate(next):'')+'</span></div></div>';
  }
  function html(list,empty){
   if(!list.length)return '<div class="rec-caption">'+empty+'</div>';
@@ -422,12 +439,13 @@ function saveRecEditor(event){
  const cartaoId=editingRecMode==='cartao'?Number($('rec-card').value):null;
  const dataBase=$('rec-start').value;
  const reativando=!!(existing&&editingRecReactivation);
+ const atualizandoValor=!!(existing&&editingRecPriceUpdate);
  let inicio=dataBase;const fim=reativando?null:existing?existing.fim||null:null,frequencia=$('rec-frequency').value,categoria=$('rec-category').value,subcategoria=$('rec-subcategory').value;
  const mensal=frequencia==='mensal';
  const diaCobranca=mensal?Number($('rec-day').value):null;
  if(mensal){
   if($('rec-day').value.trim()===''||!Number.isInteger(diaCobranca)||diaCobranca<1||diaCobranca>31){appAlert('Informe o dia do mês entre 1 e 31.');return;}
-  if(!dataISOValida(dataBase)){appAlert(reativando?'Informe desde quando a recorrência volta a ficar ativa.':'Informe desde quando essa recorrência existe.');return;}
+  if(!dataISOValida(dataBase)){appAlert(reativando?'Informe desde quando a recorrência volta a ficar ativa.':atualizandoValor?'Informe a partir de quando o novo valor passa a valer.':'Informe desde quando essa recorrência existe.');return;}
   if(reativando&&existing.fim&&dataBase<existing.fim){appAlert('A reativação não pode começar antes da data em que a recorrência foi encerrada.');return;}
   inicio=existing?existing.inicio:proximaCobrancaMensal(dataBase,diaCobranca);
  }
@@ -437,7 +455,23 @@ function saveRecEditor(event){
  if(metodo==='cartao'&&!S.cartoes.some(c=>String(c.id)===String(cartaoId))){appAlert('Cadastre e selecione um cartão antes de salvar.');return;}
  let novoId=novoIdGlobal();while(S.recorrentes.some(x=>String(x.id)===String(novoId)))novoId++;
  const exigirConfirmacao=metodo==='boleto'||(['pix','transferencia'].includes(metodo)&&!!($('rec-confirm')&&$('rec-confirm').checked));
- const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,cicloFaturaV2:true,cicloFaturaV3:true,...(exigirConfirmacao?{exigirConfirmacao:true}:{}),...(mensal?{diaCobranca}:{})};
+ if(atualizandoValor){
+  if(!valorMonetarioValido(valor)||valor<=0){appAlert('Informe um novo valor válido.');return;}
+  const atualizado={...existing};
+  atualizado.valorHistorico=Array.isArray(existing.valorHistorico)?existing.valorHistorico.slice():[];
+  if(!atualizado.valorHistorico.length){
+    atualizado.valorHistorico.push({desde:existing.vigenteDesde||existing.inicio,valor:Number(existing.valor)});
+  }
+  atualizado.valorHistorico=atualizado.valorHistorico.filter(x=>x.desde!==dataBase);
+  atualizado.valorHistorico.push({desde:dataBase,valor:Math.round(valor*100)/100});
+  atualizado.valorHistorico.sort((a,b)=>a.desde.localeCompare(b.desde));
+  atualizado.valor=Math.round(valor*100)/100;
+  const idx=S.recorrentes.findIndex(x=>String(x.id)===String(existing.id));S.recorrentes[idx]=atualizado;
+  closeRecEditor();saveData();syncRecurring();renderExtrato();renderCartao();updateResumo();renderRecurring();
+  appAlert('Valor atualizado. Lançamentos anteriores foram preservados; o novo valor passa a valer na data escolhida.');
+  return;
+ }
+ const newRecord={id:existing?existing.id:novoId,nome,valor:Math.round(valor*100)/100,tipo,metodo,cartaoId,inicio,fim,frequencia,categoria,subcategoria,excluida:false,cicloFaturaV2:true,cicloFaturaV3:true,...(existing&&Array.isArray(existing.valorHistorico)?{valorHistorico:existing.valorHistorico.slice()}:{}),...(exigirConfirmacao?{exigirConfirmacao:true}:{}),...(mensal?{diaCobranca}:{})};
  if(existing){
   // O histórico já lançado permanece. Na reativação, novas ocorrências passam a valer da data escolhida.
   newRecord.vigenteDesde=reativando?dataBase:datePlusOne(today());
@@ -462,6 +496,17 @@ function reactivateRecurring(id){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r||r.excluida||!r.fim||r.fim>today())return;
  openRecEditor(r.id,r.metodo==='cartao'?'cartao':'conta',true);
 }
+function updateRecurringPrice(id){
+ const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r||r.excluida||r.fim&&r.fim<=today())return;
+ openRecEditor(r.id,r.metodo==='cartao'?'cartao':'conta',false,true);
+}
+async function deleteEndedRecurring(id){
+ const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r||r.excluida||!r.fim||r.fim>today())return;
+ if(!await appConfirm('Excluir o cadastro encerrado '+r.nome+'? Os lançamentos já registrados no Extrato/Cartão serão preservados.'))return;
+ r.excluida=true;
+ saveData();renderRecurring();renderExtrato();renderCartao();updateResumo();
+ appAlert('Cadastro encerrado excluído da lista. Os lançamentos anteriores foram preservados.');
+}
 function ignoreRecurring(row){
  if(!row||!row.recorrenciaId||!row.recorrenciaData)return;
  const id=String(row.recorrenciaId)+'|'+row.recorrenciaData;
@@ -479,6 +524,9 @@ validarDadosImportados=function(file){
    if(r.exigirConfirmacao!==undefined&&typeof r.exigirConfirmacao!=='boolean')throw Error('Confirmação de recorrência inválida.');
    if(r.cicloFaturaV2!==undefined&&typeof r.cicloFaturaV2!=='boolean')throw Error('Versão do ciclo da recorrência inválida.');
    if(r.cicloFaturaV3!==undefined&&typeof r.cicloFaturaV3!=='boolean')throw Error('Versão atual do ciclo da recorrência inválida.');
+   if(r.valorHistorico!==undefined){
+    if(!Array.isArray(r.valorHistorico)||r.valorHistorico.length>500||r.valorHistorico.some(x=>!x||!dataISOValida(x.desde)||!valorMonetarioValido(Number(x.valor))||Number(x.valor)<=0))throw Error('Histórico de valores da recorrência inválido.');
+   }
    ids.add(String(r.id));
   }
  }
@@ -539,8 +587,10 @@ $('rec-frequency').addEventListener('change',recurrenceTiming);
 for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('click',event=>{
  const btn=event.target.closest('button');if(!btn)return;
  if(btn.dataset.recedit)openRecEditor(btn.dataset.recedit);
+ if(btn.dataset.recprice)updateRecurringPrice(btn.dataset.recprice);
  if(btn.dataset.recend)void endRecurring(btn.dataset.recend);
  if(btn.dataset.recreactivate)reactivateRecurring(btn.dataset.recreactivate);
+ if(btn.dataset.recdelete)void deleteEndedRecurring(btn.dataset.recdelete);
 });
 const oldShowPage=showPage;
 showPage=function(id,btn){oldShowPage(id,btn);if(id==='extrato'||id==='cartao')renderRecurring();};
