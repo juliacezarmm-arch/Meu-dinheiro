@@ -1104,6 +1104,36 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
  .inv-evolution-items{grid-template-columns:1fr}
  .inv-evolution-items.scrollable{max-height:260px}
 }
+
+/* Mini gráfico por tipo e janela compacta de inflação. */
+.invest-type-summary-head{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.invest-type-actions{display:flex;align-items:center;gap:4px;margin-left:auto}
+.invest-type-mode{border:1px solid #355e50;border-radius:8px;padding:6px 9px;min-height:30px;background:#141e1a;color:#d9ede4;font-size:10px;font-weight:800;cursor:pointer}
+.invest-type-mode.active{background:#0c4535;color:#a0f3d1;border-color:#19b080}
+.invest-type-summary-head .invest-collapse{margin-left:4px}
+.invest-type-chart-wrap{height:212px;min-width:0;display:flex;flex-direction:column}
+.invest-type-chart-wrap svg{display:block;min-width:0;width:100%;height:192px;flex:1}
+.invest-type-chart-wrap p{text-align:center;color:#b9cec4;font-size:9.5px;line-height:1.2;margin:1px 0 3px}
+.inflacao-overlay[hidden]{display:none!important}
+.inflacao-overlay{position:fixed;inset:0;z-index:20000;padding:12px;display:grid;place-items:center;background:rgba(0,0,0,.75);backdrop-filter:blur(4px)}
+.inflacao-modal{width:min(100%,390px);max-height:91dvh;overflow-y:auto;background:#111b19;color:#f0faf4;border:1px solid #386050;border-radius:14px;padding:15px;box-shadow:0 18px 65px rgba(0,0,0,.7)}
+.inflacao-title{display:flex;align-items:start;justify-content:space-between;gap:7px}
+.inflacao-title h2{font-size:17px;margin:0}
+.inflacao-title p{font-size:10px;color:#a6c5b6;line-height:1.3;margin:5px 0}
+.inflacao-close{background:#23352e;color:#fff;border:1px solid #4c6c5b;border-radius:8px;width:29px;height:29px;cursor:pointer}
+.inflacao-years{display:flex;align-items:center;justify-content:center;gap:22px;margin:8px 0 11px}
+.inflacao-years button{border-radius:8px;background:#172f26;border:1px solid #426657;color:#baf0d3;font-size:18px;padding:2px 10px;cursor:pointer}
+.inflacao-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.inflacao-month{display:grid;grid-template-columns:27px minmax(0,1fr) 10px;gap:5px;align-items:center;min-width:0;padding:6px;background:#0c1714;border:1px solid #2b5140;border-radius:9px}
+.inflacao-month span{font-size:11px;font-weight:750}
+.inflacao-month input{box-sizing:border-box;min-width:0;width:100%;max-width:100%;background:#1b3026!important;border:1px solid #39594b!important;border-radius:7px;padding:7px 4px!important;color:#fff!important;text-align:right;font-size:12px!important}
+.inflacao-month small{font-size:10px;color:#afd4bf}
+.inflacao-total{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:10px;margin-top:11px;border-top:1px solid #38604f}
+.inflacao-total div{display:flex;flex-direction:column;gap:4px;padding:9px;border:1px solid #2f5140;border-radius:9px;background:#11271d}
+.inflacao-total span{font-size:10px;color:#b4c9bf}
+.inflacao-total strong{font-size:16px;color:#75edb5}
+.inflacao-info{font-size:10px;color:#b5cbbf;line-height:1.4;margin:8px 0 0}
+@media(max-width:700px){.invest-type-actions{margin-left:0}.invest-type-chart-wrap{height:198px}.invest-type-mode{padding:6px 7px}}
 </style>
 </head>
 <body>
@@ -1528,7 +1558,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   </div>
 </div>
 <script>
-const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null};
+const S={extrato:[],cartao:[],invest:[],cartoes:[],saldoInicial:null,inflacao:{}};
 let dataFileHandle=null;
 let hasUnsavedChanges=false;
 let appReady=false;
@@ -1712,6 +1742,9 @@ function validarDadosImportados(arquivo){
         }
       }
     }
+  }
+  if(dados.inflacao!==undefined){
+    if(!dados.inflacao||typeof dados.inflacao!=='object'||Array.isArray(dados.inflacao)||Object.entries(dados.inflacao).length>600||Object.entries(dados.inflacao).some(([k,v])=>!/^[0-9]{4}-(0[1-9]|1[0-2])$/.test(k)||typeof v!=='number'||!Number.isFinite(v)||v< -99.99||v>1000))throw Error('Cadastro de IPCA inválido.');
   }
   if(dados.saldoInicial!==undefined&&dados.saldoInicial!==null){
     if(!saldoInicialValido(dados.saldoInicial)||!dataISOValida(dados.saldoInicial.data)||dados.saldoInicial.idsIgnorados.some(id=>!Number.isSafeInteger(Number(id))))throw Error('Saldo inicial inválido.');
@@ -1963,6 +1996,7 @@ function applyDataFile(data){
   ['extrato','cartao','invest','cartoes'].forEach(key=>{
     S[key]=Array.isArray(dados[key])?dados[key]:[];
   });
+  S.inflacao=Object.fromEntries(Object.entries(dados.inflacao||{}).filter(([k])=>/^[0-9]{4}-(0[1-9]|1[0-2])$/.test(k)));
   S.saldoInicial=saldoInicialValido(dados.saldoInicial)
     ? {valor:Number(dados.saldoInicial.valor),data:dados.saldoInicial.data,idsIgnorados:dados.saldoInicial.idsIgnorados.map(String)}
     : null;
@@ -4432,6 +4466,103 @@ function investSparkline(items){
   const path=coords.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
   return '<svg viewBox="0 0 82 28" aria-hidden="true"><path d="'+path+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
+
+/* Indicadores de inflação IPCA, gravados no JSON do usuário. */
+let investTypeView='tabela',inflacaoAnoSelecionado=null;
+function inflacaoMesesAno(ano){
+  return Array.from({length:12},(_,i)=>{
+    const key=ano+'-'+String(i+1).padStart(2,'0');
+    return {key,label:MESES[i],taxa:Object.prototype.hasOwnProperty.call(S.inflacao,key)?S.inflacao[key]:null};
+  });
+}
+function calcInflacaoAno(ano){
+  const preenchidos=inflacaoMesesAno(ano).filter(m=>typeof m.taxa==='number'&&Number.isFinite(m.taxa));
+  const produto=preenchidos.reduce((f,m)=>f*(1+m.taxa/100),1);
+  return {n:preenchidos.length,composto:(produto-1)*100,soma:preenchidos.reduce((t,m)=>t+m.taxa,0)};
+}
+function pctInflacao(v){return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';}
+function setInvestTypeView(view){investTypeView=view==='grafico'?'grafico':'tabela';renderInvest();}
+function abrirInflacaoModal(){
+  inflacaoAnoSelecionado=investMes.getFullYear();
+  renderInflacaoModal();
+  const modal=document.getElementById('inflacao-overlay');
+  modal.hidden=false;modal.querySelector('.inflacao-close').focus();
+}
+function fecharInflacaoModal(event){
+  const modal=document.getElementById('inflacao-overlay');
+  if(event&&event.target!==modal&&!event.target.closest('.inflacao-close'))return;
+  modal.hidden=true;
+  const btn=document.getElementById('btn-inflacao');if(btn)btn.focus();
+}
+function mudarAnoInflacao(delta){inflacaoAnoSelecionado+=delta;renderInflacaoModal();}
+function renderInflacaoTotais(){
+  const r=calcInflacaoAno(inflacaoAnoSelecionado);
+  document.getElementById('inflacao-acumulado').textContent=r.n?pctInflacao(r.composto):'—';
+  document.getElementById('inflacao-soma').textContent=r.n?pctInflacao(r.soma):'—';
+  document.getElementById('inflacao-cobertura').textContent=r.n+'/12 meses preenchidos'+(r.n===12?' · acumulado do ano':' · acumulado parcial');
+}
+function renderInflacaoModal(){
+  const ano=inflacaoAnoSelecionado;
+  document.getElementById('inflacao-ano').textContent=ano;
+  document.getElementById('inflacao-grid').innerHTML=inflacaoMesesAno(ano).map(m=>`<label class="inflacao-month">
+    <span>${m.label}</span>
+    <input aria-label="IPCA de ${m.label}/${ano}" type="number" inputmode="decimal" step="0.01" min="-99.99" max="1000" placeholder="—" value="${m.taxa===null?'':m.taxa}" onchange="atualizarInflacao('${m.key}',this.value,this)">
+    <small>%</small>
+  </label>`).join('');
+  renderInflacaoTotais();
+}
+function atualizarInflacao(key,raw,input){
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(key))return;
+  const str=String(raw).trim().replace(',','.');
+  if(str!==''&&(!Number.isFinite(Number(str))||Number(str)<-99.99||Number(str)>1000)){
+    appAlert('Informe uma taxa válida de IPCA.');
+    const old=S.inflacao[key];input.value=typeof old==='number'?old:'';return;
+  }
+  if(str==='')delete S.inflacao[key];
+  else S.inflacao[key]=Math.round(Number(str)*100)/100;
+  saveData();renderInflacaoTotais();
+  if(investTypeView==='grafico')renderInvest();
+}
+document.addEventListener('keydown',e=>{
+  const modal=document.getElementById('inflacao-overlay');
+  if(e.key==='Escape'&&modal&&!modal.hidden){e.preventDefault();fecharInflacaoModal();}
+});
+function renderInvestTypeChart(linhas){
+  const anual=investPeriodo==='ano';
+  const ipca=anual?calcInflacaoAno(investMes.getFullYear()):null;
+  const ref=ipca&&ipca.n?ipca.composto:null;
+  const valores=linhas.map(l=>l.pct).filter(v=>Number.isFinite(v));
+  if(ref!==null)valores.push(ref);
+  const lo=Math.min(0,...valores),hi=Math.max(0,...valores),margem=Math.max(1,(hi-lo)*.12);
+  const minimo=lo-margem,maximo=hi+margem;
+  const W=780,H=210,L=48,R=17,T=21,B=153;
+  const Y=v=>B-(v-minimo)/(maximo-minimo)*(B-T);
+  const zero=Y(0),quant=Math.max(linhas.length,1),w=(W-L-R)/quant;
+  const bars=linhas.map((r,i)=>{
+    const centro=L+(i+.5)*w,preco=r.pct;
+    const label=preco===null?'—':(preco>0?'+':'')+pctInflacao(preco);
+    const valido=Number.isFinite(preco);
+    const pos=valido?Y(preco):zero;
+    const barY=Math.min(zero,pos),barH=valido?Math.max(1,Math.abs(zero-pos)):0;
+    const cor=valido&&preco<0?'#f06474':r.tipo.toLowerCase().includes('fundo')?'#a36ae3':'#15d8a5';
+    const labelY=!valido?zero-10:preco>=0?Math.max(T+11,barY-7):Math.min(B-3,barY+barH+14);
+    const tipo=r.tipo.toLowerCase().includes('fundo')?'Fundos':r.tipo;
+    return `<g>
+      ${valido?`<rect x="${(centro-w*.18).toFixed(1)}" y="${barY.toFixed(1)}" width="${(w*.36).toFixed(1)}" height="${barH.toFixed(1)}" rx="4" fill="${cor}"/>`:''}
+      <text x="${centro.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${cor}" font-size="11" font-weight="800" text-anchor="middle">${label}</text>
+      <text x="${centro.toFixed(1)}" y="184" fill="#dae9e2" font-size="11" font-weight="800" text-anchor="middle">${escHtml(tipo)}</text>
+      <title>${escHtml(r.tipo)} · ${label}</title>
+    </g>`;
+  }).join('');
+  const ipcaLinha=ref===null?'':`<line x1="${L}" y1="${Y(ref).toFixed(1)}" x2="${W-R}" y2="${Y(ref).toFixed(1)}" stroke="#e7ebed" stroke-width="1.8" stroke-dasharray="7 5"/><text x="${W-R}" y="${Math.max(T+10,Y(ref)-6).toFixed(1)}" font-size="10" text-anchor="end" fill="#f1f7f3">IPCA ${pctInflacao(ref)}</text>`;
+  const svg=`<svg viewBox="0 0 ${W} ${H}" aria-label="Rentabilidade por tipo de investimento" role="img">
+    ${Array.from({length:5},(_,i)=>{const v=minimo+(maximo-minimo)*i/4;return `<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#23443a" stroke-dasharray="3 4"/><text x="${L-6}" y="${(Y(v)+3).toFixed(1)}" text-anchor="end" font-size="10" fill="#9fc4b5">${v.toFixed(1).replace('.',',')}%</text>`;}).join('')}
+    <line x1="${L}" x2="${W-R}" y1="${zero.toFixed(1)}" y2="${zero.toFixed(1)}" stroke="#80998f"/>
+    ${bars}${ipcaLinha}
+  </svg>`;
+  const info=anual?(ref===null?'IPCA ainda não cadastrado.':ipca.n===12?'IPCA acumulado do ano: '+pctInflacao(ref):'IPCA parcial ('+ipca.n+'/12 meses): '+pctInflacao(ref)+' · Não representa o ano inteiro.'):'Rentabilidade percentual no mês selecionado.';
+  return `<div class="invest-type-chart-wrap">${svg}<p>${info}</p></div>`;
+}
 function renderInvestTypeSummary(investimentos){
   const host=document.getElementById('inv-type-summary');
   if(!host)return;
@@ -4455,9 +4586,14 @@ function renderInvestTypeSummary(investimentos){
   host.innerHTML=`<section class="invest-type-summary">
     <div class="invest-type-summary-head">
       <div class="invest-type-title"><span class="invest-type-title-icon">◔</span><div><strong>Por tipo de investimento</strong><span>Desempenho no período selecionado (${periodoLabel}).</span></div></div>
+      <div class="invest-type-actions">
+        <button type="button" class="invest-type-mode ${investTypeView==='tabela'?'active':''}" onclick="setInvestTypeView('tabela')">▦ Tabela</button>
+        <button type="button" class="invest-type-mode ${investTypeView==='grafico'?'active':''}" onclick="setInvestTypeView('grafico')">▥ Gráfico</button>
+        <button type="button" class="invest-type-mode" id="btn-inflacao" onclick="abrirInflacaoModal()">Inflação</button>
+      </div>
       <button class="invest-collapse" type="button" onclick="toggleInvestTypeSummary()">${investTypeOpen?'⌃ Recolher':'⌄ Expandir'}</button>
     </div>
-    ${investTypeOpen?`<div class="invest-type-table-wrap">
+    ${investTypeOpen?(investTypeView==='grafico'?renderInvestTypeChart(linhas):`<div class="invest-type-table-wrap">
       <table class="invest-type-table">
         <colgroup><col style="width:25%"><col style="width:14%"><col style="width:11%"><col style="width:11%"><col style="width:14%"><col style="width:14%"><col style="width:11%"></colgroup>
         <thead><tr><th>Tipo</th><th>${inicioLabel}</th><th>Aportes</th><th>Resgates</th><th>Rendimento</th><th>${fimLabel}</th><th>Rentab.</th></tr></thead>
@@ -4468,7 +4604,7 @@ function renderInvestTypeSummary(investimentos){
           return `<tr><td><span class="invest-type-cell"><span class="invest-type-icon ${visual.cls}">${investTipoIconeResumo(visual.cls,visual.icon)}</span><span>${escHtml(r.tipo)}${r.qtd>1?'<small> ('+r.qtd+')</small>':''}</span></span></td><td data-label="${inicioLabel}">${fmt(r.base)}</td><td data-label="Aportes">${fmt(r.aportes)}</td><td data-label="Resgates">${fmt(r.resgates)}</td><td data-label="Rendimento" class="${cls}">${r.rendimento>0?'+':''}${fmt(r.rendimento)}</td><td data-label="Valor final">${fmt(r.patrimonio)}</td><td data-label="Rentab." class="${cls}">${pct}</td></tr>`;
         }).join('')}</tbody>
       </table>
-    </div>`:''}
+    </div>`):''}
   </section>`;
 }
 function renderInvest(){
@@ -5079,6 +5215,16 @@ setInterval(()=>{if(autoSaveEnabled&&hasUnsavedChanges)void autoSaveDataFile();}
 setInterval(updateResumo,5*60*1000);
 </script>
 <script src="js/recorrentes.js?v=20261012-rec-diagnostic3"></script>
+<div id="inflacao-overlay" class="inflacao-overlay" hidden onclick="fecharInflacaoModal(event)">
+  <section class="inflacao-modal" role="dialog" aria-modal="true" aria-label="Cadastro mensal da inflação">
+    <div class="inflacao-title"><div><h2>Inflação (IPCA)</h2><p>Informe a taxa mensal. Mês vazio não entra no cálculo.</p></div><button class="inflacao-close" type="button" onclick="fecharInflacaoModal(event)" aria-label="Fechar">×</button></div>
+    <div class="inflacao-years"><button type="button" onclick="mudarAnoInflacao(-1)">‹</button><strong id="inflacao-ano"></strong><button type="button" onclick="mudarAnoInflacao(1)">›</button></div>
+    <div id="inflacao-grid" class="inflacao-grid"></div>
+    <div class="inflacao-total"><div><span>Acumulado composto</span><strong id="inflacao-acumulado">—</strong></div><div><span>Soma simples</span><strong id="inflacao-soma">—</strong></div></div>
+    <p class="inflacao-info" id="inflacao-cobertura"></p>
+    <p class="inflacao-info">Você pode começar em Out/2026 e deixar Jan–Set em branco. Salve o JSON para conservar os valores.</p>
+  </section>
+</div>
 </body>
 </html>
 
