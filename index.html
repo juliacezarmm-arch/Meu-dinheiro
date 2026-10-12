@@ -20,19 +20,25 @@
 body{font-family:var(--font-sans);color:var(--color-text-primary);background:var(--color-background-primary);min-height:100vh;color-scheme:dark;scroll-padding-top:185px}
 .app{max-width:1040px;margin:0 auto;padding:0 0 1rem}
 .app-topbar{
-  position:sticky;top:0;z-index:12000;background:#050505;box-shadow:0 8px 18px rgba(0,0,0,.42);
-  isolation:isolate;padding-top:.3rem;display:grid;grid-template-columns:minmax(360px,.9fr) minmax(430px,1.1fr);
-  align-items:stretch
+  position:sticky;top:0;z-index:12000;background:linear-gradient(180deg,#08100f 0%,#070b0a 100%);
+  border:1px solid #1f2b28;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.42);
+  isolation:isolate;margin-top:.35rem;display:grid;grid-template-columns:minmax(365px,.92fr) minmax(455px,1.08fr);
+  align-items:stretch;overflow:hidden
 }
-.header{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:.62rem 1rem;border-bottom:0.5px solid var(--color-border-tertiary)}
-.header h1{font-size:19px;font-weight:650}
+.header{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:.62rem 1rem;border-bottom:1px solid #26322f}
+.header h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
 .brand-logo{width:38px;height:38px;object-fit:contain;flex:none;border:0;background:transparent;padding:0;margin:0}
-.today-label{margin-left:auto;font-size:11px;color:var(--color-text-secondary);background:#171716;border:1px solid #3a3934;border-radius:999px;padding:5px 9px;white-space:nowrap}
-.data-tools{grid-column:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:.42rem .45rem .48rem 1rem;border-bottom:0.5px solid var(--color-border-tertiary)}
-.data-tools button,.data-tools label{background:#111716;color:var(--color-text-primary);border:1px solid #343d39;border-radius:8px;padding:6px 7px;font-size:10.5px;font-weight:800;text-align:center;cursor:pointer;white-space:nowrap}
-.data-tools button:hover,.data-tools label:hover{border-color:#9FE1CB}
-.autosave-toggle{display:inline-flex;align-items:center;justify-content:center;gap:6px}
-.autosave-dot{width:8px;height:8px;border-radius:50%;background:#28d39f;box-shadow:0 0 0 2px rgba(40,211,159,.14)}
+.today-label{margin-left:auto;font-size:10.5px;color:#d4d7d5;background:#111716;border:1px solid #36403d;border-radius:999px;padding:5px 9px;white-space:nowrap}
+.data-tools{grid-column:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:.5rem .55rem .55rem 1rem}
+.data-tools button,.data-tools label{
+  min-height:38px;background:#111716;color:#eef2f0;border:1px solid #33403c;border-radius:8px;padding:6px 9px;
+  font-size:10.5px;font-weight:750;text-align:center;cursor:pointer;white-space:nowrap;
+  display:flex;align-items:center;justify-content:center;gap:7px
+}
+.data-tools button:hover,.data-tools label:hover{border-color:#5e8075;background:#14201d}
+.menu-svg{width:17px;height:17px;display:block;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.autosave-toggle{display:inline-flex!important;align-items:center;justify-content:center;gap:7px}
+.autosave-dot{width:7px;height:7px;border-radius:50%;background:#28d39f;box-shadow:0 0 0 2px rgba(40,211,159,.12)}
 .autosave-toggle.autosave-off{border-color:#654946!important;color:#e7c2bd!important;background:#211716!important}
 .autosave-toggle.autosave-off .autosave-dot{background:#d56b62;box-shadow:0 0 0 2px rgba(213,107,98,.12)}
 .autosave-toggle.autosave-on{border-color:#315f4b!important;background:#12241d!important;color:#baf2dc!important}
@@ -45,26 +51,32 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .save-status[data-state="unsaved"]{background:#2b2117;border-color:#866334;color:#ffda9b}
 .save-status[data-state="idle"]{background:#171716;border-color:#46463e;color:#e0ded6}
 @media(max-width:600px){.save-status{top:10px;right:10px;width:min(330px,calc(100vw - 20px))}}
-.nav{grid-column:2;display:flex;align-items:stretch;border-bottom:0.5px solid var(--color-border-tertiary);overflow-x:auto;padding:0 1rem 0 .4rem}
-.nav button{
-  flex:1;min-width:68px;padding:5px 5px 6px;font-size:10.5px;background:transparent;border:none;border-bottom:2px solid transparent;
-  cursor:pointer;color:var(--color-text-secondary);white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px
+.nav{
+  grid-column:2;display:flex;align-items:stretch;overflow-x:auto;padding:0 .55rem 0 .45rem;
+  border-left:1px solid #26322f
 }
-.nav button .ti{font-size:15px;margin:0;color:#bac7c2}
-.nav button.active{color:#56e4b5;border-bottom-color:#1D9E75;font-weight:800}
-.nav button.active .ti{color:#30d9a1}
+.nav button{
+  position:relative;flex:1;min-width:72px;padding:7px 6px 8px;font-size:10px;background:transparent;border:0;border-bottom:3px solid transparent;
+  cursor:pointer;color:#b9c0bd;white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px
+}
+.nav button+button::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:#26322f}
+.nav .menu-svg{width:19px;height:19px;stroke-width:1.75;color:#c5cfcb}
+.nav button.active{color:#35e2ac;border-bottom-color:#25d59f;font-weight:800}
+.nav button.active .menu-svg{color:#35e2ac}
 @media(max-width:820px){
   .app-topbar{grid-template-columns:1fr}
   .header,.data-tools,.nav{grid-column:1}
-  .data-tools{padding:.42rem 1rem}
-  .nav{padding:0 1rem}
+  .data-tools{padding:.45rem 1rem .5rem}
+  .nav{padding:0 1rem;border-left:0;border-top:1px solid #26322f}
 }
 @media(max-width:560px){
   .app{max-width:100%}
+  .app-topbar{margin-top:0;border-left:0;border-right:0;border-radius:0}
   .header{padding:.55rem .7rem}
   .header h1{font-size:16px}
   .brand-logo{width:34px;height:34px}
-  .data-tools{grid-template-columns:repeat(5,minmax(86px,1fr));overflow-x:auto;padding:.35rem .7rem}
+  .data-tools{grid-template-columns:repeat(4,minmax(104px,1fr));overflow-x:auto;padding:.4rem .7rem}
+  .data-tools button,.data-tools label{min-height:34px;font-size:9.5px;padding:5px 7px}
   .nav{padding:0 .7rem}
   .nav button{min-width:66px;font-size:9.5px}
 }
@@ -683,20 +695,40 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     <div class="today-label" id="today-label"></div>
   </div>
   <div class="data-tools">
-    <button type="button" onclick="openDataFile()" title="Abra um JSON para consultar e editar seus registros.">Abrir dados</button>
+    <button type="button" onclick="openDataFile()" title="Abra um JSON para consultar e editar seus registros.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l1.8 2H20.5v9.5H3.5z"/><path d="M3.5 7.5V5h6l1.8 2"/></svg>
+      <span>Abrir dados</span>
+    </button>
     <button type="button" id="json-permission-button" onclick="autorizarJsonPendente()" title="Pedir autorização do Chrome para editar o JSON selecionado." hidden>Autorizar edição do JSON</button>
-    <button type="button" onclick="manualSave()" title="Grava diretamente as alterações no arquivo JSON aberto.">Salvar</button>
-    <button type="button" id="autosave-toggle" class="autosave-toggle" onclick="toggleAutoSave()" aria-pressed="true" title="Liga ou desliga o salvamento automático no JSON aberto. O botão Salvar continua funcionando normalmente."><span class="autosave-dot" aria-hidden="true"></span><span id="autosave-toggle-label">Auto: ligado</span></button>
-    <button type="button" onclick="saveAsDataFile()" title="Cria um JSON novo ou salva os dados em outro arquivo.">Salvar como</button>
-    <button type="button" onclick="atualizarAplicativo()" title="Atualiza o aplicativo, fechando o arquivo atual.">Atualizar</button>
-
+    <button type="button" onclick="manualSave()" title="Grava diretamente as alterações no arquivo JSON aberto.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h11l3 3V20.5H5z"/><path d="M8 3.5v6h7v-6"/><path d="M8 14h8v6.5H8z"/></svg>
+      <span>Salvar</span>
+    </button>
+    <button type="button" onclick="saveAsDataFile()" title="Cria um JSON novo ou salva os dados em outro arquivo.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9l3 3V20.5H6z"/><path d="M9 3.5v5.5h6"/><path d="M12 12v6"/><path d="M9 15h6"/></svg>
+      <span>Salvar como</span>
+    </button>
+    <button type="button" id="autosave-toggle" class="autosave-toggle" onclick="toggleAutoSave()" aria-pressed="true" title="Liga ou desliga o salvamento automático no JSON aberto. O botão Salvar continua funcionando normalmente.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M19 12a7 7 0 1 1-2-5"/><path d="M17 4.5l2 2.5 2.5-2"/></svg>
+      <span class="autosave-dot" aria-hidden="true"></span><span id="autosave-toggle-label">Auto: ligado</span>
+    </button>
   </div>
   <nav class="nav">
-    <button onclick="showPage('resumo',this)" class="active" title="Mostra o resumo do mês: saldo, entradas, saídas, metas, investimentos e gráficos."><i class="ti ti-home" aria-hidden="true"></i> Resumo</button>
-    <button onclick="showPage('extrato',this)" title="Onde você lança dinheiro que entrou, gastos, investimentos e valores guardados em metas."><i class="ti ti-receipt" aria-hidden="true"></i> Extrato</button>
-    <button onclick="showPage('cartao',this)" title="Onde você cadastra cartões e compras no crédito, inclusive parceladas."><i class="ti ti-credit-card" aria-hidden="true"></i> Cartão</button>
-    <button onclick="showPage('invest',this)" title="Onde você cadastra investimentos e acompanha quanto eles renderam."><i class="ti ti-trending-up" aria-hidden="true"></i> Investimentos</button>
-    <button onclick="showPage('metas',this)" title="Onde você cadastra objetivos, como viagem, computador ou reserva."><i class="ti ti-flag" aria-hidden="true"></i> Metas</button>
+    <button onclick="showPage('resumo',this)" class="active" title="Mostra o resumo do mês: saldo, entradas, saídas, metas, investimentos e gráficos.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v9h11v-9"/><path d="M10 19v-5h4v5"/></svg><span>Resumo</span>
+    </button>
+    <button onclick="showPage('extrato',this)" title="Onde você lança dinheiro que entrou, gastos, investimentos e valores guardados em metas.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3.5" width="12" height="17" rx="1.5"/><path d="M9 8h6M9 11.5h6M9 15h4"/></svg><span>Extrato</span>
+    </button>
+    <button onclick="showPage('cartao',this)" title="Onde você cadastra cartões e compras no crédito, inclusive parceladas.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M3.5 10h17"/><path d="M7 15h4"/></svg><span>Cartão</span>
+    </button>
+    <button onclick="showPage('invest',this)" title="Onde você cadastra investimentos e acompanha quanto eles renderam.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V12M10 19V8M15 19V5M20 19V10"/></svg><span>Investimentos</span>
+    </button>
+    <button onclick="showPage('metas',this)" title="Onde você cadastra objetivos, como viagem, computador ou reserva.">
+      <svg class="menu-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 12 18 6"/></svg><span>Metas</span>
+    </button>
   </nav>
   </div>
 
