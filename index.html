@@ -423,9 +423,9 @@ td:last-child{white-space:normal}
 .invest-summary-copy .value.blue{color:#21adff}
 .invest-summary-copy .value.green{color:#15dca2}
 .invest-summary-copy small{display:block;color:#c0cace;font-size:10px;line-height:1.25;margin-top:6px;white-space:normal;overflow-wrap:break-word}
-.invest-summary-card .inv-rend-summary{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:4px 6px}
+.invest-summary-card .inv-rend-summary{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;column-gap:12px;row-gap:7px}
 .invest-summary-card .inv-rend-summary .value{font-size:16px;letter-spacing:-.025em}
-.invest-summary-card .inv-rend-percent{font-size:9px;font-weight:850;padding:3px 5px;border-radius:99px;background:#074932;border-color:#12664b;color:#23edb3;white-space:nowrap}
+.invest-summary-card .inv-rend-percent{font-size:11.5px;line-height:1.3;letter-spacing:.01em;font-weight:850;padding:4px 8px;border-radius:99px;background:#074932;border-color:#12664b;color:#23edb3;white-space:nowrap;flex:none}
 .invest-type-summary{background:#101514;border-color:#293632;padding:.65rem;margin:.65rem 0}
 .invest-type-summary-head{align-items:center;margin-bottom:.45rem}
 .invest-type-title{display:flex;align-items:center;gap:10px}
@@ -4391,7 +4391,7 @@ function renderExtrato(){
 }
 
 function fmtInvestPct(value){
-  return Number(value).toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4})+'%';
+  return Number(value).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
 }
 function valorInicialInvestimento(item){
   const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));

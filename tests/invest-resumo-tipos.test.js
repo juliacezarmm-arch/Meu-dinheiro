@@ -6,7 +6,9 @@ assert(html.includes('id="inv-type-summary"'),'Resumo por tipo ausente');
 assert(html.includes('Por tipo de investimento'),'Titulo do resumo por tipo ausente');
 assert(html.includes('<th>Valor inicial</th><th>Patrimônio atual</th><th>Rendimento</th><th>Rentabilidade</th>'),'Colunas esperadas ausentes');
 assert(html.includes('<div class="label">Patrimônio atual</div>'),'Total geral deve representar patrimonio atual');
-assert(html.includes('minimumFractionDigits:4,maximumFractionDigits:4'),'Rentabilidade deve ter quatro casas');
+assert(/function fmtInvestPct\(value\)\s*\{\s*return Number\(value\)\.toLocaleString\('pt-BR',\{minimumFractionDigits:2,maximumFractionDigits:2\}\)\+'%'/.test(html),'Rentabilidade deve ter duas casas decimais');
+assert(html.includes('.invest-summary-card .inv-rend-percent{font-size:11.5px'),'Percentual do rendimento do período deve ser maior');
+assert(html.includes('column-gap:12px;row-gap:7px'),'Valor e percentual do rendimento do período precisam de espaçamento');
 assert(!html.includes('aportes líquidos (aportes menos resgates)'),'Descricao antiga da base da porcentagem nao pode permanecer');
 
 function extract(name,next){
@@ -30,4 +32,4 @@ assert.strictEqual(r.resgatado,500);
 assert.strictEqual(r.rendimento,150,'Rendimento = patrimonio + resgates - aportes');
 assert.strictEqual(r.pct,10,'Percentual deve usar total aportado como base; resgate nao deve reduzir o denominador');
 
-console.log('PASS: resumo por tipo, valor inicial, rendimento com resgates e percentual de quatro casas');
+console.log('PASS: resumo por tipo, valor inicial, rendimento com resgates e percentual de duas casas');
