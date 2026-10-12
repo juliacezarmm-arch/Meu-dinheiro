@@ -3,8 +3,10 @@ const html=fs.readFileSync('index.html','utf8');
 const match=html.match(/<script\s*>([\s\S]*?)<\/script>/);
 assert(match,'Script principal ausente');
 const src=match[1];
-for(const name of ['fileSignature','fileWriteAllowed','fileUnchanged','writeDataFile','finishFileSave','saveDataFile','autoSaveDataFile','saveAsDataFile','openDataFile','atualizarAplicativo','atualizarSemSalvar','salvarEAtualizar','setFileAccessState'])assert(src.includes('function '+name+'('),'Função ausente: '+name);
-for(const token of ['indexedDB','localStorage','persistLocalSession','restoreLocalSession','localSet(','localGet(','downloadDataFile(','scheduleLocalSave('])assert(!src.includes(token),'Persistência no navegador proibida: '+token);
+for(const name of ['fileSignature','fileWriteAllowed','fileUnchanged','writeDataFile','finishFileSave','saveDataFile','autoSaveDataFile','saveAsDataFile','openDataFile','atualizarAplicativo','atualizarSemSalvar','salvarEAtualizar','setFileAccessState','toggleAutoSave','renderAutoSaveControl'])assert(src.includes('function '+name+'('),'Função ausente: '+name);
+for(const token of ['indexedDB','persistLocalSession','restoreLocalSession','localSet(','localGet(','downloadDataFile(','scheduleLocalSave('])assert(!src.includes(token),'Persistência financeira no navegador proibida: '+token);
+assert(src.includes("localStorage.getItem('meuDinheiroAutoSave')")&&src.includes("localStorage.setItem('meuDinheiroAutoSave'"),'A única preferência local permitida é o liga/desliga do autosave');
+assert(!/localStorage\.(?:setItem|getItem)\([^\n]*?(?:extrato|cartao|invest|saldoInicial|recorr)/i.test(src),'Dados financeiros não podem ser persistidos no localStorage');
 assert(src.includes("window.addEventListener('beforeunload'"),'F5 precisa proteger alterações pendentes');
 assert(src.includes('queueFileSave(handle,false)'),'Autosave apenas com permissao existente');
 assert(src.includes("new Blob([content],{type:'application/json;charset=utf-8'})"),'Salvamento deve calcular o tamanho real em bytes');
@@ -21,10 +23,12 @@ assert(!src.includes('void restoreLocalSession()'),'Proibido restaurar sessão a
 function fn(name){const re=new RegExp('^(?:async )?function '+name+'\\([^\\n]*\\)\\{.*?^\\}\\n','ms');const m=src.match(re);assert(m,'Não extraiu '+name);return m[0];}
 let timer=0,write=0,permission=[];
 const ctx=vm.createContext({console,Promise,Error,Date,Number,String,JSON,setTimeout:(f,n)=>{timer=n;return 1},clearTimeout:()=>{},fileWriteAllowed:async(h,ask)=>{permission.push(ask);return true;},fileUnchanged:async()=>true,writeDataFile:async()=>{write++;return 1;},finishFileSave:async()=>{vm.runInContext('hasUnsavedChanges=false',ctx);return true;},setSaveStatus:()=>{}});
-vm.runInContext('let dataFileHandle=null,hasUnsavedChanges=false,appReady=true,isApplyingData=false,dataRevision=0,diskSaveTimer=null,fileSaveQueue=Promise.resolve();'+fn('saveData')+fn('queueFileSave')+fn('autoSaveDataFile'),ctx);
+vm.runInContext('let dataFileHandle=null,hasUnsavedChanges=false,appReady=true,isApplyingData=false,dataRevision=0,diskSaveTimer=null,fileSaveQueue=Promise.resolve();const AUTO_SAVE_DELAY=10000;let autoSaveEnabled=true;'+fn('saveData')+fn('queueFileSave')+fn('autoSaveDataFile'),ctx);
 vm.runInContext('saveData()',ctx);
 assert.strictEqual(vm.runInContext('hasUnsavedChanges',ctx),false,'Sem arquivo nao ha alteracoes permitidas');
 vm.runInContext("dataFileHandle={name:'teste.json'};saveData()",ctx);
 assert.strictEqual(vm.runInContext('hasUnsavedChanges',ctx),true);
-assert.strictEqual(timer,10000,'Somente JSON em 10 segundos');
-(async()=>{await vm.runInContext('autoSaveDataFile()',ctx);assert.deepStrictEqual(permission,[false]);assert.strictEqual(write,1);assert.strictEqual(vm.runInContext('hasUnsavedChanges',ctx),false);console.log('PASS: JSON exclusivo, bloqueio sem arquivo, autosave autorizado, aviso F5 e diálogo de atualização');})().catch(e=>{console.error(e);process.exitCode=1});
+assert.strictEqual(timer,10000,'Autosave ligado deve aguardar 10 segundos');
+vm.runInContext('autoSaveEnabled=false;timer=0;saveData()',ctx);
+assert.strictEqual(timer,0,'Autosave desligado não pode agendar gravação');
+(async()=>{assert.strictEqual(await vm.runInContext('autoSaveDataFile()',ctx),false,'Autosave desligado não pode gravar');assert.strictEqual(write,0);vm.runInContext('autoSaveEnabled=true',ctx);await vm.runInContext('autoSaveDataFile()',ctx);assert.deepStrictEqual(permission,[false]);assert.strictEqual(write,1);assert.strictEqual(vm.runInContext('hasUnsavedChanges',ctx),false);console.log('PASS: JSON exclusivo, preferência local segura, autosave liga/desliga, aviso F5 e diálogo de atualização');})().catch(e=>{console.error(e);process.exitCode=1});
