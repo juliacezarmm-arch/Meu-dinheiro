@@ -75,6 +75,8 @@ controls.setAttribute('role','group');
 controls.setAttribute('aria-label','Comandos do Extrato');
 saldoPanel.parentNode.insertBefore(controls,saldoPanel);
 controls.append(saldoToggle,extratoToggle,section.querySelector('#rec-toggle'));
+const extratoMonthSwitch=document.querySelector('#page-extrato .month-switch');
+if(extratoMonthSwitch)controls.appendChild(extratoMonthSwitch);
 section.querySelector('.rec-top').remove();
 saldoPanel.hidden=true;
 section.hidden=true;
