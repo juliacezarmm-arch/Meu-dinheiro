@@ -595,6 +595,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       <div class="card" title="Parcelas e compras do cartão que vencem no mês selecionado."><div class="label">Cartão (mês atual)</div><div class="value amber" id="res-cc">R$ 0</div></div>
       <div class="card" title="Dinheiro separado para investimentos neste mês."><div class="label">Investido</div><div class="value blue" id="res-inv">R$ 0</div></div>
       <div class="card" title="Dinheiro guardado para metas cadastradas, como viagem ou computador."><div class="label">Metas</div><div class="value green" id="res-meta">R$ 0</div></div>
+      <div class="card" title="Resultado real do mês selecionado: entradas menos saídas, investimentos e metas. Compras previstas do cartão só entram quando a fatura for paga no Extrato."><div class="label">Resultado do mês</div><div class="value" id="res-result">R$ 0</div></div>
     </div>
     <div class="month-switch" aria-label="Escolher mês do resumo" title="Use as setas para ver outro mês. O botão Mês atual volta para o mês de hoje.">
       <button onclick="changeResumoMonth(-1)" aria-label="Mês anterior" title="Ver o mês anterior no resumo.">‹</button>
@@ -4011,6 +4012,13 @@ function updateResumo(){
   document.getElementById('res-cc').textContent=fmt(ccMes);
   document.getElementById('res-inv').textContent=fmt(investido);
   document.getElementById('res-meta').textContent=fmt(metas);
+  const resultadoEl=document.getElementById('res-result');
+  if(resultadoEl){
+    resultadoEl.textContent=fmt(saldoMes);
+    resultadoEl.classList.remove('green','red');
+    if(saldoMes>0)resultadoEl.classList.add('green');
+    else if(saldoMes<0)resultadoEl.classList.add('red');
+  }
   renderAnnualSummary(viewYear);
 
   const bars=document.getElementById('resumo-bars');
