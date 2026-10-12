@@ -808,7 +808,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <form id="card-payment-form" novalidate onsubmit="event.preventDefault();salvarPagamentoFatura()">
   <label class="site-field">Valor efetivamente pago (R$)<input id="card-payment-amount" type="number" inputmode="decimal" min="0.01" step="0.01" required></label>
   <label class="site-field">Data em que você pagou<input id="card-payment-date" type="date" required></label>
-  <p class="site-dialog-copy">Essa data será a saída no Extrato. O vencimento permanece como referência da fatura, sem duplicar a despesa.</p>
+  <p class="site-dialog-copy">A data já vem preenchida com o dia habitual de pagamento mostrado no Extrato. Só altere se a fatura realmente foi paga em outro dia.</p>
   <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('card-payment-editor')">Cancelar</button><button class="site-button primary" type="submit">Confirmar pagamento</button></div></form>
 </div></div>
 <div id="pending-payment-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="pending-payment-title" hidden onclick="if(event.target===this)fecharJanela('pending-payment-editor')">
@@ -819,7 +819,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       <label class="site-field">Valor efetivamente pago (R$)<input id="pending-payment-amount" type="number" inputmode="decimal" min="0.01" step="0.01" required></label>
       <label class="site-field">Data em que você pagou<input id="pending-payment-date" type="date" required></label>
       <label class="site-field">Forma usada no pagamento<select id="pending-payment-method"><option value="boleto">Boleto</option><option value="pix">Pix</option><option value="transferencia">Transferência</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
-      <p class="site-dialog-copy">O vencimento continua como referência. O saldo real só muda na data em que o pagamento foi confirmado.</p>
+      <p class="site-dialog-copy">A data já vem preenchida com o dia em que esse pagamento aparece no Extrato. Só altere se você realmente pagou em outro dia.</p>
       <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('pending-payment-editor')">Cancelar</button><button class="site-button primary" type="submit">Confirmar pagamento</button></div>
     </form>
   </div>
@@ -1531,7 +1531,13 @@ function registrarPagamentoFatura(cardId,mes){
  const habitual=card.paymentDay?' · Você costuma pagar dia '+card.paymentDay+'.':'';
  document.getElementById('card-payment-description').textContent='Fatura '+mes+' · Vencimento dia '+card.dueDay+'.'+habitual+' Restante: '+fmt(restante/100)+'. Escolha a data em que o dinheiro realmente saiu.';
  const amount=document.getElementById('card-payment-amount');amount.value=(restante/100).toFixed(2);amount.max=(restante/100).toFixed(2);
- const date=document.getElementById('card-payment-date');date.value=today();date.min=S.saldoInicial.data;date.max=today();abrirJanela('card-payment-editor');
+ const [anoFatura,mesFatura]=mes.split('-').map(Number);
+ const ultimoDiaFatura=new Date(anoFatura,mesFatura,0).getDate();
+ const diaPrevisto=Math.min(Number(card.paymentDay)||Number(card.dueDay)||10,ultimoDiaFatura);
+ const dataPrevista=mes+'-'+String(diaPrevisto).padStart(2,'0');
+ let dataPadrao=dataPrevista<=today()?dataPrevista:today();
+ if(dataPadrao<S.saldoInicial.data)dataPadrao=S.saldoInicial.data;
+ const date=document.getElementById('card-payment-date');date.value=dataPadrao;date.min=S.saldoInicial.data;date.max=today();abrirJanela('card-payment-editor');
 }
 function salvarPagamentoFatura(){
  if(!pagamentoEmEdicao)return;
@@ -3231,10 +3237,13 @@ function abrirPagamentoPendente(config){
   pagamentoPendenteEmEdicao=config;
   document.getElementById('pending-payment-title').textContent='Marcar como pago · '+(config.nome||'Conta');
   const venc=config.vencimento&&dataISOValida(config.vencimento)?config.vencimento.split('-').reverse().join('/'):'—';
-  document.getElementById('pending-payment-description').textContent='Vencimento: '+venc+' · Valor previsto: '+fmt(Number(config.valor||0))+'.';
+  document.getElementById('pending-payment-description').textContent='Data prevista: '+venc+' · Valor: '+fmt(Number(config.valor||0))+'. Ao confirmar, o pagamento permanece nessa data, a menos que você altere manualmente.';
   document.getElementById('pending-payment-amount').value=Number(config.valor||0).toFixed(2);
   const dataCampo=document.getElementById('pending-payment-date');
-  dataCampo.value=today();
+  const dataPrevista=config.vencimento&&dataISOValida(config.vencimento)?config.vencimento:null;
+  let dataPadrao=dataPrevista&&dataPrevista<=today()?dataPrevista:today();
+  if(S.saldoInicial&&dataPadrao<S.saldoInicial.data)dataPadrao=S.saldoInicial.data;
+  dataCampo.value=dataPadrao;
   if(S.saldoInicial)dataCampo.min=S.saldoInicial.data;
   dataCampo.max=today();
   const metodo=document.getElementById('pending-payment-method');
