@@ -430,8 +430,16 @@ function renderRecurring(){
   if(encerradas.length)out+='<div class="rec-list-section-title inactive">Encerradas</div>'+encerradas.map(itemHtml).join('');
   return out;
  }
- $('rec-list').innerHTML=html(registros.filter(r=>r.metodo!=='cartao'),'Nenhum registro recorrente da conta.');
- $('rec-card-list').innerHTML=html(registros.filter(r=>r.metodo==='cartao'),'Nenhuma recorrência cadastrada no cartão.');
+ const historicoConta=new Set(S.extrato.filter(x=>x.recorrenciaId).map(x=>String(x.recorrenciaId))).size;
+ const historicoCartao=new Set(S.cartao.filter(x=>x.recorrenciaId).map(x=>String(x.recorrenciaId))).size;
+ const vazioConta=historicoConta
+   ?'Este JSON não trouxe os cadastros recorrentes da conta, mas ainda existem '+historicoConta+' vínculo(s) históricos no Extrato. Os lançamentos antigos foram preservados.'
+   :'Nenhum registro recorrente da conta.';
+ const vazioCartao=historicoCartao
+   ?'Este JSON não trouxe os cadastros recorrentes do cartão, mas ainda existem '+historicoCartao+' vínculo(s) históricos nas compras. Os lançamentos antigos foram preservados.'
+   :'Nenhuma recorrência cadastrada no cartão.';
+ $('rec-list').innerHTML=html(registros.filter(r=>r.metodo!=='cartao'),vazioConta);
+ $('rec-card-list').innerHTML=html(registros.filter(r=>r.metodo==='cartao'),vazioCartao);
 }
 function saveRecEditor(event){
  event.preventDefault();
