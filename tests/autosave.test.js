@@ -29,6 +29,6 @@ assert.strictEqual(vm.runInContext('hasUnsavedChanges',ctx),false,'Sem arquivo n
 vm.runInContext("dataFileHandle={name:'teste.json'};saveData()",ctx);
 assert.strictEqual(vm.runInContext('hasUnsavedChanges',ctx),true);
 assert.strictEqual(timer,10000,'Autosave ligado deve aguardar 10 segundos');
-vm.runInContext('autoSaveEnabled=false;timer=0;saveData()',ctx);
+timer=0;vm.runInContext('autoSaveEnabled=false;saveData()',ctx);
 assert.strictEqual(timer,0,'Autosave desligado não pode agendar gravação');
 (async()=>{assert.strictEqual(await vm.runInContext('autoSaveDataFile()',ctx),false,'Autosave desligado não pode gravar');assert.strictEqual(write,0);vm.runInContext('autoSaveEnabled=true',ctx);await vm.runInContext('autoSaveDataFile()',ctx);assert.deepStrictEqual(permission,[false]);assert.strictEqual(write,1);assert.strictEqual(vm.runInContext('hasUnsavedChanges',ctx),false);console.log('PASS: JSON exclusivo, preferência local segura, autosave liga/desliga, aviso F5 e diálogo de atualização');})().catch(e=>{console.error(e);process.exitCode=1});
