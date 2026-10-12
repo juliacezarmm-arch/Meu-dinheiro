@@ -39,7 +39,7 @@ assert(html.includes('calcularSobraPrevistaAte')&&html.includes('faturasPendente
 assert(!html.includes('onclick=\"registrarPagamentoFatura(${card.id}'),'Pagamento não deve ficar na aba Cartão');
 assert(html.includes('class="extrato-pagar"')&&html.includes('registrarPagamentoFatura(${Number(r.cardId)}'),'Extrato deve oferecer ação para pagar fatura');
 assert(!js.includes('id=\"rec-end\"'),'Encerramento não pertence ao cadastro inicial');
-assert(js.includes('data-recdelete=\"${r.id}\">Excluir agora'),'Exclusão deve estar na lista dos registros criados');
+assert(js.includes('data-recdelete')&&js.includes('data-recend')&&js.includes('deleteEndedRecurring'),'Ações de encerrar e excluir cadastro encerrado continuam disponíveis');
 assert(js.includes('id=\"rec-toggle\"')&&js.includes('setRecAreaExpanded'),'Registros precisam abrir e fechar');
 assert(js.includes('rec-inline-actions')&&js.includes('rec-item-date'),'Editar e excluir devem ficar ao lado do dia');
 assert(!js.includes('Recorrências previstas (não movimentam o saldo)'),'Não mostrar caixa de previsões separada');
