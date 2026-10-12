@@ -380,9 +380,9 @@ td:last-child{white-space:normal}
 .invest-type-summary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:.6rem}
 .invest-type-summary-head strong{font-size:14px}
 .invest-type-summary-head span{font-size:11px;color:var(--color-text-secondary);text-align:right;line-height:1.35;max-width:360px}
-.invest-type-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.invest-type-table{width:100%;min-width:590px;border-collapse:collapse}
-.invest-type-table th,.invest-type-table td{padding:.55rem .6rem;border-top:1px solid #31302c;text-align:right;font-size:11.5px;white-space:nowrap}
+.invest-type-table-wrap{width:100%;max-width:100%;overflow-x:visible}
+.invest-type-table{width:100%;min-width:0;max-width:100%;table-layout:fixed;border-collapse:collapse}
+.invest-type-table th,.invest-type-table td{padding:7px 4px;border-top:1px solid #31302c;text-align:right;font-size:10px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .invest-type-table thead th{border-top:0;color:var(--color-text-secondary);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em}
 .invest-type-table th:first-child,.invest-type-table td:first-child{text-align:left}
 .invest-type-table tbody td:first-child{font-weight:800;color:var(--color-text-primary)}
@@ -434,18 +434,35 @@ td:last-child{white-space:normal}
 .invest-type-title strong{font-size:14px}
 .invest-type-title div>span{font-size:10px!important;text-align:left!important;max-width:none!important;margin:1px 0 0!important}
 .invest-collapse{margin-left:auto;padding:5px 10px;white-space:nowrap}
-.invest-type-table{min-width:820px}
-.invest-type-table th,.invest-type-table td{padding:.43rem .5rem;font-size:10.5px}
-.invest-type-table thead th{font-size:9.5px}
-.invest-type-cell{display:flex;align-items:center;gap:7px}
+.invest-type-table{min-width:0}
+.invest-type-table th,.invest-type-table td{padding:7px 4px;font-size:10px}
+.invest-type-table thead th{font-size:9px;white-space:normal;line-height:1.15}
+.invest-type-table td:first-child{white-space:normal}
+.invest-type-cell{display:flex;align-items:center;gap:6px;min-width:0}
+.invest-type-cell>span:last-child{min-width:0;overflow-wrap:break-word;line-height:1.2}
 .invest-type-cell small{color:var(--color-text-secondary);font-weight:700}
-.invest-type-icon{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;font-weight:900;font-size:15px;flex:none}
+.invest-type-icon{display:grid;place-items:center;width:25px;height:25px;border-radius:7px;font-weight:900;font-size:15px;flex:none}
+.invest-type-summary .invest-type-icon svg{width:19px;height:19px;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.invest-type-summary .invest-type-icon.cripto{background:#35204b;color:#b67cff}
+.invest-type-summary .invest-type-icon.poupanca{background:#382814;color:#f8a733}
 .invest-type-icon.cdb{background:#11324c;color:#4ca5ff}
 .invest-type-icon.fundos{background:#321d46;color:#a66bf4}
 .invest-type-icon.cdi{background:#44202e;color:#ff6d9e}
 .invest-type-icon.cripto{background:#4a2d12;color:#ff9d32}
 .invest-type-icon.poupanca{background:#3b3513;color:#ffd45a}
 .invest-type-icon.outro{background:#17382f;color:#62d9b3}
+/* Sem rolagem horizontal: em telas estreitas, cada tipo vira um card de dados. */
+@media(max-width:720px){
+ .invest-type-table-wrap{overflow-x:visible}
+ .invest-type-table{display:block;width:100%;min-width:0}
+ .invest-type-table colgroup,.invest-type-table thead{display:none}
+ .invest-type-table tbody{display:grid;gap:8px}
+ .invest-type-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:9px;border:1px solid #263a38;border-radius:9px;background:#0b1517}
+ .invest-type-table tbody td{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:2px 0;border:0;white-space:normal;font-size:11px}
+ .invest-type-table tbody td:first-child{grid-column:1/-1;padding-bottom:5px;border-bottom:1px solid #263a38}
+ .invest-type-table tbody td:not(:first-child)::before{content:attr(data-label);display:block;color:#b6c6c6;font-size:9px;font-weight:700}
+}
+@media(max-width:390px){.invest-type-table tbody tr{grid-template-columns:1fr}}
 .invest-list-shell{background:#101514;border:1px solid #293632;border-radius:12px;padding:.65rem;margin-top:.55rem}
 .invest-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:.55rem}
 .invest-list-head>div:first-child{display:flex;flex-direction:column}
@@ -3967,6 +3984,17 @@ function investTipoVisual(tipo){
   if(t.includes('cdb')||t.includes('lci')||t.includes('lca')||t.includes('tesouro'))return {icon:'▤',cls:'cdb'};
   return {icon:'◆',cls:'outro'};
 }
+function investTipoIconeResumo(cls,alternativo){
+ const prefixo='<svg viewBox="0 0 24 24" aria-hidden="true">';
+ const desenhos={
+  cdb:'<path d="M3 21h18M5 18h14M7 18v-8m5 8v-8m5 8v-8M3 8h18L12 3 3 8Z"/>',
+  fundos:'<path d="M5 20v-7M10 20V9M15 20V5M20 20V2"/>',
+  cdi:'<circle cx="6.5" cy="6.5" r="2.3"/><circle cx="17.5" cy="17.5" r="2.3"/><path d="M20 4 4 20"/>',
+  cripto:'<path d="m3 18 6-6 4 4 8-10"/><path d="M15 6h6v6"/>',
+  poupanca:'<path d="M19 10h2v5l-2 1.5V19h-3v-2H8v2H5v-3a6 6 0 0 1-2-4.5A6 6 0 0 1 9 5h5a5 5 0 0 1 5 5Z"/><path d="M11 7h3M7 10h.01M3 9 1.5 7.5"/>'
+ };
+ return desenhos[cls]?prefixo+desenhos[cls]+'</svg>':alternativo;
+}
 function investSparkline(items){
   const pontos=[];
   for(let offset=5;offset>=0;offset--){
@@ -3995,8 +4023,9 @@ function renderInvestTypeSummary(investimentos){
   const mesLabel=mesStr(ano,mes);
   const inicioAnterior=new Date(ano,mes,0,12);
   const fimMes=new Date(ano,mes+1,0,12);
-  const inicioLabel=investPeriodo==='ano'?'Início '+ano:'Valor em '+String(inicioAnterior.getDate()).padStart(2,'0')+'/'+String(inicioAnterior.getMonth()+1).padStart(2,'0')+'/'+String(inicioAnterior.getFullYear()).slice(2);
-  const fimLabel=investPeriodo==='ano'?'Final/atual '+ano:'Valor em '+String(fimMes.getDate()).padStart(2,'0')+'/'+String(fimMes.getMonth()+1).padStart(2,'0')+'/'+String(fimMes.getFullYear()).slice(2);
+  const mesesCurtos=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const inicioLabel=investPeriodo==='ano'?'Valor inicial':'Valor '+mesesCurtos[inicioAnterior.getMonth()]+'/'+String(inicioAnterior.getFullYear()).slice(-2);
+  const fimLabel='Valor final';
   const periodoLabel=investPeriodo==='ano'?String(ano):mesLabel;
   host.innerHTML=`<section class="invest-type-summary">
     <div class="invest-type-summary-head">
@@ -4005,12 +4034,13 @@ function renderInvestTypeSummary(investimentos){
     </div>
     ${investTypeOpen?`<div class="invest-type-table-wrap">
       <table class="invest-type-table">
-        <thead><tr><th>Tipo</th><th>${inicioLabel}</th><th>Aportes (${periodoLabel})</th><th>Resgates (${periodoLabel})</th><th>Rendimento (${periodoLabel})</th><th>${fimLabel}</th><th>Rentabilidade (${investPeriodo==='ano'?'ano':'mês'})</th></tr></thead>
+        <colgroup><col style="width:25%"><col style="width:14%"><col style="width:11%"><col style="width:11%"><col style="width:14%"><col style="width:14%"><col style="width:11%"></colgroup>
+        <thead><tr><th>Tipo</th><th>${inicioLabel}</th><th>Aportes</th><th>Resgates</th><th>Rendimento</th><th>${fimLabel}</th><th>Rentab.</th></tr></thead>
         <tbody>${linhas.map(r=>{
           const cls=r.rendimento>0?'positive':r.rendimento<0?'negative':'neutral';
           const pct=r.pct===null?'—':(r.pct>0?'+':'')+fmtInvestPct(r.pct);
           const visual=investTipoVisual(r.tipo);
-          return `<tr><td><span class="invest-type-cell"><span class="invest-type-icon ${visual.cls}">${visual.icon}</span><span>${escHtml(r.tipo)}${r.qtd>1?'<small> ('+r.qtd+')</small>':''}</span></span></td><td>${fmt(r.base)}</td><td>${fmt(r.aportes)}</td><td>${fmt(r.resgates)}</td><td class="${cls}">${r.rendimento>0?'+':''}${fmt(r.rendimento)}</td><td>${fmt(r.patrimonio)}</td><td class="${cls}">${pct}</td></tr>`;
+          return `<tr><td><span class="invest-type-cell"><span class="invest-type-icon ${visual.cls}">${investTipoIconeResumo(visual.cls,visual.icon)}</span><span>${escHtml(r.tipo)}${r.qtd>1?'<small> ('+r.qtd+')</small>':''}</span></span></td><td data-label="${inicioLabel}">${fmt(r.base)}</td><td data-label="Aportes">${fmt(r.aportes)}</td><td data-label="Resgates">${fmt(r.resgates)}</td><td data-label="Rendimento" class="${cls}">${r.rendimento>0?'+':''}${fmt(r.rendimento)}</td><td data-label="Valor final">${fmt(r.patrimonio)}</td><td data-label="Rentab." class="${cls}">${pct}</td></tr>`;
         }).join('')}</tbody>
       </table>
     </div>`:''}
