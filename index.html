@@ -852,6 +852,106 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   #inv-wrap .inv-list .inv-card-main>.inv-card-metric:nth-child(4){grid-column:3/5;grid-row:2}
   #inv-wrap .inv-list .inv-card-spark{grid-column:1/-1;grid-row:3;width:100px}
 }
+
+/* Modo Grade: cards de investimentos reorganizados sem alterar o modo Lista. */
+#inv-wrap .goal-list.inv-grade{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+#inv-wrap .inv-grade .inv-compact-card{
+  min-width:0;min-height:155px;padding:13px 12px;
+  border:1px solid #29443e;border-radius:13px;
+  background:linear-gradient(125deg,#0e1a1b 0%,#0b1516 100%);
+  overflow:visible;transition:border-color .15s ease,background .15s ease
+}
+#inv-wrap .inv-grade .inv-compact-card:hover{border-color:#426d5f;background:linear-gradient(125deg,#112221,#0e1819)}
+#inv-wrap .inv-grade .inv-compact-card:has(.inv-card-menu.open){z-index:20}
+#inv-wrap .inv-grade .inv-card-main{
+  display:grid;grid-template-columns:38px minmax(0,1fr) 64px 24px;
+  grid-template-areas:"icon name name menu" "balance balance spark spark" "yield yield yield yield";
+  grid-template-rows:auto auto auto;align-items:center;
+  gap:11px 7px;min-width:0
+}
+#inv-wrap .inv-grade .inv-card-main>.invest-type-icon{
+  grid-area:icon;display:grid;place-items:center;
+  width:38px;height:38px;border-radius:11px;font-size:20px;flex:none
+}
+#inv-wrap .inv-grade .inv-card-main>.inv-card-name{
+  grid-area:name;min-width:0;display:flex;flex-direction:column;gap:3px;align-self:center
+}
+#inv-wrap .inv-grade .inv-card-name strong{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  font-size:11.5px;font-weight:800;line-height:1.25;color:#eaf3ef;
+  white-space:normal;overflow:hidden;overflow-wrap:anywhere
+}
+#inv-wrap .inv-grade .inv-card-name span{
+  font-size:9.5px;line-height:1.25;color:#aabbb5;
+  white-space:normal;overflow:hidden;overflow-wrap:anywhere
+}
+#inv-wrap .inv-grade .inv-card-main>.inv-card-metric{
+  display:flex!important;flex-direction:column;min-width:0;
+  gap:4px;align-items:flex-start;justify-content:center
+}
+#inv-wrap .inv-grade .inv-card-main>.inv-card-metric:nth-child(3){grid-area:balance}
+#inv-wrap .inv-grade .inv-card-main>.inv-card-metric:nth-child(4){
+  grid-area:yield;display:grid!important;
+  grid-template-columns:max-content max-content;
+  grid-template-areas:"yield-label yield-label" "yield-value yield-pct";
+  justify-content:start;align-items:center;
+  column-gap:8px;row-gap:5px
+}
+#inv-wrap .inv-grade .inv-card-metric>span{
+  font-size:9.5px;line-height:1.3;color:#b6c6c0;
+  white-space:normal;overflow:visible;text-overflow:clip
+}
+#inv-wrap .inv-grade .inv-card-metric>strong{
+  font-size:14px;line-height:1.2;font-weight:850;white-space:nowrap;color:#f0f5f1
+}
+#inv-wrap .inv-grade .inv-card-metric>strong.positive{color:#2bdfa9}
+#inv-wrap .inv-grade .inv-card-metric>strong.negative{color:#ff8584}
+#inv-wrap .inv-grade .inv-card-metric:nth-child(4)>span{grid-area:yield-label}
+#inv-wrap .inv-grade .inv-card-metric:nth-child(4)>strong{
+  grid-area:yield-value;font-size:12px
+}
+#inv-wrap .inv-grade .inv-card-metric:nth-child(4)>small{
+  grid-area:yield-pct;display:inline-flex;justify-content:center;
+  border-radius:999px;padding:4px 7px;font-size:9px;font-weight:800;
+  line-height:1.2;white-space:nowrap;background:#27332f
+}
+#inv-wrap .inv-grade .inv-card-metric>small.positive{color:#30e8af;background:#103d2f}
+#inv-wrap .inv-grade .inv-card-metric>small.negative{color:#ff8d89;background:#3b2527}
+#inv-wrap .inv-grade .inv-card-metric>small.neutral{color:#cfddd6;background:#26332e}
+#inv-wrap .inv-grade .inv-card-main>.inv-card-spark{
+  grid-area:spark;display:block!important;justify-self:end;
+  align-self:center;width:75px;max-width:100%;color:#22dca7
+}
+#inv-wrap .inv-grade .inv-card-spark svg{display:block;width:100%;height:32px}
+#inv-wrap .inv-grade .inv-card-main:has(.inv-card-metric strong.negative)>.inv-card-spark{color:#ef7770}
+#inv-wrap .inv-grade .inv-card-menu-wrap{
+  grid-area:menu;justify-self:end;align-self:start;position:relative
+}
+#inv-wrap .inv-grade .inv-more-btn{
+  display:grid;place-items:center;width:25px;height:29px;
+  padding:0;border:1px solid transparent;border-radius:8px;
+  color:#e9f3ed;font-size:21px;cursor:pointer
+}
+#inv-wrap .inv-grade .inv-more-btn:hover{background:#1b2c28;border-color:#456558}
+#inv-wrap .inv-grade .inv-card-menu{right:0;top:31px}
+@media(max-width:900px){
+  #inv-wrap .goal-list.inv-grade{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:680px){
+  #inv-wrap .goal-list.inv-grade{grid-template-columns:minmax(0,1fr)}
+  #inv-wrap .inv-grade .inv-card-main{
+    grid-template-columns:38px minmax(0,1fr) 64px 24px
+  }
+}
+@media(max-width:360px){
+  #inv-wrap .inv-grade .inv-card-main{
+    grid-template-columns:38px minmax(0,1fr) 50px 24px;gap:10px 5px
+  }
+  #inv-wrap .inv-grade .inv-card-main>.inv-card-metric:nth-child(4){
+    grid-template-columns:max-content minmax(0,1fr)
+  }
+  #inv-wrap .inv-grade .inv-card-metric:nth-child(4)>small{min-width:0}
+}
 </style>
 </head>
 <body>
