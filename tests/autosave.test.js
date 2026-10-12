@@ -10,7 +10,7 @@ assert(!/localStorage\.(?:setItem|getItem)\([^\n]*?(?:extrato|cartao|invest|sald
 assert(src.includes("window.addEventListener('beforeunload'"),'F5 precisa proteger alterações pendentes');
 assert(src.includes('queueFileSave(handle,false)'),'Autosave apenas com permissao existente');
 assert(src.includes("new Blob([content],{type:'application/json;charset=utf-8'})"),'Salvamento deve calcular o tamanho real em bytes');
-assert(src.includes("writable.write({type:'write',position:0,data:blob})"),'Salvamento deve reescrever desde o início');
+assert(src.includes('handle.createWritable({keepExistingData:false})')&&src.includes('await writable.write(blob)'),'Salvamento deve sobrescrever todo o JSON sem manter bytes antigos');
 assert(src.includes('await writable.truncate(blob.size)'),'Salvamento deve remover bytes antigos que possam sobrar no fim');
 assert(src.includes('function recuperarJsonComFechamentoExtra('),'Abertura deve recuperar apenas fechamento extra no fim');
 assert(src.includes("setSaveStatus('Não salvo — JSON recuperado; salve para corrigir.')"),'JSON recuperado precisa exigir nova gravação');
