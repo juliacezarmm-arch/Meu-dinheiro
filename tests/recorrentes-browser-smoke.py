@@ -24,7 +24,7 @@ try{
  knownFileSignature='1:1';setFileAccessState(true);
  S.saldoInicial={valor:500,data:isoDate(d.getFullYear(),d.getMonth(),d.getDate()),idsIgnorados:[]};
  const controles=document.getElementById('extrato-action-buttons');
- if(!controles||!controles.querySelector('#saldo-toggle')||!controles.querySelector('.form-toggle')||!controles.querySelector('#rec-toggle'))throw Error('Tres botoes fora da mesma linha');
+ if(!controles||!controles.querySelector('#saldo-toggle')||!controles.querySelector('.form-toggle')||!controles.querySelector('#rec-toggle'))throw Error('Controles extrato: '+(controles?controles.outerHTML.slice(0,1600):'container ausente'));
  if(!document.getElementById('saldo-setup').hidden)throw Error('Painel de saldo deve comecar recolhido');
  document.getElementById('saldo-toggle').click();
  if(document.getElementById('saldo-setup').hidden||document.getElementById('saldo-content').hidden)throw Error('Botao nao abriu o saldo inicial');
