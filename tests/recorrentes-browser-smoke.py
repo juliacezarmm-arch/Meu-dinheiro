@@ -60,9 +60,9 @@ try{
  if(S.extrato.some(x=>x.recorrenciaId===989898))throw Error('Futuro entrou antecipadamente como movimentação real');
  if(Math.abs(calcularSaldoDisponivelAte(today())-600)>0.001)throw Error('Previsão não pode reduzir saldo antes da data');
  el('rec-toggle').click();
- if(!el('rec-body').hidden||el('rec-toggle').getAttribute('aria-expanded')!=='false')throw Error('Recolher não funciona');
+ if(!el('recorrentes-area').hidden||el('rec-toggle').getAttribute('aria-expanded')!=='false')throw Error('Recolher painel flutuante não funciona');
  el('rec-toggle').click();
- if(el('rec-body').hidden)throw Error('Expandir não funciona');
+ if(el('recorrentes-area').hidden||el('rec-body').hidden)throw Error('Expandir painel flutuante não funciona');
  if(!el('rec-list').querySelector('.rec-item-head .rec-inline-actions'))throw Error('Ações fora do cabeçalho compacto');
  el('rec-card-open').click();
  if(el('rec-form').parentElement.id!=='rec-card-body')throw Error('Assinatura não está na aba Cartão');
