@@ -19,6 +19,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-sans);color:var(--color-text-primary);background:var(--color-background-primary);min-height:100vh;color-scheme:dark}
 .app{max-width:870px;margin:0 auto;padding:1rem 0}
+.app-topbar{position:sticky;top:0;z-index:12000;background:rgba(5,5,5,.98);backdrop-filter:blur(10px);box-shadow:0 8px 18px rgba(0,0,0,.24)}
 .header{display:flex;align-items:center;gap:10px;padding:1rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)}
 .header h1{font-size:20px;font-weight:500}
 .brand-logo{width:42px;height:42px;object-fit:contain;flex:none;border:0;background:transparent;padding:0;margin:0}
@@ -27,10 +28,14 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .data-tools button,.data-tools label{background:#171716;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:6px 10px;font-size:12px;font-weight:800;text-align:center;cursor:pointer}
 .data-tools button:hover,.data-tools label:hover{border-color:#9FE1CB}
 .data-tools input{display:none}
-.save-status{grid-column:1/-1;justify-self:center;max-width:100%;min-height:23px;padding:4px 11px;border:1px solid #333b35;border-radius:999px;background:#151c18;color:#c5c3ba;font-size:11px;line-height:1.3;text-align:center;overflow-wrap:anywhere}
+.save-status{position:fixed;top:18px;right:18px;z-index:20500;display:flex;align-items:center;gap:10px;width:min(330px,calc(100vw - 28px));min-height:42px;padding:9px 10px 9px 12px;border:1px solid #333b35;border-radius:12px;background:#151c18;color:#c5c3ba;font-size:11px;line-height:1.35;text-align:left;overflow-wrap:anywhere;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.save-status[hidden]{display:none!important}
+.save-status span{flex:1;min-width:0}
+.save-status button{flex:none;width:24px;height:24px;padding:0;border:0;background:transparent;color:inherit;font-size:19px;line-height:1;cursor:pointer}
 .save-status[data-state="saved"]{background:#15291f;border-color:#315f4b;color:#b2f0d7}
 .save-status[data-state="unsaved"]{background:#2b2117;border-color:#866334;color:#ffda9b}
-.save-status[data-state="idle"]{background:#171716;border-color:#34342f;color:#c5c3ba}
+.save-status[data-state="idle"]{background:#171716;border-color:#46463e;color:#e0ded6}
+@media(max-width:600px){.save-status{top:10px;right:10px;width:min(330px,calc(100vw - 20px))}}
 .nav{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);overflow-x:auto}
 .nav button{flex:1;min-width:80px;padding:8px 8px;font-size:13px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--color-text-secondary);white-space:nowrap}
 .nav button.active{color:var(--color-text-primary);border-bottom-color:#1D9E75;font-weight:500}
@@ -463,9 +468,9 @@ body.action-panel-open{overflow:hidden}
 .site-dialog-copy{font-size:13px;line-height:1.55;color:#c5c3ba;white-space:pre-line;margin:0 0 15px}
 .site-field{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:700;color:#e6e3d9;margin:0 0 14px}.site-fields-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .site-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.site-button{border:1px solid #46463e;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer}.site-button.quiet{background:#2a2a28;color:#f5f5f2}.site-button.primary{background:#9FE1CB;border-color:#9FE1CB;color:#0b3329}.site-button:hover{filter:brightness(1.09)}
-.site-toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:20000;display:flex;align-items:center;gap:12px;width:min(94%,480px);background:#1a2924;color:#f5f5f2;border:1px solid #69cda9;border-radius:12px;padding:12px 13px;box-shadow:0 18px 45px rgba(0,0,0,.6);font-size:13px;line-height:1.4}.site-toast span{flex:1}.site-toast button{background:transparent;color:#f5f5f2;border:0;font-size:22px;cursor:pointer}
+.site-toast{position:fixed;top:18px;right:18px;left:auto;transform:none;z-index:20400;display:flex;align-items:center;gap:12px;width:min(360px,calc(100vw - 28px));background:#1a2924;color:#f5f5f2;border:1px solid #69cda9;border-radius:12px;padding:12px 13px;box-shadow:0 18px 45px rgba(0,0,0,.6);font-size:13px;line-height:1.4}.site-toast span{flex:1}.site-toast button{background:transparent;color:#f5f5f2;border:0;font-size:22px;cursor:pointer}
 .input-caption{display:block;font-size:12px;color:#c5c3ba;margin-bottom:5px}.bank-card-actions{position:absolute;right:7px;top:7px;z-index:2;display:flex;gap:4px}.bank-card .bank-card-actions .del{position:static;min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);border-radius:6px;color:#fff;cursor:pointer;padding:0 4px}.bank-card .bank-card-actions .del:hover{background:rgba(0,0,0,.42);border-color:white}.bank-edit-icon{width:13px;height:13px;display:block}
-@media(max-width:520px){.site-dialog-panel{padding:17px}.site-fields-row{grid-template-columns:1fr}.site-dialog-actions button{flex:1}}
+@media(max-width:520px){.site-dialog-panel{padding:17px}.site-fields-row{grid-template-columns:1fr}.site-dialog-actions button{flex:1}.site-toast{top:10px;right:10px;width:calc(100vw - 20px)}}
 /* O documento JSON e a unica fonte ativa. Nenhum formulario e editavel sem arquivo. */
 body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 #refresh-file-name{font-size:13px;color:#9FE1CB;overflow-wrap:anywhere}
@@ -504,6 +509,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 <body>
 
 <div class="app">
+  <div class="app-topbar">
   <div class="header">
     <img class="brand-logo" src="assets/favicon.svg" alt="" aria-hidden="true">
     <h1>Meu dinheiro organizado</h1>
@@ -515,7 +521,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     <button type="button" onclick="manualSave()" title="Grava diretamente as alteracoes no arquivo JSON aberto.">Salvar</button>
     <button type="button" onclick="saveAsDataFile()" title="Cria um JSON novo ou salva os dados em outro arquivo.">Salvar como</button>
     <button type="button" onclick="atualizarAplicativo()" title="Atualiza o aplicativo, fechando o arquivo atual.">Atualizar</button>
-    <div class="save-status" id="save-status" role="status" aria-live="polite">Abra um arquivo JSON para começar.</div>
+    <div class="save-status" id="save-status" role="status" aria-live="polite" hidden onmouseenter="pauseSaveStatus()" onmouseleave="resumeSaveStatus()"><span id="save-status-message">Abra um arquivo JSON para começar.</span><button type="button" onclick="hideSaveStatus()" aria-label="Fechar notificação">×</button></div>
   </div>
   <nav class="nav">
     <button onclick="showPage('resumo',this)" class="active" title="Mostra o resumo do mês: saldo, entradas, saídas, metas, investimentos e gráficos."><i class="ti ti-home" aria-hidden="true"></i> Resumo</button>
@@ -524,6 +530,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     <button onclick="showPage('invest',this)" title="Onde você cadastra investimentos e acompanha quanto eles renderam."><i class="ti ti-trending-up" aria-hidden="true"></i> Investimentos</button>
     <button onclick="showPage('metas',this)" title="Onde você cadastra objetivos, como viagem, computador ou reserva."><i class="ti ti-flag" aria-hidden="true"></i> Metas</button>
   </nav>
+  </div>
 
   <!-- RESUMO -->
   <div id="page-resumo" class="page active">
@@ -788,7 +795,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   </div>
 </div>
 <!-- Caixas de diálogo exclusivas do próprio aplicativo. -->
-<div id="app-toast" class="site-toast" role="status" aria-live="polite" hidden><span id="app-toast-message"></span><button type="button" onclick="fecharAviso()" aria-label="Dispensar aviso">×</button></div>
+<div id="app-toast" class="site-toast" role="status" aria-live="polite" hidden onmouseenter="pausarAviso()" onmouseleave="retomarAviso()"><span id="app-toast-message"></span><button type="button" onclick="fecharAviso()" aria-label="Dispensar aviso">×</button></div>
 <div id="app-confirm-overlay" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title" hidden><div class="site-dialog-panel"><div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">?</span><h2 id="app-confirm-title">Confirmar operação</h2></div><p id="app-confirm-message" class="site-dialog-copy"></p><div class="site-dialog-actions"><button type="button" class="site-button quiet" id="app-confirm-cancel">Cancelar</button><button type="button" class="site-button primary" id="app-confirm-accept">Confirmar</button></div></div></div>
 <div id="refresh-overlay" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="refresh-title" hidden><div class="site-dialog-panel">
   <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">↻</span><h2 id="refresh-title">Salvar alterações?</h2></div>
@@ -921,7 +928,15 @@ const resumoCharts={annual:false,extrato:false,cartao:false,invest:false,metas:f
 const investUi={acao:{},historico:{},grafico:{},mes:{},periodo:{}};
 let investModalAtivo=null;
 function fecharAviso(){clearTimeout(appAlert.timer);document.getElementById('app-toast').hidden=true;}
-function appAlert(message){const toast=document.getElementById('app-toast');document.getElementById('app-toast-message').textContent=String(message);toast.hidden=false;clearTimeout(appAlert.timer);appAlert.timer=setTimeout(fecharAviso,6500);}
+function pausarAviso(){clearTimeout(appAlert.timer);}
+function retomarAviso(){clearTimeout(appAlert.timer);appAlert.timer=setTimeout(fecharAviso,7000);}
+function appAlert(message){
+ const toast=document.getElementById('app-toast');
+ document.getElementById('app-toast-message').textContent=String(message);
+ toast.hidden=false;clearTimeout(appAlert.timer);
+ const importante=/erro|falha|não foi possível|bloquead|inválid|atenção/i.test(String(message));
+ appAlert.timer=setTimeout(fecharAviso,importante?8500:7000);
+}
 function abrirJanela(id){const e=document.getElementById(id);if(!e)return;e.hidden=false;const first=e.querySelector('input,select,button');if(first)first.focus();}
 function fecharJanela(id){const e=document.getElementById(id);if(e)e.hidden=true;if(id==='card-editor')editingRegisteredCardId=null;if(id==='extrato-editor')editingExtratoId=null;if(id==='card-payment-editor')pagamentoEmEdicao=null;if(id==='pending-payment-editor')pagamentoPendenteEmEdicao=null;if(id==='card-paid-editor')parcelasPagasEmEdicao=null;}
 function appConfirm(message){
@@ -1213,11 +1228,23 @@ function saveData(){
  clearTimeout(diskSaveTimer);
  diskSaveTimer=setTimeout(()=>{void autoSaveDataFile();},10000);
 }
+let saveStatusTimer=null;
+function hideSaveStatus(){clearTimeout(saveStatusTimer);saveStatusTimer=null;const el=document.getElementById('save-status');if(el)el.hidden=true;}
+function pauseSaveStatus(){clearTimeout(saveStatusTimer);saveStatusTimer=null;}
+function resumeSaveStatus(){
+ const el=document.getElementById('save-status');if(!el||el.hidden)return;
+ clearTimeout(saveStatusTimer);
+ saveStatusTimer=setTimeout(hideSaveStatus,el.dataset.state==='unsaved'?8500:7000);
+}
 function setSaveStatus(text){
  const el=document.getElementById('save-status');if(!el)return;
  const state=text==='Salvo'?'saved':(/não salvo|falha|permita|autorize|alterado fora|indisponível|não autorizada/i.test(text||'')?'unsaved':'idle');
+ const message=dataFileHandle?(dataFileHandle.name+(text?' · '+text:'')):(text||'Abra um arquivo JSON para começar.');
  el.dataset.state=state;
- el.textContent=dataFileHandle?(dataFileHandle.name+(text?' · '+text:'')):(text||'Abra um arquivo JSON para começar.');
+ const msg=document.getElementById('save-status-message');if(msg)msg.textContent=message;
+ el.hidden=false;
+ clearTimeout(saveStatusTimer);
+ saveStatusTimer=setTimeout(hideSaveStatus,state==='unsaved'?8500:7000);
 }
 function manualSave(){void saveDataFile(true);}
 function dataPayload(){
