@@ -952,6 +952,13 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   }
   #inv-wrap .inv-grade .inv-card-metric:nth-child(4)>small{min-width:0}
 }
+
+/* Logos das criptomoedas: arquivos SVG locais, compartilhados por Grade e Lista. */
+#inv-wrap .inv-crypto-logo{background:#102024;overflow:hidden}
+#inv-wrap .inv-crypto-logo img{display:block;width:100%;height:100%;object-fit:contain;border-radius:inherit}
+#inv-wrap .inv-crypto-logo img[hidden],#inv-wrap .inv-crypto-fallback[hidden]{display:none!important}
+#inv-wrap .inv-crypto-fallback{width:100%;height:100%;display:grid;place-items:center}
+#inv-wrap .inv-card-main .invest-type-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
 <body>
@@ -4229,6 +4236,21 @@ function investTipoIconeResumo(cls,alternativo){
  };
  return desenhos[cls]?prefixo+desenhos[cls]+'</svg>':alternativo;
 }
+/* Associa logos locais somente a investimentos do tipo Cripto. */
+function investLogoCripto(item){
+  if(!item||!String(item.tipo||'').toLowerCase().includes('cripto'))return '';
+  const n=String(item.nome||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const moedas=[
+    ['bitcoin','bitcoin','btc'],['ethereum','ethereum','ether','eth'],
+    ['solana','solana','sol'],['optimism','optimism','op'],
+    ['polygon','polygon','matic','pol'],['avalanche','avalanche','avax'],
+    ['usdc','usdc','usd coin'],['ripple','ripple','xrp'],
+    ['paxgold','paxgold','pax gold','paxg'],['arbitrum','arbitrum','arb'],
+    ['uniswap','uniswap','uni'],['litecoin','litecoin','ltc']
+  ];
+  const achada=moedas.find(([arquivo,...apelidos])=>apelidos.some(a=>(' '+n+' ').includes(' '+a+' ')));
+  return achada?'assets/crypto/'+achada[0]+'.svg':'';
+}
 function investSparkline(items){
   const pontos=[];
   for(let offset=5;offset>=0;offset--){
@@ -4475,6 +4497,9 @@ function renderDestinoCard(item){
   if(item.kind==='investimento'){
     const periodo=calcInvestPeriodResult(item);
     const visual=investTipoVisual(item.tipo);
+    const criptoLogo=investLogoCripto(item);
+    const iconePadrao=investTipoIconeResumo(visual.cls,visual.icon);
+    const logoHtml=criptoLogo?`<span class="invest-type-icon ${visual.cls} inv-crypto-logo"><img alt="" src="${criptoLogo}" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span hidden class="inv-crypto-fallback">${iconePadrao}</span></span>`:`<span class="invest-type-icon ${visual.cls}">${iconePadrao}</span>`;
     const cls=periodo.rendimento>0?'positive':periodo.rendimento<0?'negative':'neutral';
     const pct=(periodo.pct>0?'+':'')+fmtInvestPct(periodo.pct);
     const periodoLabel=investPeriodo==='ano'?String(investMes.getFullYear()):mesStr(investMes.getFullYear(),investMes.getMonth());
@@ -4490,7 +4515,7 @@ function renderDestinoCard(item){
     </div>`;
     return `<div class="goal-card inv-compact-card" data-invest-id="${item.id}">
       <div class="inv-card-main">
-        <span class="invest-type-icon ${visual.cls}">${visual.icon}</span>
+        ${logoHtml}
         <div class="inv-card-name"><strong>${escHtml(item.nome)}</strong><span>${escHtml(item.tipo)}${item.banco?' · '+escHtml(item.banco):''}</span></div>
         <div class="inv-card-metric"><span>Valor atual</span><strong>${fmt(periodo.final)}</strong></div>
         <div class="inv-card-metric"><span>Rendimento (${periodoLabel})</span><strong class="${cls}">${periodo.rendimento>0?'+':''}${fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div>
