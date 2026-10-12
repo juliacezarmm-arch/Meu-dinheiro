@@ -394,12 +394,40 @@ td:last-child{white-space:normal}
 #cartao-action-buttons #rec-card-toggle span{
   flex:none;font-size:14px;line-height:1;color:#9FE1CB;font-weight:900
 }
+#extrato-action-buttons #saldo-toggle span{
+  display:inline-grid;place-items:center;width:14px;height:14px;line-height:14px;font-size:11px;transform:translateY(-.5px)
+}
+/* O seletor do mês divide a mesma linha dos comandos do Extrato. */
+#extrato-action-buttons .month-switch{
+  flex:0 0 auto;margin:0 0 0 auto;padding:0;background:transparent;border:0;gap:5px;overflow:visible
+}
+#extrato-action-buttons .month-switch button{
+  flex:none;min-width:30px;width:30px;height:30px;padding:0;display:inline-grid;place-items:center;margin:0
+}
+#extrato-action-buttons .month-switch .current-month{
+  flex:none;min-width:66px;padding:0 7px;font-size:11px;white-space:nowrap
+}
+#extrato-action-buttons .month-switch .today-btn{
+  width:auto;min-width:max-content;padding:0 10px;font-size:10px
+}
+/* Saldo realizado e sobra prevista ocupam uma única faixa no desktop. */
+#ext-wrap .extrato-balance-summary{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:8px 0 12px
+}
+#ext-wrap .extrato-balance-summary .plain-card{min-width:0}
+#ext-wrap .extrato-balance-summary .plain-card strong{white-space:normal}
+#ext-wrap .extrato-balance-summary .plain-card span{max-width:50%}
+@media(max-width:700px){
+  #ext-wrap .extrato-balance-summary{grid-template-columns:1fr}
+  #ext-wrap .extrato-balance-summary .plain-card span{max-width:52%}
+}
 #page-extrato #saldo-setup[hidden],#page-extrato #recorrentes-area[hidden],
 #page-cartao #rec-cartao-area[hidden]{display:none!important}
 #page-extrato #saldo-content{border-top:0}
 @media(max-width:520px){
   .saldo-setup .row2{grid-template-columns:1fr}
   #extrato-action-buttons,#cartao-action-buttons{gap:5px}
+  #extrato-action-buttons .month-switch{margin-left:6px}
   #extrato-action-buttons #saldo-toggle,
   #extrato-action-buttons .form-toggle,
   #extrato-action-buttons #rec-toggle,
@@ -536,7 +564,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <!-- EXTRATO -->
   <div id="page-extrato" class="page">
     <section id="saldo-setup" class="saldo-setup" aria-label="Saldo inicial">
-      <button id="saldo-toggle" class="saldo-toggle" type="button" aria-expanded="false" aria-controls="saldo-content" onclick="toggleSaldoInicial()">Saldo inicial <span aria-hidden="true">⌄</span></button>
+      <button id="saldo-toggle" class="saldo-toggle" type="button" aria-expanded="false" aria-controls="saldo-content" onclick="toggleSaldoInicial()">Saldo inicial <span aria-hidden="true">▾</span></button>
       <div id="saldo-content" hidden>
         <div id="saldo-start-form">
           <div class="row row2">
@@ -1105,6 +1133,8 @@ function toggleSaldoInicial(force){
   const panel=document.getElementById('saldo-setup');
   if(panel&&document.getElementById('extrato-action-buttons'))panel.hidden=!aberto;
   button.setAttribute('aria-expanded',String(aberto));
+  const arrow=button.querySelector('span');
+  if(arrow)arrow.textContent=aberto?'▴':'▾';
 }
 function editarSaldoInicial(){
   if(!saldoInicialValido(S.saldoInicial))return;
@@ -3405,7 +3435,7 @@ function renderExtrato(){
   const sobra=calcularSobraPrevistaAte(fimMes);
   const textoSaldoMes=mesFuturo?'Saldo do mês indisponível':'Saldo do mês: '+fmt(saldoMes);
   const detalheSaldoMes=mesFuturo?'Esse mês ainda não começou.':(fimMes<today()?'Saldo ao final de '+monthLabel+'.':'Saldo realizado no mês até hoje.');
-  const projecao=saldoInicialValido(S.saldoInicial)?`<div class="plain-summary compact-summary" style="margin:8px 0 12px"><div class="plain-card"><strong>${textoSaldoMes}</strong><span>${detalheSaldoMes}</span></div><div class="plain-card"><strong style="color:${sobra===null?'#c5c3ba':sobra<0?'#efaba4':'#9FE1CB'}">${sobra===null?'Sobra prevista indisponível':'Sobra prevista até '+fimMes.slice(8,10)+'/'+fimMes.slice(5,7)+': '+fmt(sobra)}</strong><span>Inclui entradas e contas programadas e faturas em aberto, sem descontar compras duas vezes.</span></div></div>`:'';
+  const projecao=saldoInicialValido(S.saldoInicial)?`<div class="plain-summary compact-summary extrato-balance-summary"><div class="plain-card"><strong>${textoSaldoMes}</strong><span>${detalheSaldoMes}</span></div><div class="plain-card"><strong style="color:${sobra===null?'#c5c3ba':sobra<0?'#efaba4':'#9FE1CB'}">${sobra===null?'Sobra prevista indisponível':'Sobra prevista até '+fimMes.slice(8,10)+'/'+fimMes.slice(5,7)+': '+fmt(sobra)}</strong><span>Inclui entradas e contas programadas e faturas em aberto, sem descontar compras duas vezes.</span></div></div>`:'';
   if(!rows.length){wrap.innerHTML=resumo+projecao+avisoSaldo+'<div class="empty">Nenhum lançamento em '+monthLabel+'.</div>';return;}
   const hoje=new Date(today()+'T12:00:00');
   const nomesMes=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -4032,7 +4062,7 @@ setSaveStatus('Abra um arquivo JSON para começar.');
 setInterval(()=>{if(hasUnsavedChanges)void autoSaveDataFile();},10000);
 setInterval(updateResumo,5*60*1000);
 </script>
-<script src="js/recorrentes.js?v=20261012-rec-price-delete1"></script>
+<script src="js/recorrentes.js?v=20261012-extrato-toolbar1"></script>
 </body>
 </html>
 
