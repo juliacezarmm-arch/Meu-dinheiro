@@ -1111,9 +1111,8 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 .invest-type-mode{border:1px solid #355e50;border-radius:8px;padding:6px 9px;min-height:30px;background:#141e1a;color:#d9ede4;font-size:10px;font-weight:800;cursor:pointer}
 .invest-type-mode.active{background:#0c4535;color:#a0f3d1;border-color:#19b080}
 .invest-type-summary-head .invest-collapse{margin-left:4px}
-.invest-type-chart-wrap{height:212px;min-width:0;display:flex;flex-direction:column}
-.invest-type-chart-wrap svg{display:block;min-width:0;width:100%;height:192px;flex:1}
-.invest-type-chart-wrap p{text-align:center;color:#b9cec4;font-size:9.5px;line-height:1.2;margin:1px 0 3px}
+.invest-type-chart-wrap{height:212px;min-width:0;display:block}
+.invest-type-chart-wrap svg{display:block;min-width:0;width:100%;height:100%}
 .inflacao-overlay[hidden]{display:none!important}
 .inflacao-overlay{position:fixed;inset:0;z-index:20000;padding:12px;display:grid;place-items:center;background:rgba(0,0,0,.75);backdrop-filter:blur(4px)}
 .inflacao-modal{width:min(100%,390px);max-height:91dvh;overflow-y:auto;background:#111b19;color:#f0faf4;border:1px solid #386050;border-radius:14px;padding:15px;box-shadow:0 18px 65px rgba(0,0,0,.7)}
@@ -4535,7 +4534,7 @@ function renderInvestTypeChart(linhas){
   if(ref!==null)valores.push(ref);
   const lo=Math.min(0,...valores),hi=Math.max(0,...valores),margem=Math.max(1,(hi-lo)*.12);
   const minimo=lo-margem,maximo=hi+margem;
-  const W=780,H=210,L=48,R=17,T=21,B=153;
+  const W=780,H=218,L=48,R=17,T=10,B=173;
   const Y=v=>B-(v-minimo)/(maximo-minimo)*(B-T);
   const zero=Y(0),quant=Math.max(linhas.length,1),w=(W-L-R)/quant;
   const bars=linhas.map((r,i)=>{
@@ -4550,7 +4549,7 @@ function renderInvestTypeChart(linhas){
     return `<g>
       ${valido?`<rect x="${(centro-w*.18).toFixed(1)}" y="${barY.toFixed(1)}" width="${(w*.36).toFixed(1)}" height="${barH.toFixed(1)}" rx="4" fill="${cor}"/>`:''}
       <text x="${centro.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${cor}" font-size="11" font-weight="800" text-anchor="middle">${label}</text>
-      <text x="${centro.toFixed(1)}" y="184" fill="#dae9e2" font-size="11" font-weight="800" text-anchor="middle">${escHtml(tipo)}</text>
+      <text x="${centro.toFixed(1)}" y="204" fill="#dae9e2" font-size="11" font-weight="800" text-anchor="middle">${escHtml(tipo)}</text>
       <title>${escHtml(r.tipo)} · ${label}</title>
     </g>`;
   }).join('');
@@ -4561,7 +4560,7 @@ function renderInvestTypeChart(linhas){
     ${bars}${ipcaLinha}
   </svg>`;
   const info=anual?(ref===null?'IPCA ainda não cadastrado.':ipca.n===12?'IPCA acumulado do ano: '+pctInflacao(ref):'IPCA parcial ('+ipca.n+'/12 meses): '+pctInflacao(ref)+' · Não representa o ano inteiro.'):'Rentabilidade percentual no mês selecionado.';
-  return `<div class="invest-type-chart-wrap">${svg}<p>${info}</p></div>`;
+  return `<div class="invest-type-chart-wrap" title="${escHtml(info)}">${svg}</div>`;
 }
 function renderInvestTypeSummary(investimentos){
   const host=document.getElementById('inv-type-summary');
