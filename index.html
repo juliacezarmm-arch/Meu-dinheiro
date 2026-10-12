@@ -958,6 +958,101 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 #inv-wrap .inv-crypto-logo img[hidden],#inv-wrap .inv-crypto-fallback[hidden]{display:none!important}
 #inv-wrap .inv-crypto-fallback{width:100%;height:100%;display:grid;place-items:center}
 #inv-wrap .inv-card-main .invest-type-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Investment card refinements approved October 2026 */
+#inv-wrap .goal-list.inv-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#inv-wrap .inv-grade .inv-compact-card{
+ min-height:140px;padding:13px 13px 14px;border:1px solid #24534c;
+ border-radius:13px;background:linear-gradient(135deg,#0c1c1c,#081516)
+}
+#inv-wrap .inv-grade .inv-card-main{
+ display:grid;grid-template-columns:minmax(0,1fr) 28px;
+ grid-template-areas:"identity menu" "stats stats";
+ grid-template-rows:auto auto;gap:11px 8px;align-items:start;min-width:0
+}
+#inv-wrap .inv-grade .inv-card-identity{
+ grid-area:identity;display:flex;align-items:center;gap:10px;min-height:44px;min-width:0
+}
+#inv-wrap .inv-grade .inv-card-identity>.invest-type-icon{
+ width:42px;height:42px;min-width:42px;display:grid;place-items:center;border-radius:11px;font-size:21px
+}
+#inv-wrap .inv-grade .inv-card-name{
+ min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px
+}
+#inv-wrap .inv-grade .inv-card-name strong{
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+ white-space:normal;overflow:hidden;overflow-wrap:anywhere;
+ font-size:12.5px;line-height:1.26;color:#eff7f4;font-weight:800
+}
+#inv-wrap .inv-grade .inv-card-name span{
+ font-size:10px;line-height:1.26;color:#aebfbb;white-space:normal;overflow-wrap:anywhere
+}
+#inv-wrap .inv-grade .inv-card-stats{
+ grid-area:stats;display:grid;align-items:center;
+ grid-template-columns:minmax(0,1fr) minmax(0,1.12fr) minmax(0,.62fr);
+ gap:0;min-width:0
+}
+#inv-wrap .inv-grade .inv-card-stats>.inv-card-metric{
+ display:flex!important;flex-direction:column;
+ justify-content:center;align-items:flex-start;min-height:49px;min-width:0;gap:6px
+}
+#inv-wrap .inv-grade .inv-card-balance{padding-right:8px}
+#inv-wrap .inv-grade .inv-card-yield{
+ border-left:1px solid #31504e;padding:0 8px 0 12px
+}
+#inv-wrap .inv-grade .inv-card-metric>span{
+ font-size:9.5px;line-height:1.2;color:#bbcbc7;white-space:normal;overflow:visible;text-overflow:clip
+}
+#inv-wrap .inv-grade .inv-card-balance>strong{
+ font-size:15px;line-height:1.2;white-space:nowrap;
+ color:#f5f8f5;font-weight:850;letter-spacing:-.025em
+}
+#inv-wrap .inv-grade .inv-grade-yield-values{
+ display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;
+ gap:4px 6px;min-width:0
+}
+#inv-wrap .inv-grade .inv-grade-yield-values strong{
+ font-size:12px;line-height:1.2;font-weight:850;white-space:nowrap
+}
+#inv-wrap .inv-grade .inv-grade-yield-values small{
+ display:inline-flex;align-items:center;justify-content:center;
+ padding:4px 6px;border-radius:99px;font-size:9px;
+ line-height:1.1;font-weight:800;white-space:nowrap
+}
+#inv-wrap .inv-grade .inv-card-stats>.inv-card-spark{
+ display:flex!important;align-items:center;justify-content:flex-end;
+ grid-area:auto;justify-self:stretch;align-self:stretch;
+ width:auto;max-width:none;padding-left:9px;
+ border-left:1px solid #31504e;color:#1bdfab;min-width:0
+}
+#inv-wrap .inv-grade .inv-card-stats>.inv-card-spark.negative{color:#ff6679}
+#inv-wrap .inv-grade .inv-card-stats>.inv-card-spark svg{
+ width:100%;height:38px;max-width:94px;display:block
+}
+#inv-wrap .inv-grade .inv-card-menu-wrap{
+ grid-area:menu;justify-self:end;align-self:start;position:relative
+}
+#inv-wrap .inv-grade .inv-more-btn{
+ display:grid;place-items:center;min-width:26px;width:26px;height:30px;
+ border:1px solid transparent;border-radius:8px;padding:0;
+ color:#e2f0eb;font-size:21px;cursor:pointer
+}
+#inv-wrap .inv-grade .inv-more-btn:hover,
+#inv-wrap .inv-grade .inv-more-btn[aria-expanded="true"]{
+ background:#17312a;border-color:#3b6556
+}
+#inv-wrap .inv-grade .inv-card-menu{top:31px;right:0}
+#inv-wrap .inv-grade .inv-crypto-logo{background:#090f16}
+@media(max-width:780px){
+ #inv-wrap .goal-list.inv-grade{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:390px){
+ #inv-wrap .inv-grade .inv-card-stats{
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(0,.56fr)
+ }
+ #inv-wrap .inv-grade .inv-card-yield{padding-left:8px;padding-right:6px}
+ #inv-wrap .inv-grade .inv-card-stats>.inv-card-spark{padding-left:6px}
+}
 </style>
 </head>
 <body>
@@ -4236,7 +4331,7 @@ function investLogoCripto(item){
     ['polygon','polygon','matic','pol'],['avalanche','avalanche','avax'],
     ['usdc','usdc','usd coin'],['ripple','ripple','xrp'],
     ['paxgold','paxgold','pax gold','paxg'],['arbitrum','arbitrum','arb'],
-    ['uniswap','uniswap','uni'],['litecoin','litecoin','ltc']
+    ['uniswap','uniswap','uniwasp','uni'],['litecoin','litecoin','ltc']
   ];
   const achada=moedas.find(([arquivo,...apelidos])=>apelidos.some(a=>(' '+n+' ').includes(' '+a+' ')));
   return achada?'assets/crypto/'+achada[0]+'.svg':'';
@@ -4501,12 +4596,16 @@ function renderDestinoCard(item){
     </div>`;
     return `<div class="goal-card inv-compact-card" data-invest-id="${item.id}">
       <div class="inv-card-main">
-        ${logoHtml}
-        <div class="inv-card-name"><strong>${escHtml(item.nome)}</strong><span>${escHtml(item.tipo)}${item.banco?' · '+escHtml(item.banco):''}</span></div>
-        <div class="inv-card-metric"><span>Valor atual</span><strong>${fmt(periodo.final)}</strong></div>
-        <div class="inv-card-metric"><span>Rendimento (${periodoLabel})</span><div class="inv-grade-yield-values"><strong class="${cls}">${periodo.rendimento>0?'+':''}${fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div></div>
-        <span class="inv-card-spark">${investSparkline([item])}</span>
-        <div class="inv-card-menu-wrap"><button class="inv-more-btn" type="button" onclick="toggleInvestCardMenu(${item.id},event)" aria-label="Mais opções">⋮</button>${menu}</div>
+        <div class="inv-card-identity">
+          ${logoHtml}
+          <div class="inv-card-name"><strong title="${escHtml(item.nome)}">${escHtml(item.nome)}</strong><span>${escHtml(item.tipo)}${item.banco?' · '+escHtml(item.banco):''}</span></div>
+        </div>
+        <div class="inv-card-stats">
+          <div class="inv-card-metric inv-card-balance"><span>Valor atual</span><strong>${fmt(periodo.final)}</strong></div>
+          <div class="inv-card-metric inv-card-yield"><span>Rendimento (${periodoLabel})</span><div class="inv-grade-yield-values"><strong class="${cls}">${periodo.rendimento>0?'+':''}${fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div></div>
+          <span class="inv-card-spark ${cls}">${investSparkline([item])}</span>
+        </div>
+        <div class="inv-card-menu-wrap"><button class="inv-more-btn" type="button" onclick="toggleInvestCardMenu(${item.id},event)" aria-label="Mais opções de ${escHtml(item.nome)}" aria-expanded="${menuAberto}">⋮</button>${menu}</div>
       </div>
       ${painelAcao}${historicoHtml}${graficoHtml}
     </div>`;
