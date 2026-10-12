@@ -31,7 +31,7 @@ assert.strictEqual(run('diaDeCartaoValido(32,true)'),false);
 run("S.saldoInicial={valor:2000,data:'2026-09-18',idsIgnorados:[]};S.cartoes=[{id:1,bank:'Itaú',dueDay:10,paymentDay:17,closeDay:null}];S.cartao=[{id:2,cardId:1,data:'2026-09-20',val:600,parcelas:1,vencDia:10,closeDay:null,desc:'Compra'}]");
 assert.strictEqual(run("totalDaFaturaFinanceira(1,'2026-10')"),60000);
 run("registrarPagamentoFatura(1,'2026-10')");
-assert.strictEqual(el('card-payment-date').value,'2026-10-18');
+assert.strictEqual(el('card-payment-date').value,'2026-10-17','Data sugerida deve respeitar dia habitual de pagamento do cartão');
 assert(el('card-payment-description').textContent.includes('Vencimento dia 10'));
 assert(el('card-payment-description').textContent.includes('dia 17'));
 assert.strictEqual(el('card-payment-editor').hidden,false);
