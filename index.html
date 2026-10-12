@@ -718,6 +718,140 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 #invest-modal-content .history-row{grid-template-columns:64px minmax(0,1fr) 110px 24px}
 #invest-modal-content .stock-chart{max-width:100%;overflow-x:auto}
 @media(max-width:580px){.invest-dialog{padding:10px}.invest-modal-panel{padding:16px;max-height:calc(100dvh - 20px)}#invest-modal-content .row2{grid-template-columns:1fr}#invest-modal-content .history-row{grid-template-columns:52px minmax(0,1fr) 80px 24px;gap:5px;font-size:11px}#invest-modal-content .history-value{font-size:11px}.invest-modal-heading h2{font-size:17px}.inv-rend-percent{font-size:12px}}
+
+/* Lista de investimentos: layout aprovado, independente do modo Grade. */
+#inv-wrap .goal-list.inv-list{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:8px;
+}
+#inv-wrap .inv-list .inv-compact-card{
+  padding:10px 12px;
+  border:1px solid #29443e;
+  border-radius:12px;
+  background:linear-gradient(110deg,#0e1a1b 0%,#0c1516 100%);
+  min-width:0;
+  min-height:70px;
+  overflow:visible;
+  transition:border-color .15s ease,background .15s ease;
+}
+#inv-wrap .inv-list .inv-compact-card:hover{
+  border-color:#426d5f;
+  background:linear-gradient(110deg,#112222 0%,#101a1a 100%);
+}
+#inv-wrap .inv-list .inv-compact-card:has(.inv-card-menu.open){z-index:20}
+#inv-wrap .inv-list .inv-card-main{
+  display:grid;
+  grid-template-columns:38px minmax(120px,1.7fr) minmax(108px,1fr) minmax(154px,1.35fr) 75px 26px;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+#inv-wrap .inv-list .invest-type-icon{
+  width:38px;
+  height:38px;
+  border-radius:10px;
+  font-size:20px;
+  flex:none;
+  display:grid;
+  place-items:center;
+}
+#inv-wrap .inv-list .inv-card-name{gap:3px;min-width:0}
+#inv-wrap .inv-list .inv-card-name strong{
+  font-size:11.5px;
+  font-weight:800;
+  line-height:1.25;
+  color:#eaf3ef;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+#inv-wrap .inv-list .inv-card-name span{
+  font-size:9.5px;
+  line-height:1.3;
+  color:#aabbb5;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+#inv-wrap .inv-list .inv-card-metric{
+  display:flex!important;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  gap:4px;
+  min-width:0;
+}
+#inv-wrap .inv-list .inv-card-metric>span{
+  font-size:9px;
+  line-height:1.2;
+  color:#adbdb8;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+}
+#inv-wrap .inv-list .inv-card-metric>strong{
+  font-size:11.5px;
+  line-height:1.25;
+  font-weight:850;
+  color:#f2f6f2;
+  white-space:nowrap;
+}
+#inv-wrap .inv-list .inv-card-metric>strong.positive{color:#2bdfa9}
+#inv-wrap .inv-list .inv-card-metric>strong.negative{color:#ff8584}
+#inv-wrap .inv-list .inv-card-metric>small{
+  width:max-content;
+  max-width:100%;
+  font-size:9px;
+  line-height:1.2;
+  font-weight:800;
+  padding:3px 7px;
+  border-radius:999px;
+  white-space:nowrap;
+  background:#26332e;
+}
+#inv-wrap .inv-list .inv-card-metric>small.positive{color:#30e8af;background:#113d30}
+#inv-wrap .inv-list .inv-card-metric>small.negative{color:#ff8d89;background:#3c2527}
+#inv-wrap .inv-list .inv-card-metric>small.neutral{color:#cfddd6;background:#26332e}
+#inv-wrap .inv-list .inv-card-spark{
+  width:75px;
+  max-width:100%;
+  display:block!important;
+  color:#22dca7;
+}
+#inv-wrap .inv-list .inv-card-spark svg{width:100%;height:32px;display:block}
+#inv-wrap .inv-list .inv-card-menu-wrap{justify-self:end;align-self:center}
+#inv-wrap .inv-list .inv-more-btn{
+  display:grid;
+  place-items:center;
+  width:26px;
+  height:30px;
+  padding:0;
+  border:1px solid transparent;
+  border-radius:8px;
+  color:#e9f3ed;
+  font-size:21px;
+}
+#inv-wrap .inv-list .inv-more-btn:hover{background:#1b2c28;border-color:#456558}
+#inv-wrap .inv-list .inv-card-menu{right:0;top:31px}
+@media(max-width:760px){
+  #inv-wrap .inv-list .inv-card-main{
+    grid-template-columns:40px minmax(0,1fr) minmax(0,1fr) 68px 26px;
+    gap:8px 10px;
+  }
+  #inv-wrap .inv-list .inv-card-main>.invest-type-icon{grid-column:1;grid-row:1}
+  #inv-wrap .inv-list .inv-card-name{grid-column:2/5;grid-row:1}
+  #inv-wrap .inv-list .inv-card-main>.inv-card-metric:nth-child(3){grid-column:2;grid-row:2}
+  #inv-wrap .inv-list .inv-card-main>.inv-card-metric:nth-child(4){grid-column:3;grid-row:2}
+  #inv-wrap .inv-list .inv-card-spark{grid-column:4;grid-row:2;width:100%}
+  #inv-wrap .inv-list .inv-card-menu-wrap{grid-column:5;grid-row:1}
+}
+@media(max-width:520px){
+  #inv-wrap .inv-list .inv-card-main{grid-template-columns:38px minmax(0,1fr) minmax(0,1fr) 26px}
+  #inv-wrap .inv-list .inv-card-name{grid-column:2/4}
+  #inv-wrap .inv-list .inv-card-menu-wrap{grid-column:4}
+  #inv-wrap .inv-list .inv-card-main>.inv-card-metric:nth-child(3){grid-column:1/3;grid-row:2}
+  #inv-wrap .inv-list .inv-card-main>.inv-card-metric:nth-child(4){grid-column:3/5;grid-row:2}
+  #inv-wrap .inv-list .inv-card-spark{grid-column:1/-1;grid-row:3;width:100px}
+}
 </style>
 </head>
 <body>
