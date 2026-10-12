@@ -184,6 +184,30 @@ td:last-child{white-space:normal}
 .saldo-bar{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:14px;overflow:hidden}
 .saldo-bar .big{font-size:26px;font-weight:500}.mascot-panel{background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:.85rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:14px;text-align:left}.mascot-panel img{width:138px;height:138px;object-fit:contain;filter:drop-shadow(0 10px 18px rgba(0,0,0,.4))}.mascot-copy{display:flex;flex-direction:column;gap:4px;max-width:260px}.mascot-copy strong{font-size:16px;font-weight:900;color:#9FE1CB;line-height:1.1}.mascot-copy span{font-size:13px;font-weight:700;color:var(--color-text-primary);line-height:1.25}
 .month-switch{display:flex;align-items:center;justify-content:space-between;gap:6px;background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-md);padding:.38rem;margin-bottom:.8rem}
+#page-resumo .summary-overview{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(250px,.85fr);gap:10px;align-items:stretch;margin-bottom:.75rem}
+#page-resumo .summary-overview .mascot-panel{margin:0;min-height:112px;padding:.65rem .85rem;justify-content:flex-start;text-align:left;gap:12px}
+#page-resumo .summary-overview .mascot-panel img{width:92px;height:92px}
+#page-resumo .summary-overview .mascot-copy{max-width:none;align-items:flex-start}
+#page-resumo .summary-overview .mascot-copy strong{font-size:15px}
+#page-resumo .summary-overview .mascot-copy span{font-size:12px}
+#page-resumo .summary-balance-panel{min-width:0;background:#171716;border:1px solid #3a3934;border-radius:var(--border-radius-lg);padding:.75rem .9rem;display:flex;flex-direction:column;justify-content:center}
+#page-resumo .summary-balance-panel .saldo-bar{background:transparent;border-radius:0;padding:0;margin:0;min-height:0;overflow:visible}
+#page-resumo .summary-balance-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:3px}
+#page-resumo .summary-balance-panel .saldo-bar .big{font-size:24px}
+#page-resumo .summary-balance-panel .saldo-note{margin:.42rem 0 0;font-size:10.5px;line-height:1.35}
+#page-resumo .summary-balance-panel .saldo-link{align-self:flex-start;margin:.5rem 0 0;padding:6px 9px;font-size:11px}
+#page-resumo .cards{gap:7px;margin-bottom:.8rem}
+#page-resumo .card{padding:.6rem .55rem}
+#page-resumo .card .label{font-size:11px;margin-bottom:4px}
+#page-resumo .card .value{font-size:17px}
+#page-resumo>.month-switch{margin-bottom:.65rem}
+@media(max-width:700px){
+  #page-resumo .summary-overview{grid-template-columns:1fr;gap:8px}
+  #page-resumo .summary-overview .mascot-panel{min-height:92px;flex-direction:row;text-align:left;justify-content:flex-start;padding:.55rem .7rem}
+  #page-resumo .summary-overview .mascot-panel img{width:76px;height:76px}
+  #page-resumo .summary-overview .mascot-copy{align-items:flex-start}
+  #page-resumo .summary-balance-panel{padding:.65rem .75rem}
+}
 .month-switch button{background:#242423;color:var(--color-text-primary);border:1px solid #3a3934;border-radius:var(--border-radius-md);min-width:34px;height:30px;padding:0 8px;font-size:12px;font-weight:700;cursor:pointer}
 .month-switch button:hover{border-color:#9FE1CB}
 .month-switch .current-month{flex:1;text-align:center;font-size:13px;font-weight:800}
@@ -546,21 +570,25 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 
   <!-- RESUMO -->
   <div id="page-resumo" class="page active">
-    <div class="mascot-panel" aria-live="polite" title="Mascote do mês: ele muda conforme sua situação financeira e dá uma dica simples.">
-      <img id="res-mascot-img" src="assets/mascote-feliz.png" alt="Mascote feliz">
-      <div class="mascot-copy">
-        <strong id="res-mascot-title">Pensativo</strong>
-        <span id="res-mascot-text">Comece lançando o mês</span>
+    <div class="summary-overview">
+      <div class="mascot-panel" aria-live="polite" title="Mascote do mês: ele muda conforme sua situação financeira e dá uma dica simples.">
+        <img id="res-mascot-img" src="assets/mascote-feliz.png" alt="Mascote feliz">
+        <div class="mascot-copy">
+          <strong id="res-mascot-title">Pensativo</strong>
+          <span id="res-mascot-text">Comece lançando o mês</span>
+        </div>
+      </div>
+      <div class="summary-balance-panel">
+        <div class="saldo-bar" title="Dinheiro que sobrou no mês depois das saídas, cartão, investimentos e metas.">
+          <div>
+            <div class="summary-balance-label">Saldo disponível</div>
+            <div class="big" id="saldo-total">R$ 0,00</div>
+          </div>
+        </div>
+        <p class="saldo-note" id="saldo-note">Informe seu saldo inicial para começar a acompanhar o dinheiro que você realmente tem.</p>
+        <button class="saldo-link" id="saldo-link" type="button" onclick="goToSaldoInicial()">Informar saldo inicial</button>
       </div>
     </div>
-    <div class="saldo-bar" title="Dinheiro que sobrou no mês depois das saídas, cartão, investimentos e metas.">
-      <div>
-        <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px">Saldo disponível</div>
-        <div class="big" id="saldo-total">R$ 0,00</div>
-      </div>
-    </div>
-    <p class="saldo-note" id="saldo-note">Informe seu saldo inicial para começar a acompanhar o dinheiro que você realmente tem.</p>
-    <button class="saldo-link" id="saldo-link" type="button" onclick="goToSaldoInicial()">Informar saldo inicial</button>
     <div class="cards">
       <div class="card" title="Tudo que entrou de dinheiro neste mês, como salário, benefícios ou renda extra."><div class="label">Entradas</div><div class="value green" id="res-ent">R$ 0</div></div>
       <div class="card" title="Gastos do mês, incluindo despesas do extrato e parcelas do cartão."><div class="label">Saídas</div><div class="value red" id="res-sai">R$ 0</div></div>
