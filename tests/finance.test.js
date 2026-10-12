@@ -46,4 +46,28 @@ assert(html.includes('idsIgnorados:S.extrato.filter(x=>x.data<=today())'),'Saldo
 assert(html.includes('validarDadosImportados(parsed);')&&html.includes('dataFileHandle=handle;knownFileSignature='),'Arquivo só é associado após validação');
 assert(html.includes('faturaMes:mes'),'Pagamentos vinculados à fatura');
 assert(html.includes('S.extrato.some(x=>String(x.destId)===String(id))'),'Exclusão com proteção de histórico');
+
+const graphEnv=vm.createContext({
+  Number,Math,Array,String,
+  investPeriodo:'mes',
+  investMes:new Date(2026,9,1),
+  S:{inflacao:{'2026-10':1.09}},
+  calcInflacaoAno:()=>({n:1,composto:1.09}),
+  pctInflacao:v=>Number(v).toFixed(2).replace('.',',')+'%',
+  escHtml:v=>String(v)
+});
+vm.runInContext(get('renderInvestTypeChart'),graphEnv);
+const gruposTeste="[{tipo:'CDB',pct:0.6156},{tipo:'Cripto',pct:-11.39}]";
+let chart=vm.runInContext('renderInvestTypeChart('+gruposTeste+')',graphEnv);
+assert(chart.includes('Inflação do mês: 1,09%'),'Gráfico mensal deve mostrar a taxa de inflação cadastrada');
+assert(chart.includes('fill="#ff5c70"')&&chart.includes('stroke-dasharray="7 5"'),'Linha tracejada e bolinha vermelha da inflação devem aparecer');
+assert(!chart.includes('>IPCA '),'Não exibir IPCA antes da porcentagem no gráfico');
+assert(chart.indexOf('>CDB</text>')<chart.indexOf('>+0,62%</text>'),'Porcentagens dos investimentos devem ficar abaixo dos nomes');
+vm.runInContext("delete S.inflacao['2026-10']",graphEnv);
+chart=vm.runInContext('renderInvestTypeChart('+gruposTeste+')',graphEnv);
+assert(!chart.includes('Inflação do mês:')&&!chart.includes('fill="#ff5c70"'),'Não inventar taxa mensal não cadastrada');
+vm.runInContext("investPeriodo='ano'",graphEnv);
+chart=vm.runInContext('renderInvestTypeChart('+gruposTeste+')',graphEnv);
+assert(chart.includes('Inflação do ano: 1,09%'),'Gráfico anual deve manter inflação acumulada');
+assert(html.includes('aria-expanded="${investTypeOpen}"')&&html.includes('invest-collapse svg'),'Botão Recolher deve alinhar o ícone');
 console.log('PASS: saldo, datas futuras, receitas/resgates, centavos, fechamento, faturas, metas, JSON, HTML e vínculos');
