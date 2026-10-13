@@ -415,9 +415,10 @@ function renderRecurring(){
    const next=recurringNext(r),ended=!!r.fim&&r.fim<=today();
    const freq={semanal:'Semanal',mensal:'Mensal',anual:'Anual'}[r.frequencia]||r.frequencia;
    const card=S.cartoes.find(c=>String(c.id)===String(r.cartaoId));
+   const excluir='<button class="rec-button delete" type="button" data-recdelete="'+r.id+'" aria-label="Excluir recorrência '+escHtml(r.nome)+'">Excluir</button>';
    const action=ended
-    ?'<button class="rec-button primary" type="button" data-recreactivate="'+r.id+'">Reativar</button><button class="rec-button delete" type="button" data-recdelete="'+r.id+'">Excluir</button>'
-    :'<button class="rec-button" type="button" data-recprice="'+r.id+'">Atualizar valor</button><button class="rec-button danger" type="button" data-recend="'+r.id+'">Encerrar</button>';
+    ?'<button class="rec-button primary" type="button" data-recreactivate="'+r.id+'">Reativar</button>'+excluir
+    :'<button class="rec-button" type="button" data-recprice="'+r.id+'">Atualizar valor</button><button class="rec-button danger" type="button" data-recend="'+r.id+'">Encerrar</button>'+excluir;
    const actions='<span class="rec-inline-actions"><button class="rec-button" type="button" data-recedit="'+r.id+'" aria-label="Editar '+escHtml(r.nome)+'">✎ Editar</button>'+action+'</span>';
    if(r.metodo==='cartao'){
     const cobranca=r.frequencia==='mensal'?'Dia da cobrança: '+(r.diaCobranca||Number(r.inicio.slice(8))):'Desde: '+displayDate(r.inicio);
@@ -521,12 +522,20 @@ function updateRecurringPrice(id){
  const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r||r.excluida||r.fim&&r.fim<=today())return;
  openRecEditor(r.id,r.metodo==='cartao'?'cartao':'conta',false,true);
 }
-async function deleteEndedRecurring(id){
- const r=S.recorrentes.find(x=>String(x.id)===String(id));if(!r||r.excluida||!r.fim||r.fim>today())return;
- if(!await appConfirm('Excluir o cadastro encerrado '+r.nome+'? Os lançamentos já registrados no Extrato/Cartão serão preservados.'))return;
+async function deleteRecurring(id){
+ const r=S.recorrentes.find(x=>String(x.id)===String(id));
+ if(!r||r.excluida)return;
+ const ativa=!r.fim||r.fim>today();
+ const mensagem='Excluir a recorrência '+r.nome+'? '
+   +(ativa?'Ela deixará de gerar novas cobranças. ':'')
+   +'As compras e movimentações já registradas no Extrato/Cartão serão preservadas.';
+ if(!await appConfirm(mensagem))return;
+ // A exclusão é prospectiva: nenhuma compra/fatura passada é removida.
+ if(ativa)r.fim=today();
  r.excluida=true;
+ if(String(editingRecId)===String(r.id))closeRecEditor();
  saveData();renderRecurring();renderExtrato();renderCartao();updateResumo();
- appAlert('Cadastro encerrado excluído da lista. Os lançamentos anteriores foram preservados.');
+ appAlert('Recorrência excluída. Os lançamentos anteriores foram preservados.');
 }
 function ignoreRecurring(row){
  if(!row||!row.recorrenciaId||!row.recorrenciaData)return;
@@ -611,7 +620,7 @@ for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('cli
  if(btn.dataset.recprice)updateRecurringPrice(btn.dataset.recprice);
  if(btn.dataset.recend)void endRecurring(btn.dataset.recend);
  if(btn.dataset.recreactivate)reactivateRecurring(btn.dataset.recreactivate);
- if(btn.dataset.recdelete)void deleteEndedRecurring(btn.dataset.recdelete);
+ if(btn.dataset.recdelete)void deleteRecurring(btn.dataset.recdelete);
 });
 const oldShowPage=showPage;
 showPage=function(id,btn){oldShowPage(id,btn);if(id==='extrato'||id==='cartao')renderRecurring();};

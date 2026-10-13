@@ -26,10 +26,10 @@ assert(!js.includes('Data da primeira ocorrência'),'Rótulo antigo não deve ap
 assert(js.includes('id=\"rec-day\"')&&js.includes('recurrenceTiming()'),'Formulário mensal do cartão deve pedir somente dia');
 assert.deepStrictEqual(Array.from(datasRecorrentes({inicio:'2026-08-05',frequencia:'mensal',fim:'2026-11-01'},'2026-12-31')),['2026-08-05','2026-09-05','2026-10-05']);
 assert.deepStrictEqual(Array.from(datasRecorrentes({inicio:'2026-08-05',frequencia:'mensal',vigenteDesde:'2026-09-19'},'2026-11-30')),['2026-10-05','2026-11-05']);
-for(const token of ['recorrenciaData','recorrenciaIgnoradas','saldoInicial.data','originalJaRegistrado','syncRecurring','cardForecasts','cashForecastsForMonth','endRecurring','deleteEndedRecurring','openRecEditor','appConfirm'])assert(js.includes(token),'Regra ausente: '+token);
+for(const token of ['recorrenciaData','recorrenciaIgnoradas','saldoInicial.data','originalJaRegistrado','syncRecurring','cardForecasts','cashForecastsForMonth','endRecurring','deleteRecurring','openRecEditor','appConfirm'])assert(js.includes(token),'Regra ausente: '+token);
 assert(js.includes("cardSection.id='rec-cartao-area'"),'Assinaturas precisam de área própria na aba Cartão');
 assert(js.includes('id=\"rec-card-open\"'),'Botão de assinatura ausente');
-assert(js.includes('r.fim=today()')&&js.includes('r.excluida=true')&&js.includes('deleteEndedRecurring'),'Encerrar deve suspender ocorrências futuras; excluir só após encerramento, preservando histórico');
+assert(js.includes('r.fim=today()')&&js.includes('r.excluida=true')&&js.includes('deleteRecurring'),'Encerrar e excluir devem suspender ocorrências futuras, preservando histórico');
 assert(!js.includes('id=\"rec-end\"')&&!js.includes('data-reccancel'),'Campos duplicados de encerramento não devem aparecer');
 assert(js.includes('cardRow.hidden=true;cardRow.remove()'),'Campo de cartão precisa sair fisicamente do formulário da conta');
 assert(js.includes('id=\"rec-card-toggle\"')&&js.includes('setCardRecAreaExpanded'),'Assinaturas precisam ser minimizáveis');
@@ -39,9 +39,36 @@ assert(html.includes('calcularSobraPrevistaAte')&&html.includes('faturasPendente
 assert(!html.includes('onclick=\"registrarPagamentoFatura(${card.id}'),'Pagamento não deve ficar na aba Cartão');
 assert(html.includes('class="extrato-pagar"')&&html.includes('registrarPagamentoFatura(${Number(r.cardId)}'),'Extrato deve oferecer ação para pagar fatura');
 assert(!js.includes('id=\"rec-end\"'),'Encerramento não pertence ao cadastro inicial');
-assert(js.includes('data-recdelete')&&js.includes('data-recend')&&js.includes('deleteEndedRecurring'),'Ações de encerrar e excluir cadastro encerrado continuam disponíveis');
+assert(js.includes('data-recdelete')&&js.includes('data-recend')&&js.includes('deleteRecurring'),'Ações de encerrar e excluir qualquer recorrência ficam disponíveis');
+assert(js.includes("const excluir='<button")&&js.includes("'+excluir;"),'Excluir precisa aparecer também nas recorrências ativas');
 assert(js.includes('id=\"rec-toggle\"')&&js.includes('setRecAreaExpanded'),'Registros precisam abrir e fechar');
 assert(js.includes('rec-inline-actions')&&js.includes('rec-item-date'),'Editar e excluir devem ficar ao lado do dia');
 assert(!js.includes('Recorrências previstas (não movimentam o saldo)'),'Não mostrar caixa de previsões separada');
 assert(html.includes('rowsBase.concat(proximas)')&&html.includes('const entradasMes=rowsBase.filter'),'Previsões na tabela mas fora do saldo até a data');
-console.log('PASS: recorrências, separação conta/cartão, exclusão prospectiva, histórico e validação');
+// Verifica excluir uma recorrência ativa ou encerrada sem apagar compras já registradas.
+const delStart=js.indexOf('async function deleteRecurring(id){');
+const delEnd=js.indexOf('\nfunction ignoreRecurring(row){',delStart);
+assert(delStart>=0&&delEnd>delStart,'Ação de exclusão não localizada');
+async function testarExclusao(){
+ const compra={id:700,recorrenciaId:11,recorrenciaData:'2026-09-10',val:29};
+ const ativa={id:11,nome:'Assinatura ativa',metodo:'cartao',fim:null,excluida:false};
+ const encerrada={id:12,nome:'Assinatura encerrada',metodo:'cartao',fim:'2026-09-15',excluida:false};
+ let confirmacao=false,salvamentos=0;
+ const sandbox={S:{recorrentes:[ativa,encerrada],cartao:[compra]},today:()=>'2026-10-12',
+   appConfirm:async()=>confirmacao,saveData:()=>salvamentos++,renderRecurring:()=>{},renderExtrato:()=>{},renderCartao:()=>{},updateResumo:()=>{},
+   appAlert:()=>{},editingRecId:null,closeRecEditor:()=>{}};
+ vm.createContext(sandbox);
+ vm.runInContext(js.slice(delStart,delEnd),sandbox);
+ await vm.runInContext('deleteRecurring(11)',sandbox);
+ assert.strictEqual(ativa.excluida,false,'Cancelar confirmação deve manter cadastro');
+ assert.strictEqual(salvamentos,0,'Cancelar confirmação não salva');
+ confirmacao=true;
+ await vm.runInContext('deleteRecurring(11)',sandbox);
+ assert.strictEqual(ativa.excluida,true,'Ativa pode ser excluída diretamente');
+ assert.strictEqual(ativa.fim,'2026-10-12','Exclusão de ativa cancela próximas cobranças');
+ assert.strictEqual(sandbox.S.cartao[0],compra,'Compra passada não pode ser apagada');
+ await vm.runInContext('deleteRecurring(12)',sandbox);
+ assert.strictEqual(encerrada.excluida,true,'Encerrada continua excluível');
+}
+testarExclusao().then(()=>console.log('PASS: recorrências, exclusão direta ativa/encerrada, histórico protegido e validação'))
+ .catch(err=>{console.error(err);process.exitCode=1;});
