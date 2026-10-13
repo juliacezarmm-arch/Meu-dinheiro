@@ -1522,6 +1522,13 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <p class="site-dialog-copy">A mensalidade é vinculada ao cartão e entra automaticamente nas próximas faturas. Não precisa ser cadastrada em Recorrentes.</p>
   <div class="site-dialog-actions"><button class="site-button quiet" type="button" onclick="fecharJanela('card-editor')">Cancelar</button><button class="site-button primary" type="submit">Salvar cartão</button></div></form>
 </div></div>
+<div id="card-fee-delete" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-fee-delete-title" hidden><div class="site-dialog-panel">
+<div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">×</span><h2 id="card-fee-delete-title">Remover mensalidade</h2></div>
+<p class="site-dialog-copy" id="card-fee-delete-description"></p>
+<p class="site-dialog-copy">Remover somente esta fatura ou cancelar a mensalidade desta fatura em diante? Faturas pagas serão preservadas.</p>
+<div class="site-dialog-actions"><button type="button" class="site-button quiet" onclick="fecharJanela('card-fee-delete')">Cancelar</button>
+<button type="button" class="site-button" onclick="removerMensalidadeCartao('mes')">Só esta fatura</button>
+<button type="button" class="site-button primary" onclick="removerMensalidadeCartao('futuras')">Esta e próximas</button></div></div></div>
 <div id="card-paid-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-paid-title" hidden><div class="site-dialog-panel">
   <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">✓</span><h2 id="card-paid-title">Parcelas pagas</h2></div>
   <p class="site-dialog-copy" id="card-paid-description"></p>
@@ -1667,7 +1674,7 @@ async function confirmarExclusao(message){
 const exclusaoConfirmadaPorBotao=new WeakSet();
 document.addEventListener('click',async event=>{
   const btn=event.target&&event.target.closest?event.target.closest('button'):null;
-  if(!btn||btn.dataset.recdelete||btn.classList.contains('goal-delete'))return;
+  if(!btn||btn.dataset.recdelete||btn.dataset.feeaction||btn.classList.contains('goal-delete'))return;
   const onclick=btn.getAttribute('onclick')||'';
   const label=[btn.getAttribute('aria-label')||'',btn.dataset.help||'',btn.getAttribute('title')||''].join(' ');
   const temX=btn.textContent.trim()==='×'||!!btn.querySelector('.ti-x');
@@ -1681,7 +1688,7 @@ document.addEventListener('click',async event=>{
   exclusaoConfirmadaPorBotao.add(btn);
   btn.click();
 },true);
-document.addEventListener('keydown',event=>{if(event.key!=='Escape'||!document.getElementById('app-confirm-overlay').hidden)return;for(const id of ['extrato-editor','card-editor','card-payment-editor','card-paid-editor'])if(!document.getElementById(id).hidden){fecharJanela(id);break;}});
+document.addEventListener('keydown',event=>{if(event.key!=='Escape'||!document.getElementById('app-confirm-overlay').hidden)return;for(const id of ['extrato-editor','card-editor','card-fee-delete','card-payment-editor','card-paid-editor'])if(!document.getElementById(id).hidden){fecharJanela(id);break;}});
 function fmt(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function today(){const d=new Date();return isoDate(d.getFullYear(),d.getMonth(),d.getDate());}
 function todayText(){return new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}).replace('.', '');}
@@ -1733,6 +1740,9 @@ function validarDadosImportados(arquivo){
       if(key==='cartoes'&&r.monthlyFeeStartMonth!==undefined&&r.monthlyFeeStartMonth!==null&&!/^\d{4}-\d{2}$/.test(String(r.monthlyFeeStartMonth)))throw Error('Início da mensalidade do cartão inválido.');
       if(key==='cartoes'&&r.monthlyFeeHistory!==undefined){
         if(!Array.isArray(r.monthlyFeeHistory)||r.monthlyFeeHistory.length>500||r.monthlyFeeHistory.some(x=>!x||!/^\d{4}-\d{2}$/.test(String(x.startMonth))||!valorMonetarioValido(Number(x.value))))throw Error('Histórico de mensalidade do cartão inválido.');
+      }
+      if(key==='cartoes'&&r.monthlyFeeIgnoredMonths!==undefined){
+        if(!Array.isArray(r.monthlyFeeIgnoredMonths)||r.monthlyFeeIgnoredMonths.length>500||new Set(r.monthlyFeeIgnoredMonths).size!==r.monthlyFeeIgnoredMonths.length||r.monthlyFeeIgnoredMonths.some(x=>typeof x!=='string'||!/^\d{4}-(0[1-9]|1[0-2])$/.test(x)))throw Error('Exceções de mensalidade inválidas.');
       }
       if(key==='cartao'&&(!Number.isInteger(Number(r.parcelas||1))||Number(r.parcelas||1)<1||Number(r.parcelas||1)>120))throw Error('Parcelamento inválido.');
       if(key==='cartao'&&r.parcelasPagasInformadas!==undefined&&(!Number.isInteger(r.parcelasPagasInformadas)||r.parcelasPagasInformadas<0||r.parcelasPagasInformadas>Number(r.parcelas||1)))throw Error('Quantidade de parcelas pagas inválida.');
@@ -2373,6 +2383,7 @@ function mesFaturaAtualDoCartao(card,referencia=today()){
 function valorMensalidadeNoMes(card,y,m){
   if(!card)return 0;
   const mes=monthKey(y,m);
+  if(Array.isArray(card.monthlyFeeIgnoredMonths)&&card.monthlyFeeIgnoredMonths.includes(mes))return 0;
   if(Array.isArray(card.monthlyFeeHistory)&&card.monthlyFeeHistory.length){
     const vigente=card.monthlyFeeHistory
       .filter(x=>x&&/^\d{4}-\d{2}$/.test(String(x.startMonth))&&String(x.startMonth)<=mes)
@@ -2396,6 +2407,45 @@ function primeiroMesMensalidadeCartao(card){
 }
 function mensalidadeAtivaNoMes(card,y,m){
   return valorMensalidadeNoMes(card,y,m)>0;
+}
+// Mensalidade automática: remove por fatura sem apagar o cartão ou histórico pago.
+let mensalidadeEmExclusao=null;
+function abrirExclusaoMensalidadeCartao(id,mes){
+ const card=S.cartoes.find(c=>String(c.id)===String(id));
+ if(!card||!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(mes)))return;
+ const [ano,n]=mes.split('-').map(Number);
+ const valor=valorMensalidadeNoMes(card,ano,n-1);
+ if(valor<=0)return;
+ mensalidadeEmExclusao={id:card.id,mes};
+ document.getElementById('card-fee-delete-description').textContent=nomeCartaoResumo(card)+' · Fatura '+mes+' · '+fmt(valor);
+ abrirJanela('card-fee-delete');
+}
+function removerMensalidadeCartao(escopo){
+ const pedido=mensalidadeEmExclusao;
+ if(!pedido||!['mes','futuras'].includes(escopo))return;
+ const card=S.cartoes.find(c=>String(c.id)===String(pedido.id));
+ if(!card)return fecharJanela('card-fee-delete');
+ const mes=pedido.mes;
+ const pago=S.extrato.some(x=>String(x.cardId)===String(card.id)&&typeof x.faturaMes==='string'&&
+   (escopo==='futuras'?x.faturaMes>=mes:x.faturaMes===mes)&&Number(x.val)>0);
+ if(pago){appAlert('Há pagamento registrado nesta fatura ou em uma posterior. Concilie o pagamento antes de modificar a mensalidade.');return;}
+ if(escopo==='mes'){
+   if(!Array.isArray(card.monthlyFeeIgnoredMonths))card.monthlyFeeIgnoredMonths=[];
+   if(!card.monthlyFeeIgnoredMonths.includes(mes))card.monthlyFeeIgnoredMonths.push(mes);
+   card.monthlyFeeIgnoredMonths.sort();
+ }else{
+   if(!Array.isArray(card.monthlyFeeHistory))card.monthlyFeeHistory=[];
+   if(!card.monthlyFeeHistory.length&&Number(card.monthlyFee)>0){
+     card.monthlyFeeHistory.push({startMonth:card.monthlyFeeStartMonth||mesFaturaAtualDoCartao(card),value:Number(card.monthlyFee)});
+   }
+   card.monthlyFeeHistory=card.monthlyFeeHistory.filter(x=>String(x.startMonth)<mes);
+   card.monthlyFeeHistory.push({startMonth:mes,value:0});
+   if(mes<=mesFaturaAtualDoCartao(card))card.monthlyFee=0;
+ }
+ mensalidadeEmExclusao=null;fecharJanela('card-fee-delete');
+ saveData();renderRegisteredCards();renderCartao();renderExtrato();updateResumo();
+ if(typeof window.refreshRecorrentes==='function')window.refreshRecorrentes();
+ appAlert(escopo==='mes'?'Mensalidade removida apenas desta fatura.':'Mensalidade cancelada desta fatura em diante.');
 }
 function parcelaMensalidadeCartao(card,y,m){
   const valor=valorMensalidadeNoMes(card,y,m);
@@ -3664,11 +3714,12 @@ function renderCartao(){
         const cat=`${r.subcategoria||'Sem categoria'}${historico?' · Histórico anterior à abertura':''}`;
         let actions='';
         if(mensalidade){
-          actions='';
+          actions=`<button class="del" type="button" onclick="editarCartaoCadastrado(${Number(r.cardId)})" aria-label="Editar mensalidade">✎</button><button class="del" type="button" data-feeaction="1" onclick="abrirExclusaoMensalidadeCartao(${Number(r.cardId)},'${faturaKey}')" aria-label="Remover mensalidade" title="Escolher como excluir esta mensalidade."><i class="ti ti-x" aria-hidden="true"></i></button>`;
         }else if(r.recorrenciaId){
-          actions=r.previsto
-            ?`<button class="del" type="button" onclick="editRecurringCardForecast(${Number(r.recorrenciaId)})" aria-label="Editar recorrência" title="Abre o cadastro da recorrência.">✎</button>`
-            :`<button class="del" type="button" onclick="editCartao(${r.id})" aria-label="Editar recorrência" title="Abre o cadastro da recorrência.">✎</button>`;
+          const existente=Array.isArray(S.recorrentes)&&S.recorrentes.some(x=>String(x.id)===String(r.recorrenciaId)&&!x.excluida);
+          const editar=existente?(r.previsto?`editRecurringCardForecast(${Number(r.recorrenciaId)})`:`editCartao(${Number(r.id)})`):'';
+          const excluir=r.previsto?`excluirPrevisaoRecorrenteCartao(${Number(r.recorrenciaId)},'${r.recorrenciaData}')`:`delCC(${Number(r.id)})`;
+          actions=`${editar?`<button class="del" type="button" onclick="${editar}" aria-label="Editar recorrência">✎</button>`:''}<button class="del" type="button" onclick="${excluir}" aria-label="Excluir cobrança recorrente desta fatura" title="Excluir só esta cobrança, sem afetar as demais."><i class="ti ti-x" aria-hidden="true"></i></button>`;
         }else if(parcelado){
           actions=`<button class="del" type="button" onclick="editCartao(${r.id})" aria-label="Editar compra parcelada" title="Edita a compra parcelada original.">✎</button>`;
         }else{
@@ -5237,7 +5288,7 @@ setSaveStatus('Abra um arquivo JSON para começar.');
 setInterval(()=>{if(autoSaveEnabled&&hasUnsavedChanges)void autoSaveDataFile();},AUTO_SAVE_DELAY);
 setInterval(updateResumo,5*60*1000);
 </script>
-<script src="js/recorrentes.js?v=20261012-rec-excluir-ativos1"></script>
+<script src="js/recorrentes.js?v=20261013-rec-mensalidades2"></script>
 <div id="inflacao-overlay" class="inflacao-overlay" hidden onclick="fecharInflacaoModal(event)">
   <section class="inflacao-modal" role="dialog" aria-modal="true" aria-label="Cadastro mensal da inflação">
     <div class="inflacao-title"><div><h2>Inflação (IPCA)</h2><p>Informe a taxa mensal. Mês vazio não entra no cálculo.</p></div><button class="inflacao-close" type="button" onclick="fecharInflacaoModal(event)" aria-label="Fechar">×</button></div>

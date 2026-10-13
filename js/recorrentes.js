@@ -450,7 +450,14 @@ function renderRecurring(){
    ?'Este JSON não trouxe os cadastros recorrentes do cartão, mas ainda existem '+historicoCartao+' vínculo(s) históricos nas compras. Os lançamentos antigos foram preservados.'
    :'Nenhuma recorrência cadastrada no cartão.';
  $('rec-list').innerHTML=html(registros.filter(r=>r.metodo!=='cartao'),vazioConta);
- $('rec-card-list').innerHTML=html(registros.filter(r=>r.metodo==='cartao'),vazioCartao);
+ const ano=cartaoMes.getFullYear(),mes=cartaoMes.getMonth(),ref=monthKey(ano,mes);
+ const fees=S.cartoes.filter(c=>valorMensalidadeNoMes(c,ano,mes)>0);
+ const listaFee=fees.length?'<div class="rec-list-section-title">Mensalidades dos cartões · '+ref+'</div>'+
+ fees.map(c=>'<div class="rec-item"><div class="rec-item-head"><span class="rec-item-name">Mensalidade · '+escHtml(nomeCartaoResumo(c))+'</span><span class="rec-inline-actions">'+
+ '<button type="button" class="rec-button" data-feeedit="'+c.id+'">✎ Editar</button>'+
+ '<button type="button" class="rec-button delete" data-feedelete="'+c.id+'" data-feemonth="'+ref+'">Excluir</button></span></div>'+
+ '<div class="rec-item-sub">−'+fmt(valorMensalidadeNoMes(c,ano,mes))+' · Fatura '+ref+'</div></div>').join(''):'';
+ $('rec-card-list').innerHTML=(registros.some(r=>r.metodo==='cartao')?html(registros.filter(r=>r.metodo==='cartao'),vazioCartao):listaFee?'':html([],vazioCartao))+listaFee;
 }
 function saveRecEditor(event){
  event.preventDefault();
@@ -596,6 +603,16 @@ getParcelasCartao=function(){
 // a previsão não vira registro persistido até chegar sua data.
 window.cardRecurringForecasts=cardForecasts;
 window.editRecurringCardForecast=id=>openRecEditor(id,'cartao');
+window.refreshRecorrentes=renderRecurring;
+window.excluirPrevisaoRecorrenteCartao=async function(id,data){
+ const rec=S.recorrentes.find(x=>String(x.id)===String(id));
+ if(!rec||rec.excluida||rec.metodo!=='cartao'||!dataISOValida(data))return;
+ if(!await appConfirm('Remover apenas a cobrança de '+rec.nome+' de '+data+'? As demais continuarão agendadas.'))return;
+ const chave=String(rec.id)+'|'+data;
+ if(!S.recorrenciaIgnoradas.includes(chave))S.recorrenciaIgnoradas.push(chave);
+ saveData();renderCartao();renderExtrato();renderRecurring();updateResumo();
+ appAlert('Cobrança recorrente removida somente desta fatura.');
+};
 
 const oldEditPurchase=editCartao;
 editCartao=function(id){const row=S.cartao.find(x=>String(x.id)===String(id));if(row&&row.recorrenciaId){showPage('cartao',document.querySelectorAll('.nav button')[2]);openRecEditor(row.recorrenciaId);return;}oldEditPurchase(id);};
@@ -621,6 +638,8 @@ for(const listId of ['rec-list','rec-card-list'])$(listId).addEventListener('cli
  if(btn.dataset.recend)void endRecurring(btn.dataset.recend);
  if(btn.dataset.recreactivate)reactivateRecurring(btn.dataset.recreactivate);
  if(btn.dataset.recdelete)void deleteRecurring(btn.dataset.recdelete);
+ if(btn.dataset.feeedit)editarCartaoCadastrado(Number(btn.dataset.feeedit));
+ if(btn.dataset.feedelete)abrirExclusaoMensalidadeCartao(Number(btn.dataset.feedelete),btn.dataset.feemonth);
 });
 const oldShowPage=showPage;
 showPage=function(id,btn){oldShowPage(id,btn);if(id==='extrato'||id==='cartao')renderRecurring();};
