@@ -686,7 +686,10 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 .inv-meta-row b{white-space:nowrap;font-variant-numeric:tabular-nums}
 .inv-meta-link{border:1px solid #4d7966;background:#183127;color:#9FE1CB;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:750;cursor:pointer}
 .inv-info{font-size:11px;line-height:1.45;color:#c5c3ba;overflow-wrap:anywhere}
-.meta-mode-help{background:#15231b;border:1px solid #315743;border-radius:9px;padding:10px;color:#c3ebd6;font-size:12px;line-height:1.5;margin-bottom:10px}
+.meta-mode-help{color:var(--color-text-secondary);font-size:12px;line-height:1.5;margin:4px 0 10px;overflow-wrap:anywhere}
+#page-metas .meta-help-details{margin:8px 0 10px;border-top:1px solid #393932;padding-top:8px;color:var(--color-text-secondary);font-size:12px;line-height:1.5}
+#page-metas .meta-help-details summary{cursor:pointer;color:#9FE1CB;font-weight:700;width:max-content;max-width:100%}
+#page-metas .meta-help-details p{margin:8px 0 0;overflow-wrap:anywhere}
 .meta-mode-help[hidden]{display:none!important}
 @media(max-width:520px){.inv-meta-row{align-items:flex-start}.inv-meta-row b{font-size:11px}}
 /* Ações de investimentos em janela flutuante, sem esticar cartões vizinhos. */
@@ -1605,19 +1608,23 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   <div id="page-metas" class="page">
     <div id="meta-action-buttons" class="page-action-buttons" role="group" aria-label="Comandos das Metas"></div>
     <div class="add-form">
+      <div class="row row1"><input type="text" id="meta-desc" placeholder="Nome da meta (ex: computador, viagem, reserva)" maxlength="40"></div>
+      <div class="row row1"><input type="number" id="meta-val" placeholder="Valor da meta (R$)" min="0" step="0.01"></div>
       <div class="row row1">
-        <label class="input-caption" for="meta-modo">Como funciona essa meta?</label>
-        <select id="meta-modo" onchange="toggleMetaModo()" title="Reservar dinheiro de um investimento ou acompanhar um valor-alvo sem mexer no saldo.">
-          <option value="separar">Separar dinheiro no investimento</option><option value="acompanhar">Acompanhar valor-alvo, sem separar</option>
+        <label class="input-caption" for="meta-modo">Como deseja usar esta meta?</label>
+        <select id="meta-modo" onchange="toggleMetaModo()">
+          <option value="acompanhar" selected>Acompanhar um objetivo</option><option value="separar">Reservar dinheiro do investimento</option>
         </select>
       </div>
-      <p id="meta-mode-help" class="meta-mode-help">Vincule a meta a um investimento. Você poderá reservar dinheiro que já está nele ou fazer novos depósitos pelo Extrato, sem contar esse dinheiro duas vezes.</p>
-      <div class="row row1"><input type="text" id="meta-desc" placeholder="Nome da meta (ex: computador, viagem, reserva)" maxlength="40" title="Nome do objetivo que você quer alcançar. Exemplo: viagem, computador, reserva."></div>
-      <div class="row row1"><input type="number" id="meta-val" placeholder="Valor da meta (R$)" min="0" step="0.01" title="Valor total que você quer juntar para essa meta."></div>
+      <p id="meta-mode-help" class="meta-mode-help" aria-live="polite">Acompanhe o valor de um investimento ou de todos, sem separar dinheiro.</p>
       <div class="row row1">
         <select id="meta-invest-dest" title="Escolha onde o dinheiro dessa meta vai ficar guardado."><option value="">Onde esse dinheiro vai ficar?</option></select>
       </div>
       <div class="row row1"><label class="input-caption" for="meta-prazo">Data-alvo da meta (opcional)<input type="date" id="meta-prazo" title="Dia em que deseja alcançar a meta. Não é o vencimento do investimento."/></label></div>
+      <details class="meta-help-details"><summary>Entenda a diferença entre acompanhar e reservar</summary>
+        <p><strong>Acompanhar:</strong> mostra quanto falta para atingir o objetivo, sem reservar dinheiro ou gerar lançamentos.</p>
+        <p><strong>Reservar:</strong> identifica uma parte do saldo já investido para sua meta, sem mexer no Extrato. Dinheiro novo destinado à meta pode ser lançado pelo Extrato e aumenta o saldo do investimento vinculado.</p>
+      </details>
       <button class="btn-green" onclick="addMeta()" title="Cadastra essa meta para você acompanhar o progresso."><i class="ti ti-plus" aria-hidden="true"></i> Cadastrar meta</button>
     </div>
     <div class="cards">
@@ -3006,8 +3013,8 @@ function renderMetaInvestOptions(){
 function toggleMetaModo(){
   const monitor=document.getElementById('meta-modo').value==='acompanhar';
   document.getElementById('meta-mode-help').textContent=monitor
-    ?'Acompanhe a evolução de um investimento ou de todo o patrimônio. Não separa nem transfere dinheiro, nem cria lançamentos no Extrato.'
-    :'Vincule a meta a um investimento. Reserve dinheiro já investido ou registre novos depósitos pelo Extrato; o patrimônio não será somado duas vezes.';
+    ?'O progresso acompanha o saldo do investimento escolhido, sem reservar ou movimentar dinheiro.'
+    :'Use dinheiro já investido como reserva, sem movimentar a conta. Depósitos novos podem ser registrados pelo Extrato.';
   renderMetaInvestOptions();
 }
 function valorMetaAtual(item){

@@ -1,0 +1,13 @@
+const fs=require('fs'),assert=require('assert');
+const html=fs.readFileSync('index.html','utf8');
+const form=html.slice(html.indexOf('<!-- METAS -->'),html.indexOf('<!-- Janela flutuante'));
+for(const id of ['meta-desc','meta-val','meta-modo','meta-invest-dest','meta-prazo'])assert(form.includes('id="'+id+'"'));
+assert(form.indexOf('id="meta-desc"')<form.indexOf('id="meta-modo"'),'Nome e valor vêm antes do modo');
+assert(form.indexOf('id="meta-modo"')<form.indexOf('id="meta-invest-dest"'),'Destino vem após o modo');
+assert(form.includes('<option value="acompanhar" selected>'),'Acompanhamento deve ser padrão');
+assert(form.includes('<option value="separar">'),'Reserva continua disponível');
+assert(form.includes('<details class="meta-help-details">'),'Ajuda expansível presente');
+assert(!form.includes('title="Reservar dinheiro de um investimento'),'Sem balão sobre seletor do modo');
+assert(html.includes("dest.modo==='acompanhar'"),'Metas de acompanhamento não recebem depósitos no extrato');
+assert(html.includes("metas.filter(x=>x.modo!=='acompanhar')"),'Reservas devem preservar cálculo separado');
+console.log('PASS: formulário de metas, auxílio discreto e modos preservados');
