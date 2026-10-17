@@ -7,7 +7,7 @@ function fn(name){
  const rest=src.slice(at+10),next=/\n(?:async )?function [A-Za-z]/.exec(rest);
  return src.slice(at,next?at+10+next.index:src.length);
 }
-const names=['isoDate','monthKey','valorMonetarioValido','valorParcela','dueDateFor','vencimentoDaCompra','getMesMap','getParcelasCartao','totalDaFatura','dataISOValida','saldoInicialValido','validarDadosImportados','addCartao','resetCartaoForm','updatePreview'];
+const names=['isoDate','monthKey','valorMonetarioValido','valorParcela','dueDateFor','mesFaturaAtualDoCartao','valorMensalidadeNoMes','primeiroMesMensalidadeCartao','parcelaMensalidadeCartao','vencimentoDaCompra','getMesMap','getParcelasCartao','totalDaFatura','dataISOValida','saldoInicialValido','validarDadosImportados','addCartao','resetCartaoForm','updatePreview'];
 const elements={};function el(id){return elements[id]||(elements[id]={value:'',innerHTML:'',textContent:'',style:{display:''}});}
 const ctx=vm.createContext({console,Date,Set,Number,Math,String,Array,Error,document:{getElementById:el}});
 vm.runInContext(`const S={extrato:[],cartao:[],cartoes:[{id:10,bank:'Itaú',nome:'Black',dueDay:10,closeDay:null}],invest:[],saldoInicial:null};let editingCartaoId=null;let cartaoMes=new Date(2026,9,1),extratoMes=new Date(2026,9,1),resumoMes=new Date(2026,9,1);function today(){return '2026-10-17'};function selectedCard(){return S.cartoes[0]};function appAlert(v){throw Error(v)};function novoIdGlobal(){return 100+S.cartao.length};function saveData(){};function renderCartao(){};function renderExtrato(){};function updateResumo(){};function fecharPainelFlutuante(){};function fmt(v){return 'R$ '+v.toFixed(2)};function mesStr(y,m){return String(y)+'-'+String(m+1)};`+names.map(fn).join('\n'),ctx);
