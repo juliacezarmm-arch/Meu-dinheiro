@@ -113,7 +113,8 @@ body{font-family:var(--font-sans);color:var(--color-text-primary);background:var
 .add-form input:focus,.add-form select:focus,input:focus,select:focus{background:#30302d!important;background-color:#30302d!important;border-color:#9FE1CB;box-shadow:inset 0 0 0 999px #30302d,0 0 0 2px rgba(159,225,203,.16)}
 .add-form select,select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
 select option{background:#2a2a28;color:#fff}
-input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.85}
+/* Ícone nativo do calendário sempre branco, inclusive com tema escuro. */
+input[type="date"]::-webkit-calendar-picker-indicator{filter:brightness(0) invert(1)!important;opacity:1!important;cursor:pointer}
 .ti{display:inline-flex;align-items:center;justify-content:center;width:1em;height:1em;font-style:normal;line-height:1;margin-right:.25rem}
 .ti::before{font-family:var(--font-sans) !important}
 .header .ti,.saldo-bar .ti,.del .ti{margin-right:0}
@@ -1055,6 +1056,12 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 .inv-evolution-plot{padding:10px 6px 0;border:1px solid #30453f;background:linear-gradient(180deg,#0d1616,#090e0e);border-radius:12px;min-width:0}
 #invest-modal-content .inv-evolution-svg{display:block;width:100%;height:auto;max-height:300px}
 .inv-evolution-grid{stroke:#345049;stroke-width:.8;stroke-dasharray:3 4;opacity:.8}
+/* Resgates são saídas de capital, não prejuízos. Preserva a curva original. */
+.inv-evolution-resgate-marker{cursor:help}
+.inv-evolution-resgate-events{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:8px 4px 0}
+.inv-evolution-resgate-title{font-size:11px;color:#f3bd72;font-weight:850}
+.inv-evolution-resgate-chip{font-size:10.5px;font-weight:750;color:#ffdfaa;background:#332817;border:1px solid #946b35;border-radius:8px;padding:5px 8px;overflow-wrap:anywhere}
+
 .inv-evolution-axis{fill:#b5c9c4;font-size:11px;font-weight:500;font-family:Inter,system-ui,sans-serif}
 .inv-evolution-summary{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:0;border:1px solid #30453f;background:#0c1716;border-radius:12px;margin:11px 0 18px;padding:12px 9px}
 .inv-evolution-summary>div{display:flex;flex-direction:column;gap:6px;padding:3px 12px;min-width:0}
@@ -4363,6 +4370,31 @@ function renderStockChart(item,mes,periodo){
   const xAt=x=>left+Math.max(0,Math.min(maxX,x))/maxX*plotWidth;
   const yAt=y=>top+plotHeight-(y-yMin)/yRange*plotHeight;
   const coords=pontos.map(p=>({...p,px:xAt(p.x),py:yAt(p.valor)}));
+  // Indica os resgates no ponto da curva correspondente ao dia (ou mês).
+  // Agrupa múltiplas retiradas no mesmo período e soma em centavos.
+  const resgatesPorPonto=new Map();
+  dentro.filter(ev=>ev.tipo==='resgate'&&ev.data).forEach(ev=>{
+    const chave=anual?ev.data.slice(0,7):ev.data;
+    resgatesPorPonto.set(chave,(resgatesPorPonto.get(chave)||0)+Math.round(Number(ev.valor||0)*100));
+  });
+  const resgatesMarcados=[...resgatesPorPonto].map(([chave,centavos])=>{
+    const x=anual?Number(chave.slice(5,7))-1:Number(chave.slice(8,10))-1;
+    const ponto=coords.slice().reverse().find(p=>p.x===x);
+    if(!ponto||centavos<=0)return null;
+    const dataLabel=anual?MESES[x]+'/'+String(ano).slice(-2):chave.slice(8,10)+'/'+chave.slice(5,7);
+    return {ponto,dataLabel,valor:centavos/100};
+  }).filter(Boolean);
+  const marcadoresResgateSvg=resgatesMarcados.map(r=>{
+    const x=r.ponto.px;
+    const y=Math.max(top+11,Math.min(top+plotHeight-11,r.ponto.py-17));
+    const texto='Resgate de '+fmt(r.valor)+' em '+r.dataLabel+' — redução do saldo, não prejuízo';
+    return `<g class="inv-evolution-resgate-marker" role="img" aria-label="${escHtml(texto)}">
+      <line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${r.ponto.px.toFixed(1)}" y2="${r.ponto.py.toFixed(1)}" stroke="#f3bd72" stroke-width="1" stroke-dasharray="2 2"/>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10" fill="#f3bd72" stroke="#17221c" stroke-width="1.4"/>
+      <path d="M${x.toFixed(1)} ${(y-5).toFixed(1)}v8m-3-3 3 3 3-3" fill="none" stroke="#17221c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <title>${escHtml(texto)}</title>
+    </g>`;
+  }).join('');
   const linha=coords.map((p,i)=>(i?'L':'M')+p.px.toFixed(1)+' '+p.py.toFixed(1)).join(' ');
   const area=coords.length?linha+' L'+coords[coords.length-1].px.toFixed(1)+' '+(top+plotHeight)+' L'+coords[0].px.toFixed(1)+' '+(top+plotHeight)+' Z':'';
   const gid='inv-evol-'+String(item.id).replace(/[^a-zA-Z0-9_-]/g,'');
@@ -4378,6 +4410,7 @@ function renderStockChart(item,mes,periodo){
     ${area?`<path d="${area}" fill="url(#${gid})"/>`:''}
     ${linha?`<path d="${linha}" fill="none" stroke="${cor}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`:''}
     ${coords.map(p=>`<circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="4.3" fill="#0c1919" stroke="${cor}" stroke-width="2.3"><title>${escHtml(p.label)}: ${fmt(p.valor)}</title></circle>`).join('')}
+    ${marcadoresResgateSvg}
   </svg>`;
   const updates=agruparDia(dentro.filter(ev=>ev.tipo==='atualizacao'));
   const resumidos=updates.map(ev=>{
@@ -4406,6 +4439,7 @@ function renderStockChart(item,mes,periodo){
   const rolavel=!anual&&resumidos.length>=6;
   return `<div class="stock-chart inv-evolution">
     <div class="inv-evolution-plot">${svg}</div>
+    ${resgatesMarcados.length?`<div class="inv-evolution-resgate-events" aria-label="Resgates registrados neste período"><span class="inv-evolution-resgate-title">↓ Resgates</span>${resgatesMarcados.map(r=>`<span class="inv-evolution-resgate-chip">${escHtml(r.dataLabel)} · ${fmt(r.valor)}</span>`).join('')}</div>`:''}
     <div class="inv-evolution-summary">
       <div><span>Início do período</span><strong>${fmt(base)}</strong></div>
       <div><span>Variação patrimonial <small>(inclui aportes/resgates)</small></span><strong class="${variacao>=0?'positive':'negative'}">${variacao>0?'+':''}${fmt(variacao)}</strong></div>
