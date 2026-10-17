@@ -81,4 +81,12 @@ vm.runInContext("investPeriodo='ano'",graphEnv);
 chart=vm.runInContext('renderInvestTypeChart('+gruposTeste+')',graphEnv);
 assert(chart.includes('Inflação do ano: 1,09%'),'Gráfico anual deve manter inflação acumulada');
 assert(html.includes('aria-expanded="${investTypeOpen}"')&&html.includes('invest-collapse svg'),'Botão Recolher deve alinhar o ícone');
+assert(html.includes('.invest-type-mobile-cards{display:none}')&&html.includes('.invest-type-table-wrap{display:none}'),'Mobile tem cartões próprios, desktop mantém a tabela');
+assert(html.includes('grid-template-columns:minmax(0,1.16fr) minmax(0,1.09fr) minmax(0,.9fr)'),'Card mobile deve usar três colunas como no modelo');
+assert(html.includes('class="invest-type-mobile-head"')&&html.includes('justify-content:flex-start'),'Título mobile deve alinhar à esquerda');
+assert(html.includes("metrica(inicioLabel,fmt(r.base))")&&html.includes("metrica(fimLabel,fmt(r.patrimonio))"),'Saldos mobile devem usar os cálculos da tabela');
+assert(html.includes("metrica('Rendimento',(r.rendimento>0?'+':'')+fmt(r.rendimento),cls)")&&html.includes("metrica('Rentab.',pct,cls)"),'Valores de rendimento mobile precisam preservar sinal');
+assert(html.includes("metrica('Aportes',fmt(r.aportes))")&&html.includes("metrica('Resgates',fmt(r.resgates))"),'Terceira coluna mobile deve ter aportes e resgates');
+assert(!html.includes('@media(max-width:390px){.invest-type-table tbody tr{grid-template-columns:1fr}}'),'Celulares estreitos não devem empilhar os seis valores');
+
 console.log('PASS: saldo, datas futuras, receitas/resgates, centavos, fechamento, faturas, metas, JSON, HTML e vínculos');

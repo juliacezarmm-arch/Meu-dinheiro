@@ -451,18 +451,7 @@ td:last-child{white-space:normal}
 .invest-type-icon.cripto{background:#4a2d12;color:#ff9d32}
 .invest-type-icon.poupanca{background:#3b3513;color:#ffd45a}
 .invest-type-icon.outro{background:#17382f;color:#62d9b3}
-/* Sem rolagem horizontal: em telas estreitas, cada tipo vira um card de dados. */
-@media(max-width:720px){
- .invest-type-table-wrap{overflow-x:visible}
- .invest-type-table{display:block;width:100%;min-width:0}
- .invest-type-table colgroup,.invest-type-table thead{display:none}
- .invest-type-table tbody{display:grid;gap:8px}
- .invest-type-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:9px;border:1px solid #263a38;border-radius:9px;background:#0b1517}
- .invest-type-table tbody td{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:2px 0;border:0;white-space:normal;font-size:11px}
- .invest-type-table tbody td:first-child{grid-column:1/-1;padding-bottom:5px;border-bottom:1px solid #263a38}
- .invest-type-table tbody td:not(:first-child)::before{content:attr(data-label);display:block;color:#b6c6c6;font-size:9px;font-weight:700}
-}
-@media(max-width:390px){.invest-type-table tbody tr{grid-template-columns:1fr}}
+.invest-type-mobile-cards{display:none}
 .invest-list-shell{background:#101514;border:1px solid #293632;border-radius:12px;padding:.65rem;margin-top:.55rem}
 .invest-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:.55rem}
 .invest-list-head>div:first-child{display:flex;flex-direction:column}
@@ -1135,6 +1124,82 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 .inflacao-total strong{font-size:16px;color:#75edb5}
 .inflacao-info{font-size:10px;color:#b5cbbf;line-height:1.4;margin:8px 0 0}
 @media(max-width:700px){.invest-type-actions{margin-left:0}.invest-type-chart-wrap{height:198px}.invest-type-mode{padding:6px 7px}}
+/* Visão por tipo no celular, baseada no modelo aprovado.
+   Os dados da tabela desktop são preservados sem alterar cálculos. */
+@media(max-width:720px){
+ .invest-type-summary{padding:9px;margin:.55rem 0}
+ .invest-type-table-wrap{display:none}
+ .invest-type-mobile-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;min-width:0}
+ .invest-type-mobile-card{
+  min-width:0;padding:10px 11px 11px;
+  border:1px solid #284843;border-radius:12px;
+  background:linear-gradient(115deg,#0d1b1e,#0b1618);overflow:hidden
+ }
+ .invest-type-mobile-head{
+  display:flex;align-items:center;justify-content:flex-start;
+  gap:9px;min-width:0;margin-bottom:9px;padding-bottom:9px;
+  border-bottom:1px solid #2b4642;text-align:left
+ }
+ .invest-type-mobile-head>.invest-type-icon{
+  display:grid;place-items:center;flex:0 0 32px;
+  width:32px;height:32px;border-radius:9px
+ }
+ .invest-type-mobile-name{
+  min-width:0;color:#f2f8f5;font-size:13px;font-weight:800;
+  line-height:1.2;overflow-wrap:anywhere;text-align:left
+ }
+ .invest-type-mobile-name small{color:#b6c6c1;font-size:11px;font-weight:700}
+ .invest-type-mobile-metrics{
+  display:grid;grid-template-columns:minmax(0,1.16fr) minmax(0,1.09fr) minmax(0,.9fr);
+  gap:0;min-width:0
+ }
+ .invest-type-mobile-group{
+  display:flex;flex-direction:column;justify-content:space-between;
+  min-width:0;gap:10px;padding:0 8px;border-left:1px solid #27403d
+ }
+ .invest-type-mobile-group:first-child{padding-left:2px;border-left:0}
+ .invest-type-mobile-group:last-child{padding-right:0}
+ .invest-type-mobile-metric{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  min-width:0;line-height:1.15;text-align:left
+ }
+ .invest-type-mobile-metric>span{
+  font-size:10px;font-weight:600;color:#b3cec6;white-space:nowrap
+ }
+ .invest-type-mobile-metric>strong{
+  display:block;max-width:100%;
+  font-size:clamp(11px,3.25vw,14px);font-weight:850;
+  line-height:1.16;letter-spacing:-.02em;
+  color:#f4f9f6;font-variant-numeric:tabular-nums;
+  overflow-wrap:anywhere
+ }
+ .invest-type-mobile-metric>strong.positive{color:#21e4ad}
+ .invest-type-mobile-metric>strong.negative{color:#ff6976}
+ .invest-type-mobile-metric>strong.neutral{color:#becdc8}
+ .invest-type-mobile-group:last-child .invest-type-mobile-metric>strong{
+  font-size:clamp(10px,2.95vw,12px)
+ }
+}
+@media(max-width:620px){
+ .invest-type-summary-head{
+  display:flex;align-items:center;flex-wrap:wrap;gap:7px;
+  margin-bottom:9px
+ }
+ .invest-type-summary-head .invest-type-title{width:100%;min-width:0}
+ .invest-type-summary-head .invest-type-actions{flex:1 1 auto;margin-left:0;gap:4px}
+ .invest-type-summary-head>.invest-collapse{flex:0 0 auto;margin-left:auto}
+ .invest-type-summary-head .invest-type-mode{padding:6px 7px}
+}
+@media(max-width:355px){
+ .invest-type-mobile-card{padding:9px 8px}
+ .invest-type-mobile-metrics{
+  grid-template-columns:minmax(0,1.2fr) minmax(0,1.04fr) minmax(0,.88fr)
+ }
+ .invest-type-mobile-group{padding:0 6px}
+ .invest-type-mobile-metric>span{font-size:9px}
+ .invest-type-mobile-metric>strong{font-size:10.5px}
+ .invest-type-mobile-group:last-child .invest-type-mobile-metric>strong{font-size:9.8px}
+}
 </style>
 </head>
 <body>
@@ -4678,6 +4743,34 @@ function renderInvestTypeSummary(investimentos){
           return `<tr><td><span class="invest-type-cell"><span class="invest-type-icon ${visual.cls}">${investTipoIconeResumo(visual.cls,visual.icon)}</span><span>${escHtml(r.tipo)}${r.qtd>1?'<small> ('+r.qtd+')</small>':''}</span></span></td><td data-label="${inicioLabel}">${fmt(r.base)}</td><td data-label="Aportes">${fmt(r.aportes)}</td><td data-label="Resgates">${fmt(r.resgates)}</td><td data-label="Rendimento" class="${cls}">${r.rendimento>0?'+':''}${fmt(r.rendimento)}</td><td data-label="Valor final">${fmt(r.patrimonio)}</td><td data-label="Rentab." class="${cls}">${pct}</td></tr>`;
         }).join('')}</tbody>
       </table>
+    </div>
+    <div class="invest-type-mobile-cards" aria-label="Resumo dos investimentos por tipo">
+      ${linhas.map(r=>{
+        const cls=r.rendimento>0?'positive':r.rendimento<0?'negative':'neutral';
+        const pct=r.pct===null?'—':(r.pct>0?'+':'')+fmtInvestPct(r.pct);
+        const visual=investTipoVisual(r.tipo);
+        const metrica=(rotulo,valor,classe='')=>`<div class="invest-type-mobile-metric"><span>${rotulo}</span><strong class="${classe}">${valor}</strong></div>`;
+        return `<article class="invest-type-mobile-card">
+          <div class="invest-type-mobile-head">
+            <span class="invest-type-icon ${visual.cls}">${investTipoIconeResumo(visual.cls,visual.icon)}</span>
+            <strong class="invest-type-mobile-name">${escHtml(r.tipo)}${r.qtd>1?'<small> ('+r.qtd+')</small>':''}</strong>
+          </div>
+          <div class="invest-type-mobile-metrics">
+            <div class="invest-type-mobile-group">
+              ${metrica(inicioLabel,fmt(r.base))}
+              ${metrica('Rendimento',(r.rendimento>0?'+':'')+fmt(r.rendimento),cls)}
+            </div>
+            <div class="invest-type-mobile-group">
+              ${metrica(fimLabel,fmt(r.patrimonio))}
+              ${metrica('Rentab.',pct,cls)}
+            </div>
+            <div class="invest-type-mobile-group">
+              ${metrica('Aportes',fmt(r.aportes))}
+              ${metrica('Resgates',fmt(r.resgates))}
+            </div>
+          </div>
+        </article>`;
+      }).join('')}
     </div>`):''}
   </section>`;
 }
