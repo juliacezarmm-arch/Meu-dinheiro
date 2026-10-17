@@ -81,4 +81,9 @@ vm.runInContext("investPeriodo='ano'",graphEnv);
 chart=vm.runInContext('renderInvestTypeChart('+gruposTeste+')',graphEnv);
 assert(chart.includes('Inflação do ano: 1,09%'),'Gráfico anual deve manter inflação acumulada');
 assert(html.includes('aria-expanded="${investTypeOpen}"')&&html.includes('invest-collapse svg'),'Botão Recolher deve alinhar o ícone');
+assert(html.includes('grid-template-areas:"tipo tipo" "inicio final" "rendimento rentabilidade" "aportes resgates"'),'Mobile deve agrupar valores principais e deixar aportes/resgates no rodapé');
+assert(html.includes('.invest-type-table tbody td:nth-child(5){grid-area:rendimento}')&&html.includes('.invest-type-table tbody td:nth-child(6){grid-area:final}'),'Células mobile devem manter o vínculo correto com os valores reais');
+assert(!html.includes('@media(max-width:390px){.invest-type-table tbody tr{grid-template-columns:1fr}}'),'Celulares estreitos não podem empilhar os seis valores em uma única coluna');
+assert(html.includes('.invest-type-summary-head>.invest-collapse{grid-column:2;grid-row:2'),'Ações do painel devem ficar alinhadas no celular');
+
 console.log('PASS: saldo, datas futuras, receitas/resgates, centavos, fechamento, faturas, metas, JSON, HTML e vínculos');

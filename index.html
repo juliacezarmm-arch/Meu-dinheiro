@@ -451,18 +451,59 @@ td:last-child{white-space:normal}
 .invest-type-icon.cripto{background:#4a2d12;color:#ff9d32}
 .invest-type-icon.poupanca{background:#3b3513;color:#ffd45a}
 .invest-type-icon.outro{background:#17382f;color:#62d9b3}
-/* Sem rolagem horizontal: em telas estreitas, cada tipo vira um card de dados. */
+/* Celular: cards de investimento realmente compactos; o desktop mantém a tabela. */
 @media(max-width:720px){
- .invest-type-table-wrap{overflow-x:visible}
- .invest-type-table{display:block;width:100%;min-width:0}
+ .invest-type-summary{padding:9px;margin:.55rem 0}
+ .invest-type-table-wrap{width:100%;max-width:100%;overflow-x:visible}
+ .invest-type-table{display:block;width:100%;min-width:0;max-width:100%}
  .invest-type-table colgroup,.invest-type-table thead{display:none}
- .invest-type-table tbody{display:grid;gap:8px}
- .invest-type-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:9px;border:1px solid #263a38;border-radius:9px;background:#0b1517}
- .invest-type-table tbody td{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:2px 0;border:0;white-space:normal;font-size:11px}
- .invest-type-table tbody td:first-child{grid-column:1/-1;padding-bottom:5px;border-bottom:1px solid #263a38}
- .invest-type-table tbody td:not(:first-child)::before{content:attr(data-label);display:block;color:#b6c6c6;font-size:9px;font-weight:700}
+ .invest-type-table tbody{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+ .invest-type-table tbody tr{
+   display:grid;min-width:0;
+   grid-template-columns:repeat(2,minmax(0,1fr));
+   grid-template-areas:"tipo tipo" "inicio final" "rendimento rentabilidade" "aportes resgates";
+   gap:8px 12px;padding:11px 12px;border:1px solid #263f3c;border-radius:11px;
+   background:linear-gradient(120deg,#0b1819,#0b1517)
+ }
+ .invest-type-table tbody td{
+   display:flex;flex-direction:column;justify-content:center;align-items:flex-start;
+   min-width:0;gap:3px;padding:0;border:0;white-space:normal;overflow-wrap:anywhere;
+   font-size:12px;line-height:1.25;font-variant-numeric:tabular-nums;font-weight:800
+ }
+ .invest-type-table tbody td:first-child{
+   grid-area:tipo;display:flex;flex-direction:row;align-items:center;
+   padding-bottom:8px;border-bottom:1px solid #26413d
+ }
+ .invest-type-table tbody td:nth-child(2){grid-area:inicio}
+ .invest-type-table tbody td:nth-child(3){grid-area:aportes}
+ .invest-type-table tbody td:nth-child(4){grid-area:resgates}
+ .invest-type-table tbody td:nth-child(5){grid-area:rendimento}
+ .invest-type-table tbody td:nth-child(6){grid-area:final}
+ .invest-type-table tbody td:nth-child(7){grid-area:rentabilidade}
+ .invest-type-table tbody td:not(:first-child)::before{
+   content:attr(data-label);display:block;font-size:10px;font-weight:650;
+   line-height:1.15;color:#a9c5bf
+ }
+ .invest-type-table tbody td:nth-child(3),.invest-type-table tbody td:nth-child(4){
+   border-top:1px solid #233934;padding-top:7px;
+   font-size:10.5px;color:#c5d6d0;font-weight:700
+ }
+ .invest-type-table tbody td:nth-child(3)::before,.invest-type-table tbody td:nth-child(4)::before{
+   font-size:9px;color:#92b3a8
+ }
+ .invest-type-table .invest-type-cell{gap:8px}
+ .invest-type-table .invest-type-icon{width:29px;height:29px;border-radius:8px}
 }
-@media(max-width:390px){.invest-type-table tbody tr{grid-template-columns:1fr}}
+@media(max-width:620px){
+ .invest-type-summary-head{
+   display:grid;grid-template-columns:minmax(0,1fr) auto;
+   align-items:center;column-gap:5px;row-gap:8px
+ }
+ .invest-type-summary-head .invest-type-title{grid-column:1/-1;min-width:0}
+ .invest-type-summary-head .invest-type-actions{grid-column:1;grid-row:2;display:flex;flex-wrap:wrap;margin:0;gap:4px}
+ .invest-type-summary-head>.invest-collapse{grid-column:2;grid-row:2;margin:0;justify-self:end}
+ .invest-type-summary-head .invest-type-mode{padding:6px 7px}
+}
 .invest-list-shell{background:#101514;border:1px solid #293632;border-radius:12px;padding:.65rem;margin-top:.55rem}
 .invest-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:.55rem}
 .invest-list-head>div:first-child{display:flex;flex-direction:column}
