@@ -152,6 +152,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 #ext-wrap .ext-day-balance-inline.is-negative{color:#efaba4}
 #ext-wrap .ext-day-balance-inline span{color:var(--color-text-secondary);margin-right:5px;font-weight:800}
 #cc-wrap .cc-money{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip;font-size:11px;font-weight:700}
+#cc-wrap .cc-money.cc-credit{color:#9FE1CB}
 #cc-wrap .cc-table-wrap{width:100%;overflow-x:auto}
 #cc-wrap .cc-launch-table{min-width:690px}
 #cc-wrap .cc-description{white-space:normal;overflow-wrap:anywhere;line-height:1.25}
@@ -214,6 +215,7 @@ td:last-child{white-space:normal}
 #cc-wrap td.cc-installments{font-size:11px;white-space:nowrap;line-height:1.25;font-weight:700}
 .badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:10px}
 .b-compra{background:#FAEEDA;color:#633806}
+.b-estorno{background:#E1F5EE;color:#085041}
 .b-pagamento{background:#E1F5EE;color:#085041}
 .b-cartao{background:#FAEEDA;color:#633806}
 .b-pendente{background:#FAEEDA;color:#633806}
@@ -1474,7 +1476,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
         <select id="cc-card" title="Escolha em qual cartão essa compra foi feita."><option value="">Escolha o cartão</option></select>
       </div>
       <div class="row row1">
-        <select id="cc-tipo" title="Escolha se a compra foi à vista ou parcelada."><option value="compra">Compra à vista</option><option value="parcelado">Parcelado</option></select>
+        <select id="cc-tipo" title="Escolha se a compra foi à vista ou parcelada."><option value="compra">Compra à vista</option><option value="parcelado">Parcelado</option><option value="estorno">Estorno / crédito (−)</option></select>
       </div>
       <div class="row row2">
         <select id="cc-categoria" onchange="updateCartaoSubcategorias()" title="Categoria da compra no cartão, para aparecer no resumo."><option value="">Selecione categoria</option></select>
@@ -1489,7 +1491,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       </div>
       <div class="row row1"><input type="text" id="cc-desc" placeholder="Descrição (ex: geladeira, roupa...)" title="Nome da compra para lembrar depois. Exemplo: geladeira, roupa, remédio."/></div>
       <div class="row row2">
-        <input type="number" id="cc-val" placeholder="Valor total (R$)" min="0" step="0.01" title="Valor total da compra, mesmo se ela for parcelada."/>
+        <input type="number" id="cc-val" placeholder="Valor total (R$)" step="0.01" title="Compras em valor positivo. Para estornos, digite o valor negativo (ex.: -80) ou escolha Estorno."/>
         <div id="cc-parcelas-wrap" style="display:none">
           <select id="cc-parcelas" title="Quantidade de parcelas da compra.">
             <option value="2">2x</option><option value="3">3x</option><option value="4">4x</option>
@@ -1878,7 +1880,7 @@ function validarDadosImportados(arquivo){
       if(key==='extrato'&&r.pagoConfirmado!==undefined&&typeof r.pagoConfirmado!=='boolean')throw Error('Status de pagamento inválido.');
       if(key==='extrato'&&r.vencimentoPagamento!==undefined&&r.vencimentoPagamento!==null&&!dataISOValida(r.vencimentoPagamento))throw Error('Vencimento de pagamento inválido.');
       for(const campo of ['val','valorAtual','totalAportado','totalResgatado','meta']){
-        if(r[campo]!==undefined&&(typeof r[campo]!=='number'||!Number.isFinite(r[campo])||r[campo]<0))throw Error('Valor financeiro inválido em '+key+': '+campo);
+        if(r[campo]!==undefined&&(typeof r[campo]!=='number'||!Number.isFinite(r[campo])||(r[campo]<0&&!(key==='cartao'&&campo==='val'&&r.tipo==='estorno'))))throw Error('Valor financeiro inválido em '+key+': '+campo);
       }
       if(key==='invest'){
         if(r.banco!==undefined&&(typeof r.banco!=='string'||r.banco.length>70)||r.rentIndice!==undefined&&!['','CDI','Prefixado','IPCA','Outro'].includes(r.rentIndice)||r.rentValor!==undefined&&r.rentValor!==null&&(!Number.isFinite(r.rentValor)||r.rentValor<0||r.rentValor>10000)||r.vencimento!==undefined&&r.vencimento!==null&&!dataISOValida(r.vencimento))throw Error('Condições do investimento inválidas.');
@@ -1895,6 +1897,7 @@ function validarDadosImportados(arquivo){
         if(!Array.isArray(r.monthlyFeeIgnoredMonths)||r.monthlyFeeIgnoredMonths.length>500||new Set(r.monthlyFeeIgnoredMonths).size!==r.monthlyFeeIgnoredMonths.length||r.monthlyFeeIgnoredMonths.some(x=>typeof x!=='string'||!/^\d{4}-(0[1-9]|1[0-2])$/.test(x)))throw Error('Exceções de mensalidade inválidas.');
       }
       if(key==='cartao'&&(!Number.isInteger(Number(r.parcelas||1))||Number(r.parcelas||1)<1||Number(r.parcelas||1)>120))throw Error('Parcelamento inválido.');
+       if(key==='cartao'&&r.tipo==='estorno'&&(r.parcelas!==undefined&&Number(r.parcelas)!==1||!valorMonetarioValido(Math.abs(r.val))||r.val>=0))throw Error('Estorno de cartão inválido: use valor negativo e uma única parcela.');
       if(key==='cartao'&&r.parcelasPagasInformadas!==undefined&&(!Number.isInteger(r.parcelasPagasInformadas)||r.parcelasPagasInformadas<0||r.parcelasPagasInformadas>Number(r.parcelas||1)))throw Error('Quantidade de parcelas pagas inválida.');
       if(key==='invest'&&r.historico!==undefined){
         if(!Array.isArray(r.historico)||r.historico.length>100000)throw Error('Histórico de investimento inválido.');
@@ -2785,7 +2788,14 @@ document.getElementById('cc-tipo').addEventListener('change',function(){
   p.style.display=this.value==='parcelado'?'block':'none';
   updatePreview();
 });
-document.getElementById('cc-val').addEventListener('input',updatePreview);
+document.getElementById('cc-val').addEventListener('input',function(){
+  const tipo=document.getElementById('cc-tipo');
+  if(this.value.trim()!==''&&Number(this.value)<0&&tipo.value!=='estorno'){
+    tipo.value='estorno';
+    document.getElementById('cc-parcelas-wrap').style.display='none';
+  }
+  updatePreview();
+});
 document.getElementById('cc-parcelas').addEventListener('change',updatePreview);
 document.getElementById('cc-data').addEventListener('change',updatePreview);
 document.getElementById('cc-card').addEventListener('change',updatePreview);
@@ -3069,19 +3079,25 @@ function getMetaStorage(item){
 
 function updatePreview(){
   const tipo=document.getElementById('cc-tipo').value;
-  const val=parseFloat(document.getElementById('cc-val').value);
+  const valorTexto=document.getElementById('cc-val').value;
+  const val=parseFloat(valorTexto);
   const n=parseInt(document.getElementById('cc-parcelas').value);
   const dataStr=document.getElementById('cc-data').value||today();
   const card=selectedCard();
   const vencDia=card?card.dueDay:10;
   const prev=document.getElementById('cc-preview');
-  if(!card&&val>0){prev.textContent='Escolha um cartão para calcular o vencimento.';return;}
+  if(valorTexto===''||!Number.isFinite(val)||val===0){prev.textContent='';return;}
+  if(!card){prev.textContent='Escolha um cartão para calcular o vencimento.';return;}
   if(tipo==='parcelado'&&val>0&&n>1){
     const parc=valorParcela({val,parcelas:n},0);
     const d=new Date(dataStr+'T12:00:00');
     const primeira=dueDateFor(d,vencDia,0,card.closeDay);
     const ultima=dueDateFor(d,vencDia,n-1,card.closeDay);
     prev.textContent=card.bank+(card.nome?' · '+card.nome:'')+': '+n+' parcelas (aprox. '+fmt(parc)+', com ajuste de centavos)'+' ” vence todo dia '+vencDia+' de '+mesStr(primeira.getFullYear(),primeira.getMonth())+' até '+mesStr(ultima.getFullYear(),ultima.getMonth());
+  } else if(tipo==='estorno'||val<0){
+    const d=new Date(dataStr+'T12:00:00');
+    const venc=dueDateFor(d,vencDia,0,card.closeDay);
+    prev.textContent='Estorno de '+fmt(-Math.abs(val))+' será abatido da fatura de '+mesStr(venc.getFullYear(),venc.getMonth())+'. Não cria entrada no Extrato.';
   } else if(tipo==='compra'&&val>0){
     const d=new Date(dataStr+'T12:00:00');
     const venc=dueDateFor(d,vencDia,0,card.closeDay);
@@ -3397,17 +3413,22 @@ function addCartao(){
   const categoria=document.getElementById('cc-categoria').value;
   const subcategoria=document.getElementById('cc-subcategoria').value;
   const gastoTipo='variavel'; // Gastos recorrentes têm cadastro próprio.
-  const val=parseFloat(document.getElementById('cc-val').value);
+  const valInformado=parseFloat(document.getElementById('cc-val').value);
+  // Valor negativo é um crédito na fatura, inclusive quando a compra original é antiga.
+  const tipoEfetivo=tipo==='estorno'||valInformado<0?'estorno':tipo;
+  const val=tipoEfetivo==='estorno'?-Math.abs(valInformado):valInformado;
   const card=selectedCard();
-  if(!card){appAlert('Escolha o cartão usado na compra.');return;}
-  if(!desc||!valorMonetarioValido(val)||val<=0||!categoria||!subcategoria){appAlert('Preencha descrição, categoria, subcategoria e valor.');return;}
+  if(!card){appAlert('Escolha o cartão usado na compra ou no estorno.');return;}
+  if(!desc||!valorMonetarioValido(Math.abs(val))||val===0||!categoria||!subcategoria||!['compra','parcelado','estorno'].includes(tipoEfetivo)){
+    appAlert('Preencha descrição, categoria, subcategoria e um valor válido. Estornos devem ser negativos.');return;
+  }
   const vencDia=card.dueDay;
-  const n=tipo==='parcelado'?parseInt(document.getElementById('cc-parcelas').value):1;
+  const n=tipoEfetivo==='parcelado'?parseInt(document.getElementById('cc-parcelas').value):1;
   const primeiraParcela=dueDateFor(new Date(data+'T12:00:00'),vencDia,0,card.closeDay);
   if(editingCartaoId&&S.extrato.some(x=>String(x.cardId)===String(card.id)&&x.faturaMes)){
     appAlert('Este cartão já possui pagamento vinculado. Não altere compras sem antes reconciliar os pagamentos.');return;
   }
-  const registro={id:editingCartaoId||novoIdGlobal(),data,desc,tipo,val,parcelas:n,vencDia,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria,subcategoria,gastoTipo};
+  const registro={id:editingCartaoId||novoIdGlobal(),data,desc,tipo:tipoEfetivo,val,parcelas:n,vencDia,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria,subcategoria,gastoTipo};
   const anterior=editingCartaoId?S.cartao.find(x=>x.id===editingCartaoId):null;
   if(anterior&&Number.isInteger(anterior.parcelasPagasInformadas))registro.parcelasPagasInformadas=Math.min(n,anterior.parcelasPagasInformadas);
   if(editingCartaoId){
@@ -3554,7 +3575,8 @@ function vencimentoDaCompra(c,indice){
   const base=new Date(c.data+'T12:00:00');
   const dia=c.vencDia||10;
   const calculado=dueDateFor(base,dia,indice,c.closeDay);
-  if(c.closeDay||c.previsto||base.getDate()>dia)return calculado;
+  // Estornos novos seguem a data do crédito. Faturas antigas pagas não deslocam o abatimento.
+  if(c.tipo==='estorno'||c.closeDay||c.previsto||base.getDate()>dia)return calculado;
   const mesCompra=c.data.slice(0,7);
   const temPagamentoAnterior=S.extrato.some(x=>x.tipo==='saida'&&String(x.cardId)===String(c.cardId)&&x.faturaMes===mesCompra);
   if(!temPagamentoAnterior)return calculado;
@@ -3572,7 +3594,7 @@ function getMesMap(){
       const parc=valorParcela(c,i);
       const venc=vencimentoDaCompra(c,i);
       const key=monthKey(venc.getFullYear(),venc.getMonth());
-      map[key]=(map[key]||0)+parc;
+      map[key]=(Math.round((map[key]||0)*100)+Math.round(parc*100))/100;
     }
   });
   const limite=new Date();limite.setFullYear(limite.getFullYear()+10);
@@ -3629,8 +3651,8 @@ function getParcelasCartao(){
 
 function getResumoCartaoExtrato(y,m){
   const parcelas=parcelasCartaoFinanceiras().filter(r=>isSameMonthDate(r.data,y,m));
-  const total=parcelas.reduce((s,r)=>s+r.val,0);
-  if(total<=0)return null;
+  const totalCentavos=parcelas.reduce((s,r)=>s+Math.round(Number(r.val)*100),0);
+  if(totalCentavos<=0)return null;
   const vencimentos=[...new Set(parcelas.map(r=>new Date(r.data+'T12:00:00').getDate()))].sort((a,b)=>a-b);
   const dia=vencimentos.length?vencimentos[0]:1;
   return {
@@ -3640,7 +3662,7 @@ function getResumoCartaoExtrato(y,m){
     tipo:'cartao',
     categoria:'Cartão de crédito',
     subcategoria:'Total do mês',
-    val:total,
+    val:totalCentavos/100,
     auto:true,
     resumoCartao:true,
     qtdParcelas:parcelas.length
@@ -3800,7 +3822,7 @@ function renderCartao(){
   document.getElementById('cc-prox').textContent=fmt(map[nextKey]||0);
 
   const keys=Object.keys(map).sort().filter(k=>k>=nowKey).slice(0,6);
-  const maxVal=Math.max(...Object.values(map),1);
+  const maxVal=Math.max(...Object.values(map).map(Math.abs),1);
   const tl=document.getElementById('cc-timeline');
   if(!keys.length){tl.innerHTML='<div class="empty">Nenhuma compra ainda.</div>';}
   else{
@@ -3808,7 +3830,7 @@ function renderCartao(){
       const [y,m]=k.split('-').map(Number);
       const label=mesStr(y,m);
       const v=map[k];
-      const pct=Math.round(v/maxVal*100);
+      const pct=Math.round(Math.abs(v)/maxVal*100);
       const isNow=k===nowKey;
       return`<div class="tl-row${isNow?' mes-atual':''}">
         <div class="tl-mes"><b>${label}</b></div>
@@ -3835,7 +3857,8 @@ function renderCartao(){
   // Separação somente visual: conserva as compras e todas as parcelas no JSON.
   // O valor da parcela corresponde ao mês da fatura que está sendo visualizado.
   const grupos=[
-    ['À vista',rows.filter(r=>r.tipo!=='parcelado'&&!r.recorrenciaId)],
+    ['À vista',rows.filter(r=>r.tipo!=='parcelado'&&r.tipo!=='estorno'&&!r.recorrenciaId)],
+    ['Estornos',rows.filter(r=>r.tipo==='estorno'&&!r.recorrenciaId)],
     ['Mensalidade do cartão',mensalidades],
     ['Recorrentes',rows.filter(r=>r.tipo!=='parcelado'&&!!r.recorrenciaId)],
     ['Parcelamentos',rows.filter(r=>r.tipo==='parcelado')]
@@ -3848,7 +3871,7 @@ function renderCartao(){
         const qtdParcelas=Number(r.parcelas)||1;
         const parcelado=r.tipo==='parcelado';
         const mensalidade=!!r.mensalidadeCartao;
-        const tipoLabel=mensalidade?'Mensalidade':parcelado?'Parcelado':'À vista';
+        const tipoLabel=mensalidade?'Mensalidade':r.tipo==='estorno'?'Estorno':parcelado?'Parcelado':'À vista';
         const venc='dia '+(r.vencDia||10);
         const nomeProduto=(S.cartoes.find(card=>String(card.id)===String(r.cardId))||{}).nome||r.nomeCartao||'';
         const desc=r.banco?`${r.desc} (${r.banco}${nomeProduto?' · '+nomeProduto:''})`:r.desc;
@@ -3871,7 +3894,7 @@ function renderCartao(){
         }else{
           actions=`<button class="del" type="button" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra.">✎</button><button class="del" type="button" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra à vista do cartão."><i class="ti ti-x" aria-hidden="true"></i></button>`;
         }
-        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge b-compra">${mensalidade?'Mensalidade':r.previsto?'Previsto':r.recorrenciaId?'Recorrente':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
+        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge ${r.tipo==='estorno'?'b-estorno':'b-compra'}">${mensalidade?'Mensalidade':r.previsto?'Previsto':r.recorrenciaId?'Recorrente':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money${r.tipo==='estorno'?' cc-credit':''}">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
       }).join('');
       const subtotal=titulo==='Mensalidade do cartão'
         ?itens.reduce((s,r)=>s+Number(r.val||0),0)
