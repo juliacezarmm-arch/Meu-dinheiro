@@ -3474,15 +3474,32 @@ function addCartao(){
   const vencDia=card.dueDay;
   const n=tipoEfetivo==='parcelado'?parseInt(document.getElementById('cc-parcelas').value):1;
   const primeiraParcela=dueDateFor(new Date(data+'T12:00:00'),vencDia,0,card.closeDay);
-  if(editingCartaoId&&S.extrato.some(x=>String(x.cardId)===String(card.id)&&x.faturaMes)){
-    appAlert('Este cartão já possui pagamento vinculado. Não altere compras sem antes reconciliar os pagamentos.');return;
-  }
   const registro={id:editingCartaoId||novoIdGlobal(),data,desc,tipo:tipoEfetivo,val,parcelas:n,vencDia,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria,subcategoria,gastoTipo};
   const anterior=editingCartaoId?S.cartao.find(x=>x.id===editingCartaoId):null;
   if(anterior&&Number.isInteger(anterior.parcelasPagasInformadas))registro.parcelasPagasInformadas=Math.min(n,anterior.parcelasPagasInformadas);
-  if(editingCartaoId){
+  if(anterior){
+    // Permite corrigir compras do cartão mesmo depois de pagar uma fatura anterior.
+    // Bloqueia somente se a alteração tornaria alguma fatura efetivamente paga
+    // menor que os pagamentos já registrados para aquela mesma competência.
     const idx=S.cartao.findIndex(x=>x.id===editingCartaoId);
-    if(idx>=0)S.cartao[idx]=registro;
+    if(idx<0)return;
+    const pagamentos=S.extrato.filter(x=>x.tipo==='saida'&&x.faturaMes&&
+      [String(anterior.cardId),String(registro.cardId)].includes(String(x.cardId)));
+    if(pagamentos.length){
+      S.cartao[idx]=registro;
+      let conflito=null;
+      try{
+        for(const pagamento of pagamentos){
+          const total=totalDaFaturaFinanceira(pagamento.cardId,pagamento.faturaMes);
+          const pago=pagoNaFaturaFinanceira(pagamento.cardId,pagamento.faturaMes);
+          if(pago>total){conflito={mes:pagamento.faturaMes,excesso:(pago-total)/100};break;}
+        }
+      }finally{S.cartao[idx]=anterior;}
+      if(conflito){
+        appAlert('Esta alteração deixaria a fatura '+conflito.mes+' com '+fmt(conflito.excesso)+' pagos além do total. Confira a competência ou o pagamento antes de salvar.');return;
+      }
+    }
+    S.cartao[idx]=registro;
   }else{
     S.cartao.push(registro);
   }
@@ -3495,7 +3512,6 @@ function addCartao(){
 function editCartao(id){
   const item=S.cartao.find(x=>x.id===id);
   if(!item)return;
-  if(S.extrato.some(x=>String(x.cardId)===String(item.cardId)&&x.faturaMes)){appAlert('Cartão com pagamento vinculado: edição bloqueada para preservar a conciliação.');return;}
   editingCartaoId=id;
   document.getElementById('cc-data').value=item.data||today();
   document.getElementById('cc-card').value=item.cardId||'';
