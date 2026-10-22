@@ -20,6 +20,14 @@ for(const day of ['10','11','19','30']){
 }
 assert.strictEqual(run("dueDateFor(new Date('2026-10-09T12:00:00'),10,0,null).toISOString().slice(0,10)"),'2026-10-10','Compra de 09/10 entra na fatura de 10/10');
 assert.strictEqual(run("dueDateFor(new Date('2026-10-10T12:00:00'),10,0,null).toISOString().slice(0,10)"),'2026-11-10','Compra no próprio dia 10 vai ao mês seguinte');
+// Regressão de outubro/2026: o pagamento registrado no dia 19 não pode
+// puxar a assinatura Office 365 do dia 10/10 para a fatura de outubro.
+run("S.cartoes=[{id:1,bank:'Itaú',dueDay:10}];S.cartao=[{id:600,cardId:1,data:'2026-10-10',desc:'Pacote Office 365',val:60,parcelas:1,vencDia:10,closeDay:null}];S.extrato=[{id:700,data:'2026-10-19',tipo:'saida',cardId:1,faturaMes:'2026-10',val:1628.34}]");
+assert.strictEqual(run("getParcelasCartao().find(p=>p.id==='600-0').data"),'2026-11-10','Office 365 no dia do vencimento deve entrar em novembro, mesmo após pagamento de outubro');
+assert.strictEqual(run("totalDaFatura(1,'2026-10')"),0,'Office 365 não deve gerar R$ 60 extras em outubro');
+assert.strictEqual(run("totalDaFatura(1,'2026-11')"),6000,'Office 365 deve ser incluído uma vez em novembro');
+run("S.cartoes=[];S.cartao=[];S.extrato=[]");
+
 assert.strictEqual(run("dueDateFor(new Date('2026-12-31T12:00:00'),10,0,null).toISOString().slice(0,10)"),'2027-01-10','Virada do ano');
 assert.strictEqual(run("dueDateFor(new Date('2026-09-19T12:00:00'),10,1,null).toISOString().slice(0,10)"),'2026-11-10','Segunda parcela em novembro');
 assert.strictEqual(run("dueDateFor(new Date('2026-09-04T12:00:00'),10,0,5).toISOString().slice(0,10)"),'2026-09-10','Fechamento explícito deve prevalecer');
