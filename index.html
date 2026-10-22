@@ -4015,8 +4015,15 @@ function ensureInvestHistory(item){
   return item.historico;
 }
 
+// Preserve a ordem real dos lançamentos dentro de cada dia. O identificador
+// de um registro não é garantia da sequência entre aporte, atualização e resgate.
+function ordenarHistoricoInvest(item){
+  return ensureInvestHistory(item).map((evento,ordem)=>({evento,ordem}))
+    .sort((a,b)=>(a.evento.data||'').localeCompare(b.evento.data||'')||a.ordem-b.ordem)
+    .map(registro=>registro.evento);
+}
 function recalcInvestFromHistory(item){
-  const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
+  const hist=ordenarHistoricoInvest(item);
   let saldo=0,totalAportado=0,totalResgatado=0;
   hist.forEach(h=>{
     const valor=Number(h.valor||0);
@@ -4024,7 +4031,7 @@ function recalcInvestFromHistory(item){
       saldo+=valor;
       totalAportado+=valor;
     }else if(h.tipo==='resgate'){
-      const resgate=Math.min(valor,saldo);
+      const resgate=Math.min(Math.max(valor,0),Math.max(saldo,0));
       saldo-=resgate;
       totalResgatado+=resgate;
     }else if(h.tipo==='atualizacao'){
@@ -4037,42 +4044,63 @@ function recalcInvestFromHistory(item){
   item.totalResgatado=totalResgatado;
 }
 
+// TWR por atualização: aporte/resgate muda o capital, mas seu retorno é zero.
+// A atualização é comparada ao saldo imediatamente anterior, já ajustado pelos
+// fluxos registrados. Sem valores de mercado intradiários este é o TWR por
+// avaliação disponível (aproximação, não TWR diário exato).
+function avaliarRetornoInvestimento(item,inicio,fim){
+  const hist=ordenarHistoricoInvest(item);
+  let saldo=0,base=0,aportes=0,resgates=0,rendimento=0;
+  let fator=1,houveTaxa=false,baseDefinida=false,capitalObservado=false;
+  const atualizacoes=[];
+  for(const h of hist){
+    const data=h.data||'',valor=Number(h.valor||0);
+    if(!Number.isFinite(valor)||valor<0||!data||data>=fim)continue;
+    const noPeriodo=data>=inicio;
+    if(noPeriodo&&!baseDefinida){base=saldo;baseDefinida=true;}
+    if(h.tipo==='aporte'){
+      saldo+=valor;
+      if(noPeriodo)aportes+=valor;
+      if(saldo>0)capitalObservado=true;
+    }else if(h.tipo==='resgate'){
+      const retirado=Math.min(valor,Math.max(0,saldo));
+      saldo-=retirado;
+      if(noPeriodo)resgates+=retirado;
+    }else if(h.tipo==='atualizacao'){
+      const anterior=saldo;
+      saldo=valor;
+      if(noPeriodo){
+        const ganho=valor-anterior;
+        rendimento+=ganho;
+        if(anterior>0){
+          fator*=valor/anterior;
+          houveTaxa=true;
+        }
+        atualizacoes.push({
+          id:h.id,data,valor,resultado:ganho,rendimento,
+          pct:houveTaxa?(fator-1)*100:null,
+          taxaAtualizacao:anterior>0?(valor/anterior-1)*100:null
+        });
+      }
+    }
+  }
+  if(!baseDefinida)base=saldo;
+  return {base,final:saldo,aportes,resgates,rendimento,
+    pct:houveTaxa?(fator-1)*100:capitalObservado?0:null,
+    inicio,fim,atualizacoes};
+}
 function calcInvestPeriodResult(item,periodo=investPeriodo,referencia=investMes){
-  const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
-  const ano=referencia.getFullYear();
-  const mes=referencia.getMonth();
-  const inicio=periodo==='ano'
-    ?ano+'-01-01'
-    :ano+'-'+String(mes+1).padStart(2,'0')+'-01';
+  const ano=referencia.getFullYear(),mes=referencia.getMonth();
+  const inicio=periodo==='ano'?ano+'-01-01':isoDate(ano,mes,1);
   const fimDate=periodo==='ano'?new Date(ano+1,0,1,12):new Date(ano,mes+1,1,12);
   const fim=isoDate(fimDate.getFullYear(),fimDate.getMonth(),fimDate.getDate());
-  const antes=hist.filter(h=>(h.data||'')<inicio).slice(-1)[0];
-  const dentro=hist.filter(h=>(h.data||'')>=inicio&&(h.data||'')<fim);
-  const ultimo=dentro.slice(-1)[0];
-  const base=antes?Number(antes.saldo||0):0;
-  const final=ultimo?Number(ultimo.saldo||0):base;
-  const aportes=dentro.filter(h=>h.tipo==='aporte').reduce((s,h)=>s+Number(h.valor||0),0);
-  const resgates=dentro.filter(h=>h.tipo==='resgate').reduce((s,h)=>s+Number(h.valor||0),0);
-  const rendimento=final-base-aportes+resgates;
-  const capital=base+aportes;
-  return {base,final,aportes,resgates,rendimento,pct:capital>0?rendimento/capital*100:0,inicio,fim};
+  return avaliarRetornoInvestimento(item,inicio,fim);
 }
 function calcInvestMonthResult(item,mes){
-  const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
-  const inicio=mes+'-01';
-  const y=Number(mes.slice(0,4));
-  const m=Number(mes.slice(5,7));
-  const fim=(m===12?y+1:y)+'-'+String(m===12?1:m+1).padStart(2,'0')+'-01';
-  const antes=hist.filter(h=>(h.data||'')<inicio).slice(-1)[0];
-  const doMes=hist.filter(h=>(h.data||'')>=inicio&&(h.data||'')<fim);
-  const ultimoMes=doMes.slice(-1)[0];
-  const saldoAnterior=antes?Number(antes.saldo||0):0;
-  const saldoFinal=ultimoMes?Number(ultimoMes.saldo||0):saldoAnterior;
-  const aportes=doMes.filter(h=>h.tipo==='aporte').reduce((s,h)=>s+Number(h.valor||0),0);
-  const resgates=doMes.filter(h=>h.tipo==='resgate').reduce((s,h)=>s+Number(h.valor||0),0);
-  const rendimento=saldoFinal-saldoAnterior-aportes+resgates;
-  const base=saldoAnterior+aportes;
-  return {rendimento,pct:base>0?rendimento/base*100:0};
+  const y=Number(mes.slice(0,4)),m=Number(mes.slice(5,7));
+  const fim=m===12?(y+1)+'-01-01':y+'-'+String(m+1).padStart(2,'0')+'-01';
+  const resultado=avaliarRetornoInvestimento(item,mes+'-01',fim);
+  return {rendimento:resultado.rendimento,pct:resultado.pct};
 }
 
 function refreshInvestViews(){
