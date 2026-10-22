@@ -333,10 +333,6 @@ td:last-child{white-space:normal}
 .cc-card-breakdown-row strong{flex:none;color:#f5f5f2;font-size:12px;font-variant-numeric:tabular-nums}
 .cc-card-breakdown-row.total{padding-top:5px;margin-top:2px;border-top:1px solid #34342f;color:#9FE1CB;font-weight:800}
 .cc-card-breakdown-row.total strong{color:#9FE1CB}
-.cc-invoice-row .cc-invoice-label{min-width:0;overflow:visible;white-space:normal;text-overflow:clip}
-.cc-invoice-row .cc-invoice-label small{display:block;margin-top:2px;font-size:10px;color:#b1c6bb;line-height:1.3}
-.cc-invoice-row>strong{align-self:center}
-.cc-invoice-hint{margin:4px 0 0;font-size:10px;line-height:1.35;color:#9eada5}
 
 @media(max-width:520px){.cc-filter-chip{font-size:10px;padding:5px 8px}.cc-card-breakdown{padding:7px 8px}.cc-card-breakdown-row{font-size:10px}.cc-card-breakdown-row strong{font-size:11px}.bank-cards{gap:7px}.bank-card{padding:.58rem .62rem;min-height:58px}.bank-card .bank-title{font-size:12px;margin-right:54px}.bank-card .bank-due{font-size:9px}.bank-card .bank-chip{width:22px;height:15px;margin-bottom:5px}}
 .goal-list{display:grid;grid-template-columns:1fr;gap:8px}
@@ -3918,33 +3914,20 @@ function renderFiltroCartoes(){
 }
 function renderResumoCartoes(parcelasMes,totalMes){
   const box=document.getElementById('cc-card-breakdown');if(!box)return;
-  if(!S.cartoes.length){box.hidden=true;box.innerHTML='';return;}
-  const mes=isoDate(cartaoMes.getFullYear(),cartaoMes.getMonth(),1).slice(0,7);
+  if(cartaoFiltroId!=='todos'||!S.cartoes.length){box.hidden=true;box.innerHTML='';return;}
   const porCartao=new Map();
   for(const parcela of parcelasMes){
     const id=String(parcela.cardId);
     porCartao.set(id,(porCartao.get(id)||0)+Math.round(Number(parcela.val||0)*100));
   }
-  const visiveis=S.cartoes.filter(card=>cartaoPassaFiltro(card.id));
-  const linhas=visiveis.map(card=>{
-    const total=(porCartao.get(String(card.id))||0)/100;
-    // Um pagamento de fatura quita o conjunto de compras do cartão naquele mês,
-    // nunca uma compra individual. Os valores são exibidos sem alterar registros.
-    const totalFinanceiro=totalDaFaturaFinanceira(card.id,mes);
-    const pago=pagoNaFaturaFinanceira(card.id,mes);
-    const restante=Math.max(0,totalFinanceiro-pago);
-    const excedente=Math.max(0,pago-totalFinanceiro);
-    const detalhe='Pago: '+fmt(pago/100)+' · '+(excedente?'Pago acima do total: '+fmt(excedente/100):'Restante: '+fmt(restante/100));
-    return '<div class="cc-card-breakdown-row cc-invoice-row"><span class="cc-invoice-label">'+
-      escHtml(nomeCartaoResumo(card))+'<small>'+escHtml(detalhe)+'</small></span>'+
-      '<strong title="Total da fatura calculada das compras e créditos deste mês">'+fmt(total)+'</strong></div>';
+  const linhas=S.cartoes.map(card=>{
+    const valor=(porCartao.get(String(card.id))||0)/100;
+    return '<div class="cc-card-breakdown-row"><span>'+escHtml(nomeCartaoResumo(card))+'</span><strong>'+fmt(valor)+'</strong></div>';
   });
-  if(cartaoFiltroId==='todos'&&visiveis.length>1)linhas.push('<div class="cc-card-breakdown-row total"><span>Total dos cartões</span><strong>'+fmt(totalMes)+'</strong></div>');
-  linhas.push('<p class="cc-invoice-hint">A fatura reúne compras, parcelas, mensalidades e estornos do mesmo mês. Os pagamentos são registrados por cartão e fatura, não por compra.</p>');
+  linhas.push('<div class="cc-card-breakdown-row total"><span>Total dos cartões</span><strong>'+fmt(totalMes)+'</strong></div>');
   box.innerHTML=linhas.join('');
   box.hidden=false;
 }
-
 function renderCartao(){
   const viewYear=cartaoMes.getFullYear();
   const viewMonth=cartaoMes.getMonth();
