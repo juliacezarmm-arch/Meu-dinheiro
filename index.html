@@ -293,6 +293,11 @@ td:last-child{white-space:normal}
 .month-fill{height:100%;border-radius:999px;min-width:4px}
 .month-value{font-size:12px;font-weight:700;text-align:right}
 .month-note{font-size:11px;color:var(--color-text-secondary);margin-left:19px;margin-top:3px}
+.invest-flow-list{gap:13px}
+.invest-flow-item{min-width:0}
+.invest-flow-detail{font-size:11px;color:var(--color-text-secondary);line-height:1.5;margin:5px 0 0 19px;overflow-wrap:anywhere}
+.invest-flow-item .month-label{overflow-wrap:anywhere;min-width:0}
+.invest-flow-item .month-value{font-variant-numeric:tabular-nums;white-space:nowrap}
 .plain-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:.75rem}
 .chart-panel>.plain-summary{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
 .plain-card{background:#10100f;border:1px solid #31302c;border-radius:var(--border-radius-md);padding:.7rem}
@@ -1381,7 +1386,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       <div class="card" title="Tudo que entrou de dinheiro neste mês, como salário, benefícios ou renda extra."><div class="label">Entradas</div><div class="value green" id="res-ent">R$ 0</div></div>
       <div class="card" title="Gastos do mês, incluindo despesas do extrato e parcelas do cartão."><div class="label">Saídas</div><div class="value red" id="res-sai">R$ 0</div></div>
       <div class="card" title="Parcelas e compras do cartão que vencem no mês selecionado."><div class="label">Cartão (mês atual)</div><div class="value amber" id="res-cc">R$ 0</div></div>
-      <div class="card" title="Dinheiro separado para investimentos neste mês."><div class="label">Investido</div><div class="value blue" id="res-inv">R$ 0</div></div>
+      <div class="card" title="Aportes menos resgates dos investimentos neste mês, sem incluir rendimentos."><div class="label">Aplicado líquido</div><div class="value blue" id="res-inv">R$ 0</div></div>
       <div class="card" title="Dinheiro guardado para metas cadastradas, como viagem ou computador."><div class="label">Metas</div><div class="value green" id="res-meta">R$ 0</div></div>
       <div class="card" title="Resultado real do mês selecionado: entradas menos saídas, investimentos e metas. Compras previstas do cartão só entram quando a fatura for paga no Extrato."><div class="label">Resultado do mês</div><div class="value" id="res-result">R$ 0</div></div>
     </div>
@@ -2897,6 +2902,62 @@ function renderBarList(items,color,emptyText){
 
 function objToItems(obj,color){
   return Object.keys(obj).map(label=>({label,val:obj[label],color}));
+}
+
+function resumoFluxosInvestimentos(ano,mes){
+ // A movimentação líquida é diferente da rentabilidade: aporte - resgate.
+ const investimentos=S.invest.filter(i=>i.kind==='investimento');
+ const porNome=new Map();
+ for(const item of investimentos){
+   const chave=String(item.nome||'').trim().toLocaleLowerCase('pt-BR');
+   if(!porNome.has(chave))porNome.set(chave,[]);
+   porNome.get(chave).push(item);
+ }
+ const linhas=new Map();
+ for(const mov of S.extrato){
+   if(!isSameMonthDate(mov.data,ano,mes)||!movimentoNoControleFinanceiro(mov))continue;
+   const aporte=mov.tipo==='investimento';
+   const resgate=mov.tipo==='entrada'&&mov.categoria==='Resgate';
+   if(!aporte&&!resgate)continue;
+   const centavos=Math.round(Number(mov.val)*100);
+   if(!Number.isSafeInteger(centavos)||centavos<=0)continue;
+   const destino=mov.destId==null?null:S.invest.find(i=>String(i.id)===String(mov.destId));
+   // Meta e investimento não se confundem; o resgate de meta continua no caixa.
+   if(destino&&destino.kind!=='investimento')continue;
+   const nomeInformado=String(destino?.nome||mov.subcategoria||mov.desc?.replace(/^(Investimento|Resgate)\s*-\s*/i,'')||'Investimento').trim();
+   const candidatos=porNome.get(nomeInformado.toLocaleLowerCase('pt-BR'))||[];
+   const invest=destino||(candidatos.length===1?candidatos[0]:null);
+   const chave=invest?'id:'+invest.id:'nome:'+nomeInformado.toLocaleLowerCase('pt-BR');
+   if(!linhas.has(chave))linhas.set(chave,{nome:invest?.nome||nomeInformado,aportesCentavos:0,resgatesCentavos:0});
+   const linha=linhas.get(chave);
+   if(aporte)linha.aportesCentavos+=centavos;
+   if(resgate)linha.resgatesCentavos+=centavos;
+ }
+ const resultado=[...linhas.values()].map(l=>({
+   nome:l.nome,aportes:l.aportesCentavos/100,resgates:l.resgatesCentavos/100,
+   liquido:(l.aportesCentavos-l.resgatesCentavos)/100
+ })).sort((a,b)=>Math.abs(b.liquido)-Math.abs(a.liquido)||b.aportes-a.aportes||a.nome.localeCompare(b.nome,'pt-BR'));
+ const total=resultado.reduce((acc,l)=>{
+   acc.aportes+=Math.round(l.aportes*100);
+   acc.resgates+=Math.round(l.resgates*100);
+   return acc;
+ },{aportes:0,resgates:0});
+ return {linhas:resultado,aportes:total.aportes/100,resgates:total.resgates/100,liquido:(total.aportes-total.resgates)/100};
+}
+function fmtFluxoLiquido(v){return v<0?'−'+fmt(-v):fmt(v);}
+function renderFluxosInvestimentos(fluxo){
+ if(!fluxo.linhas.length)return '<div class="empty">Nenhum aporte ou resgate de investimento neste mês.</div>';
+ const maximo=Math.max(1,...fluxo.linhas.map(l=>Math.abs(l.liquido)));
+ return '<div class="month-bars invest-flow-list">'+fluxo.linhas.map(l=>{
+   const pct=(Math.abs(l.liquido)/maximo*100).toFixed(1);
+   const cor=l.liquido<0?'#DA9A51':'#2378D4';
+   return '<div class="invest-flow-item"><div class="month-row">'+
+     '<div class="month-label"><span class="chart-dot" style="background:'+cor+'"></span>'+escHtml(l.nome)+'</div>'+
+     '<div class="month-track"><div class="month-fill" style="width:'+pct+'%;min-width:'+(l.liquido?4:0)+'px;background:'+cor+'"></div></div>'+
+     '<div class="month-value">'+fmtFluxoLiquido(l.liquido)+'</div></div>'+
+     '<div class="invest-flow-detail">Aportes: '+fmt(l.aportes)+' · Resgates: '+fmt(l.resgates)+
+     ' · '+(l.liquido<0?'Resgate líquido':'Aplicado líquido')+': '+fmtFluxoLiquido(l.liquido)+'</div></div>';
+ }).join('')+'</div>';
 }
 
 function showAnnualTooltip(evt,label,mes,valor){
@@ -5418,7 +5479,8 @@ function updateResumo(){
   document.getElementById('res-ent').textContent=fmt(entradas);
   document.getElementById('res-sai').textContent=fmt(saidas);
   document.getElementById('res-cc').textContent=fmt(ccMes);
-  document.getElementById('res-inv').textContent=fmt(investido);
+  const fluxoInvestimentos=resumoFluxosInvestimentos(viewYear,viewMonth);
+  document.getElementById('res-inv').textContent=fmtFluxoLiquido(fluxoInvestimentos.liquido);
   document.getElementById('res-meta').textContent=fmt(metas);
   const resultadoEl=document.getElementById('res-result');
   if(resultadoEl){
@@ -5492,19 +5554,21 @@ function updateResumo(){
     <div class="chart-panel">
       <div class="chart-head">
         <div>
-          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('invest')" title="Abrir ou fechar o resumo dos investimentos.">${resumoCharts.invest?'-':'+'}</button><h3>Investimentos</h3></div>
-          <p>Onde o dinheiro foi separado para o futuro neste mês.</p>
+          <div class="chart-title-line"><button class="chart-toggle" onclick="toggleResumoChart('invest')" title="Abrir ou fechar os aportes e resgates por investimento.">${resumoCharts.invest?'-':'+'}</button><h3>Investimentos</h3></div>
+          <p>Quanto foi colocado e retirado de cada investimento neste mês.</p>
         </div>
-        <div class="chart-total">${fmt(investido)}</div>
+        <div class="chart-total" title="Aportes menos resgates no mês">${fmtFluxoLiquido(fluxoInvestimentos.liquido)}</div>
       </div>
       ${resumoCharts.invest?`
       <div class="month-message">
-        <strong>${topText(investItems,'Nenhum investimento neste mês.','Você investiu mais em')}</strong>
-        <span>Separado por tipo de aplicação.</span>
+        <strong>Movimentação dos investimentos em ${monthLabel}</strong>
+        <span>Aportes aumentam o valor aplicado; resgates diminuem. Isso não é rendimento nem prejuízo.</span>
       </div>
-      ${renderBarList(investItems,'#2378D4','Nenhum investimento neste mês.')}
+      ${renderFluxosInvestimentos(fluxoInvestimentos)}
       <div class="plain-summary">
-        <div class="plain-card"><strong>Total investido: ${fmt(investido)}</strong><span>Esse valor também reduz o saldo disponível.</span></div>
+        <div class="plain-card"><strong>Aportes: ${fmt(fluxoInvestimentos.aportes)}</strong><span>Dinheiro colocado nos investimentos neste mês.</span></div>
+        <div class="plain-card"><strong>Resgates: ${fmt(fluxoInvestimentos.resgates)}</strong><span>Dinheiro retirado e devolvido ao saldo disponível.</span></div>
+        <div class="plain-card"><strong>Aplicado líquido: ${fmtFluxoLiquido(fluxoInvestimentos.liquido)}</strong><span>Aportes menos resgates — não é rendimento nem patrimônio total.</span></div>
       </div>
       `:''}
     </div>
