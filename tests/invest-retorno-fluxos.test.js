@@ -2,13 +2,13 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const html=fs.readFileSync('index.html','utf8');
-const src=html.match(/<script\\s*>([\\s\\S]*?)<\\/script>/)?.[1];
+const src=html.match(/<script\s*>([\s\S]*?)<\/script>/)?.[1];
 assert(src,'Script do aplicativo nao encontrado.');
 const extract=name=>{
  const at=src.indexOf('function '+name+'(');
  assert(at>=0,'Funcao '+name+' ausente.');
  const remaining=src.slice(at+10);
- const next=/\\n(?:async )?function [A-Za-z]/.exec(remaining);
+ const next=/\n(?:async )?function [A-Za-z]/.exec(remaining);
  return src.slice(at,next?at+10+next.index:src.length);
 };
 const ctx=vm.createContext({
@@ -17,7 +17,7 @@ const ctx=vm.createContext({
  isoDate:(y,m,d)=>new Date(y,m,d,12).toISOString().slice(0,10)
 });
 const functions=['ensureInvestHistory','ordenarHistoricoInvest','recalcInvestFromHistory','avaliarRetornoInvestimento','calcInvestPeriodResult','calcInvestMonthResult'];
-vm.runInContext(functions.map(extract).join('\\n'),ctx);
+vm.runInContext(functions.map(extract).join('\n'),ctx);
 const analyze=(events)=>{
  ctx.item={id:1,historico:events.map((event,i)=>({id:'e'+i,...event}))};
  return vm.runInContext('recalcInvestFromHistory(item); calcInvestPeriodResult(item)',ctx);
