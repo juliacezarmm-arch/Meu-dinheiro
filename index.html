@@ -4436,20 +4436,20 @@ function renderStockChart(item,mes,periodo){
     ${coords.map(p=>`<circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="4.3" fill="#0c1919" stroke="${cor}" stroke-width="2.3"><title>${escHtml(p.label)}: ${fmt(p.valor)}</title></circle>`).join('')}
     ${marcadoresResgateSvg}
   </svg>`;
-  const updates=agruparDia(dentro.filter(ev=>ev.tipo==='atualizacao'));
-  const resumidos=updates.map(ev=>{
-    const ate=dentro.filter(h=>(h.data||'')<=ev.data);
-    const aportes=ate.filter(h=>h.tipo==='aporte').reduce((sum,h)=>sum+Number(h.valor||0),0);
-    const resgates=ate.filter(h=>h.tipo==='resgate').reduce((sum,h)=>sum+Number(h.valor||0),0);
-    const valor=Number(ev.saldo||0),rendimento=valor-base-aportes+resgates;
-    const capital=base+aportes;
-    return {label:ev.data.slice(8,10)+'/'+ev.data.slice(5,7),valor,rendimento,pct:capital>0?rendimento/capital*100:0};
-  });
+  // Cada atualização usa a ordem efetiva do histórico. Não inclui resgates
+  // registrados depois da atualização, mesmo que tenham ocorrido no mesmo dia.
+  const resultadoAteAtualizacao=avaliarRetornoInvestimento(item,inicio,fim);
+  const porDia=new Map();
+  for(const atualizacao of resultadoAteAtualizacao.atualizacoes)porDia.set(atualizacao.data,atualizacao);
+  const resumidos=[...porDia.values()].map(ev=>({
+    label:ev.data.slice(8,10)+'/'+ev.data.slice(5,7),
+    valor:ev.valor,rendimento:ev.rendimento,pct:ev.pct
+  }));
   const cards=anual?mesesAno.map(m=>{
     const cls=m.rendimento>=0?'positive':'negative';
     return `<div class="inv-evolution-item ${m.registrado?'':'no-activity'}">
       <div class="inv-evolution-item-head"><strong>${escHtml(m.label)}</strong><span>${m.registrado?'Com registro':'Sem registro no mês'}</span></div>
-      <div class="inv-evolution-item-numbers"><span class="${cls}">${m.rendimento>0?'+':''}${fmt(m.rendimento)}</span><b class="${cls}">${fmtInvestPct(m.pct)}</b></div>
+      <div class="inv-evolution-item-numbers"><span class="${cls}">${m.rendimento>0?'+':''}${fmt(m.rendimento)}</span><b class="${cls}">${m.pct===null?'—':fmtInvestPct(m.pct)}</b></div>
       <small>Saldo final: ${m.valor===null?'—':fmt(m.valor)}</small>
     </div>`;
   }):resumidos.map(m=>{
@@ -4466,7 +4466,7 @@ function renderStockChart(item,mes,periodo){
     ${resgatesMarcados.length?`<div class="inv-evolution-resgate-events" aria-label="Resgates registrados neste período"><span class="inv-evolution-resgate-title">↓ Resgates</span>${resgatesMarcados.map(r=>`<span class="inv-evolution-resgate-chip">${escHtml(r.dataLabel)} · ${fmt(r.valor)}</span>`).join('')}</div>`:''}
     <div class="inv-evolution-summary">
       <div><span>Início do período</span><strong>${fmt(base)}</strong></div>
-      <div><span>Variação patrimonial <small>(inclui aportes/resgates)</small></span><strong class="${variacao>=0?'positive':'negative'}">${variacao>0?'+':''}${fmt(variacao)}</strong></div>
+      <div><span>Rendimento do período <small>(sem aportes/resgates)</small></span><strong class="${resultadoAteAtualizacao.rendimento>=0?'positive':'negative'}">${resultadoAteAtualizacao.rendimento>0?'+':''}${fmt(resultadoAteAtualizacao.rendimento)}</strong><span>Rentab.: ${resultadoAteAtualizacao.pct===null?'—':fmtInvestPct(resultadoAteAtualizacao.pct)} · Variação do saldo: ${fmt(variacao)}</span></div>
       <div><span>Último saldo</span><strong>${fmt(ultimo)}</strong></div>
     </div>
     <div class="inv-evolution-heading"><strong>${anual?'Rendimento de janeiro a dezembro':'Atualizações de valor no mês'}</strong><span>${anual?'Último saldo disponível de cada mês':'Rendimento acumulado até cada atualização'}</span></div>
@@ -4733,8 +4733,12 @@ function resumoGrupoInvestimentosPeriodo(items){
   const aportes=resultados.reduce((s,x)=>s+x.aportes,0);
   const resgates=resultados.reduce((s,x)=>s+x.resgates,0);
   const rendimento=resultados.reduce((s,x)=>s+x.rendimento,0);
-  const capital=base+aportes;
-  return {base,patrimonio,aportes,resgates,rendimento,pct:capital>0?rendimento/capital*100:null};
+  // Retorno combinado aproximado: pondera o TWR por capital de referência
+  // em vez de dividir fluxo de caixa por aportes totais.
+  const weights=resultados.map(r=>Math.max(0,r.base+r.aportes));
+  const totalPeso=weights.reduce((sum,w)=>sum+w,0);
+  const pct=totalPeso>0?resultados.reduce((sum,r,i)=>sum+(r.pct||0)*weights[i],0)/totalPeso:null;
+  return {base,patrimonio,aportes,resgates,rendimento,pct};
 }
 function investTipoVisual(tipo){
   const t=String(tipo||'Outro').toLocaleLowerCase('pt-BR');
@@ -5205,7 +5209,7 @@ function renderDestinoCard(item){
     </div>
     <div class="plain-summary">
       <div class="plain-card" title="${monitor?'Saldo observado, sem criar dinheiro adicional':'Valor atual registrado'}"><strong>${monitor?'Acompanhado':'Atual'}: ${fmt(atual)}</strong><span>${monitor?'Mesmo saldo do investimento, sem reserva.':'Valor registrado neste investimento ou reserva.'}</span></div>
-      ${monitor?`<div class="plain-card"><strong>Faltam: ${fmt(Math.max(0,item.meta-atual))}</strong><span>Objetivo de patrimônio; não altera o Extrato.</span></div>`:`<div class="plain-card" title="Mostra quanto rendeu no mês selecionado."><strong>Rendeu no mês: ${fmt(resultadoMes.rendimento)}</strong><span>${item.kind==='meta'?'Estimativa pela variação do investimento vinculado.':fmtInvestPct(resultadoMes.pct)+' aproximado; não considera o tempo de cada aporte.'}</span></div>`}
+      ${monitor?`<div class="plain-card"><strong>Faltam: ${fmt(Math.max(0,item.meta-atual))}</strong><span>Objetivo de patrimônio; não altera o Extrato.</span></div>`:`<div class="plain-card" title="Mostra quanto rendeu no mês selecionado."><strong>Rendeu no mês: ${fmt(resultadoMes.rendimento)}</strong><span>${item.kind==='meta'?'Estimativa pela variação do investimento vinculado.':resultadoMes.pct===null?'—':fmtInvestPct(resultadoMes.pct)+' · retorno ajustado por aportes/resgates (por atualização).'}</span></div>`}
     </div>
     ${progresso}
     ${item.kind==='investimento'?`<div class="inv-meta-list"><strong>Dinheiro deste investimento</strong>
