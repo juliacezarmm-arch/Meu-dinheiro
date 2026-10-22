@@ -3486,17 +3486,24 @@ function addCartao(){
     const pagamentos=S.extrato.filter(x=>x.tipo==='saida'&&x.faturaMes&&
       [String(anterior.cardId),String(registro.cardId)].includes(String(x.cardId)));
     if(pagamentos.length){
+      // Só bloquear um novo excesso de pagamento criado ou agravado pela edição.
+      // Uma divergência preexistente não pode impedir correções sem relação.
+      const chaves=[...new Map(pagamentos.map(p=>[String(p.cardId)+'|'+p.faturaMes,{cardId:p.cardId,mes:p.faturaMes}])).values()];
+      const antes=chaves.map(k=>({...k,total:totalDaFaturaFinanceira(k.cardId,k.mes),pago:pagoNaFaturaFinanceira(k.cardId,k.mes)}));
       S.cartao[idx]=registro;
       let conflito=null;
       try{
-        for(const pagamento of pagamentos){
-          const total=totalDaFaturaFinanceira(pagamento.cardId,pagamento.faturaMes);
-          const pago=pagoNaFaturaFinanceira(pagamento.cardId,pagamento.faturaMes);
-          if(pago>total){conflito={mes:pagamento.faturaMes,excesso:(pago-total)/100};break;}
+        for(const previo of antes){
+          const total=totalDaFaturaFinanceira(previo.cardId,previo.mes);
+          const excesso=Math.max(0,previo.pago-total);
+          const excessoAntes=Math.max(0,previo.pago-previo.total);
+          if(excesso>excessoAntes){
+            conflito={mes:previo.mes,excesso:excesso/100};break;
+          }
         }
       }finally{S.cartao[idx]=anterior;}
       if(conflito){
-        appAlert('Esta alteração deixaria a fatura '+conflito.mes+' com '+fmt(conflito.excesso)+' pagos além do total. Confira a competência ou o pagamento antes de salvar.');return;
+        appAlert('O novo valor ultrapassaria o pagamento já registrado na fatura '+conflito.mes+' em '+fmt(conflito.excesso)+'. Confira essa alteração antes de salvar.');return;
       }
     }
     S.cartao[idx]=registro;
