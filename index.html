@@ -679,6 +679,12 @@ body.action-panel-open{overflow:hidden}
 .site-toast{position:fixed;top:18px;right:18px;left:auto;transform:none;z-index:20400;display:flex;align-items:center;gap:12px;width:min(360px,calc(100vw - 28px));background:#1a2924;color:#f5f5f2;border:1px solid #69cda9;border-radius:12px;padding:12px 13px;box-shadow:0 18px 45px rgba(0,0,0,.6);font-size:13px;line-height:1.4}
 .save-status:not([hidden]) + .site-toast:not([hidden]){top:72px}.site-toast span{flex:1}.site-toast button{background:transparent;color:#f5f5f2;border:0;font-size:22px;cursor:pointer}
 .input-caption{display:block;font-size:12px;color:#c5c3ba;margin-bottom:5px}.bank-card-actions{position:absolute;right:7px;top:7px;z-index:2;display:flex;gap:4px}.bank-card .bank-card-actions .del{position:static;min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);border-radius:6px;color:#fff;cursor:pointer;padding:0 4px}.bank-card .bank-card-actions .del:hover{background:rgba(0,0,0,.42);border-color:white}.bank-edit-icon{width:13px;height:13px;display:block}
+.bank-card .bank-due{padding-right:59px}
+.bank-card-order-actions{position:absolute;right:7px;bottom:6px;z-index:2;display:flex;gap:4px}
+.bank-card-order-actions button{display:inline-flex;justify-content:center;align-items:center;width:24px;height:23px;border:1px solid rgba(255,255,255,.38);border-radius:6px;background:rgba(0,0,0,.26);color:#fff;font-size:16px;font-weight:700;line-height:1;cursor:pointer;padding:0}
+.bank-card-order-actions button:hover:not(:disabled){background:rgba(0,0,0,.47);border-color:#fff}
+.bank-card-order-actions button:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.bank-card-order-actions button:disabled{opacity:.28;cursor:not-allowed}
 @media(max-width:520px){.site-dialog-panel{padding:17px}.site-fields-row{grid-template-columns:1fr}.site-dialog-actions button{flex:1}.site-toast{top:10px;right:10px;width:calc(100vw - 20px)}.save-status:not([hidden]) + .site-toast:not([hidden]){top:64px}}
 /* O documento JSON e a unica fonte ativa. Nenhum formulario e editavel sem arquivo. */
 body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
@@ -2854,18 +2860,34 @@ function delRegisteredCard(id){
   updatePreview();
 }
 
+function moverCartaoNaOrdem(id,direcao){
+  // Mantém o conteúdo de cada cartão e de seus lançamentos intacto:
+  // muda apenas sua posição no array salvo no arquivo JSON.
+  if(![-1,1].includes(direcao))return;
+  const indice=S.cartoes.findIndex(card=>String(card.id)===String(id));
+  const destino=indice+direcao;
+  if(indice<0||destino<0||destino>=S.cartoes.length)return;
+  [S.cartoes[indice],S.cartoes[destino]]=[S.cartoes[destino],S.cartoes[indice]];
+  saveData();
+  renderRegisteredCards();
+  renderCartao();
+}
 function renderRegisteredCards(){
  const wrap=document.getElementById('bank-cards-wrap'),select=document.getElementById('cc-card'),prev=select.value;
  select.innerHTML='<option value="">Escolha o cartão</option>'+S.cartoes.map(c=>`<option value="${c.id}">${escHtml(c.bank)}${c.nome?' · '+escHtml(c.nome):''} - vence dia ${c.dueDay}</option>`).join('');
  if(S.cartoes.some(c=>String(c.id)===prev))select.value=prev;
  if(!S.cartoes.length){wrap.innerHTML='<div class="empty">Nenhum cartão cadastrado ainda.</div>';renderFiltroCartoes();return;}
- wrap.innerHTML='<div class="bank-cards">'+S.cartoes.map(c=>`
+ wrap.innerHTML='<div class="bank-cards">'+S.cartoes.map((c,i)=>`
  <div class="bank-card" style="background:${c.color};color:#fff">
  <div class="bank-card-actions">
  <button class="del" type="button" onclick="editarCartaoCadastrado(${c.id})" aria-label="Editar cartão ${escHtml(c.bank)}${c.nome?' '+escHtml(c.nome):''}" title="Editar cartão"><svg class="bank-edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
  <button class="del" type="button" onclick="delRegisteredCard(${c.id})" aria-label="Remover cartão ${escHtml(c.bank)}${c.nome?' '+escHtml(c.nome):''}" title="Excluir cartão sem movimentações vinculadas">×</button>
  </div><div class="bank-chip"></div><div class="bank-title">${escHtml(c.bank==='Outro'&&c.nome?c.nome:[c.bank,c.nome].filter(Boolean).join(' · '))}</div>
  <div class="bank-due">Vence ${c.dueDay}${c.paymentDay?' · paga dia '+c.paymentDay:''}${Number(c.monthlyFee)>0?' · mensalidade '+fmt(c.monthlyFee):''}</div>
+ <div class="bank-card-order-actions" aria-label="Mudar ordem do cartão">
+   <button type="button" onclick="moverCartaoNaOrdem(${c.id},-1)" aria-label="Mover cartão para a esquerda" title="Mover cartão para a esquerda" ${i===0?'disabled':''}>←</button>
+   <button type="button" onclick="moverCartaoNaOrdem(${c.id},1)" aria-label="Mover cartão para a direita" title="Mover cartão para a direita" ${i===S.cartoes.length-1?'disabled':''}>→</button>
+ </div>
  </div>`).join('')+'</div>';
  renderFiltroCartoes();
 }
