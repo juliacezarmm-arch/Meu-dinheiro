@@ -719,6 +719,14 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 #invest-modal-content .goal-panel{margin:0;background:transparent;border:0;box-shadow:none;padding:0}
 #invest-modal-content .goal-panel-title{font-size:15px;margin-bottom:12px}
 #invest-modal-content input,#invest-modal-content select{max-width:100%;min-width:0;box-sizing:border-box}
+.invest-update-fields .row{align-items:end;gap:8px;margin-bottom:9px}
+.invest-update-fields .update-field{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:11px;font-weight:600;color:#c5c3ba}
+.invest-update-fields .update-field input{width:100%;padding:6px 8px;font-size:12px;min-height:32px}
+.invest-update-flow{margin:12px 0;padding:10px;border:1px solid #384440;border-radius:9px}
+.invest-update-flow .hint{margin:6px 0;font-size:11px;line-height:1.45}
+.invest-update-flow .update-correction{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.4;margin:0 0 10px;color:#e6e3d9}
+.invest-update-flow .update-correction input{width:16px;min-width:16px;height:16px;margin:1px 0 0;box-shadow:none;accent-color:#9fe1cb}
+.invest-chart-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 #invest-modal-content .history-row{grid-template-columns:64px minmax(0,1fr) 110px 24px}
 #invest-modal-content .stock-chart{max-width:100%;overflow-x:auto}
 @media(max-width:580px){.invest-dialog{padding:10px}.invest-modal-panel{padding:16px;max-height:calc(100dvh - 20px)}#invest-modal-content .row2{grid-template-columns:1fr}#invest-modal-content .history-row{grid-template-columns:52px minmax(0,1fr) 80px 24px;gap:5px;font-size:11px}#invest-modal-content .history-value{font-size:11px}.invest-modal-heading h2{font-size:17px}.inv-rend-percent{font-size:12px}}
@@ -1781,7 +1789,7 @@ const CATEGORIAS={
   },
   saida:{
     'Casa':['Aluguel','Financiamento','Condomínio','Conta de água','Conta de luz','Conta de gás','Internet','Telefone','IPTU','Manutenção da casa','Faxina','Móveis','Decoração','Eletrodomésticos','Eletrônicos','Segurança residencial'],
-    'Alimentação':['Supermercado','Feira','Padaria','Açougue','Delivery','Restaurante','Lanche','Café','Marmita','Bebidas'],
+    'Alimentação':['Supermercado','Feira','Hortifruti','Padaria','Açougue','Peixaria','Delivery','Restaurante','Almoço','Almoço no trabalho','Jantar','Lanchonete','Lanche','Café','Marmita','Sorveteria','Bebidas'],
     'Transporte':['Combustível','Uber / 99','Ônibus','Metrô','Pedágio','Estacionamento','Manutenção do carro','Seguro do carro','IPVA','Parcelas do veículo','Bicicleta','Táxi'],
     'Saúde':['Plano de saúde','Consulta médica','Dentista','Medicamentos','Academia','Terapia','Exames','Óculos','Suplementos'],
     'Educação':['Faculdade','Aulas','Curso online','Curso técnico','Idiomas','Livros','Material escolar','Assinaturas educacionais'],
@@ -1814,7 +1822,7 @@ let pagamentoPendenteEmEdicao=null;
 let parcelasPagasEmEdicao=null;
 let extratoResumoAberto=false;
 const resumoCharts={annual:false,extrato:false,cartao:false,invest:false,metas:false};
-const investUi={acao:{},historico:{},grafico:{},mes:{},periodo:{}};
+const investUi={acao:{},historico:{},grafico:{},mes:{},periodo:{},metrica:{}};
 let investModalAtivo=null;
 function fecharAviso(){clearTimeout(appAlert.timer);document.getElementById('app-toast').hidden=true;}
 function pausarAviso(){clearTimeout(appAlert.timer);}
@@ -1904,6 +1912,7 @@ function validarDadosImportados(arquivo){
       if(key==='extrato'&&!dataISOValida(r.data))throw Error('Lançamento sem data.');
       if(key==='cartao'&&!dataISOValida(r.data))throw Error('Compra sem data.');
       if(key==='extrato'&&!['entrada','saida','investimento','meta'].includes(r.tipo))throw Error('Tipo de lançamento inválido.');
+      if(key==='extrato'&&r.destinoGrupo!==undefined&&(!transferenciaCriptoSemDestino(r)||r.categoria!=='Investimento'||r.subcategoria!=='Criptomoedas'||!valorMonetarioValido(r.val)||r.val<=0))throw Error('Transferência para criptomoedas inválida.');
       if(key==='extrato'&&r.exigeConfirmacaoPagamento!==undefined&&typeof r.exigeConfirmacaoPagamento!=='boolean')throw Error('Confirmação de pagamento inválida.');
       if(key==='extrato'&&r.pagoConfirmado!==undefined&&typeof r.pagoConfirmado!=='boolean')throw Error('Status de pagamento inválido.');
       if(key==='extrato'&&r.vencimentoPagamento!==undefined&&r.vencimentoPagamento!==null&&!dataISOValida(r.vencimentoPagamento))throw Error('Vencimento de pagamento inválido.');
@@ -2944,7 +2953,7 @@ function resumoFluxosInvestimentos(ano,mes){
    if(destino&&destino.kind!=='investimento')continue;
    const nomeInformado=String(destino?.nome||mov.subcategoria||mov.desc?.replace(/^(Investimento|Resgate)\s*-\s*/i,'')||'Investimento').trim();
    const candidatos=porNome.get(nomeInformado.toLocaleLowerCase('pt-BR'))||[];
-   const invest=destino||(candidatos.length===1?candidatos[0]:null);
+   const invest=transferenciaCriptoSemDestino(mov)?null:destino||(candidatos.length===1?candidatos[0]:null);
    const chave=invest?'id:'+invest.id:'nome:'+nomeInformado.toLocaleLowerCase('pt-BR');
    if(!linhas.has(chave))linhas.set(chave,{nome:invest?.nome||nomeInformado,aportesCentavos:0,resgatesCentavos:0});
    const linha=linhas.get(chave);
@@ -3081,9 +3090,9 @@ function renderInvestDestinationOptions(){
   const select=document.getElementById('ext-invest-dest');
   if(!select)return;
   const tipo=document.getElementById('ext-tipo')?document.getElementById('ext-tipo').value:'';
-  const lista=(tipo==='investimento'||tipo==='meta')?S.invest.filter(i=>i.kind===tipo&&(tipo!=='meta'||i.modo!=='acompanhar')):S.invest;
+  const lista=((tipo==='investimento'||tipo==='meta')?S.invest.filter(i=>i.kind===tipo&&(tipo!=='meta'||i.modo!=='acompanhar')):S.invest).filter(i=>!isCryptoInvest(i));
   const label=tipo==='meta'?'Escolha a meta':tipo==='investimento'?'Escolha o investimento':'Escolha o destino';
-  select.innerHTML='<option value="">'+label+'</option>'+lista.map(i=>{
+  select.innerHTML='<option value="">'+label+'</option>'+(tipo==='investimento'?'<option value="criptomoedas">Criptomoedas · transferência sem moeda específica</option>':'')+lista.map(i=>{
     const storage=getMetaStorage(i);
     const extra=i.kind==='investimento'?' - '+i.tipo:(storage?' - guardado em '+storage.nome:'');
     return `<option value="${i.id}">${escHtml(i.nome+extra)}</option>`;
@@ -3327,11 +3336,19 @@ function addExtrato(){
     appAlert('O saldo anterior já é transportado automaticamente. Registre apenas dinheiro que realmente entrou.');return;
   }
   if(tipo==='investimento'||tipo==='meta'){
+    if(tipo==='investimento'&&document.getElementById('ext-invest-dest').value==='criptomoedas'){
+      if(!dataISOValida(data)||data>today()||!valorMonetarioValido(val)||val<=0){appAlert('Informe a data da transferência, até hoje, e um valor positivo.');return;}
+      S.extrato.push({id:novoIdExtrato(),data,desc:desc||'Investimento - Criptomoedas',tipo:'investimento',categoria:'Investimento',subcategoria:'Criptomoedas',val:Math.round(val*100)/100,destinoGrupo:'criptomoedas'});
+      document.getElementById('ext-desc').value='';document.getElementById('ext-val').value='';document.getElementById('ext-invest-dest').value='';
+      saveData();renderExtrato();updateResumo();fecharPainelFlutuante();return;
+    }
     const dest=S.invest.find(i=>i.id===investDestId);
+    if(isCryptoInvest(dest)){appAlert('No Extrato, escolha Criptomoedas para registrar só a transferência. Atualize cada moeda na aba Investimentos.');return;}
     if(data>today()){appAlert('Aportes e metas futuros devem ser registrados somente quando ocorrerem.');return;}
     if(!dest||dest.kind!==tipo||dest.modo==='acompanhar'||!valorMonetarioValido(val)||val<=0){appAlert('Escolha '+(tipo==='meta'?'a meta':'o investimento')+' e informe o valor.');return;}
     const extId=novoIdExtrato();
     const storage=tipo==='meta'?getMetaStorage(dest):null;
+    if(isCryptoInvest(storage)){appAlert('Atualize a criptomoeda na aba Investimentos e depois reserve o saldo para a meta. No Extrato, use a transferência geral para Criptomoedas.');return;}
     dest.valorAtual+=val;
     dest.totalAportado+=val;
     ensureInvestHistory(dest).push({id:extId+'-hist',tipo:'aporte',data,valor:val,saldo:dest.valorAtual,extId,storageId:storage?storage.id:null,storageNome:storage?storage.nome:''});
@@ -3408,6 +3425,7 @@ function editarLancamentoExtrato(id){
   document.getElementById('extrato-edit-regular').hidden=vinculado;
   document.getElementById('extrato-edit-note').textContent=item.faturaMes
     ?'Pagamento da fatura '+item.faturaMes+': corrija a data e o valor. O vínculo com o cartão permanece.'
+    :transferenciaCriptoSemDestino(item)?'Transferência para criptomoedas: corrija data e valor. Este registro só desconta o saldo da conta, sem alterar nenhuma moeda.'
     :item.destId||['investimento','meta'].includes(item.tipo)
       ?'Movimentação vinculada a investimento ou meta: corrija a data e o valor. O destino e o histórico permanecem vinculados.'
       :'Corrija data, tipo, categoria, subcategoria, descrição ou valor. O registro original será atualizado.';
@@ -3454,6 +3472,8 @@ function salvarEdicaoExtrato(){
   const valor=Math.round(numero*100)/100;
   const vinculados=!!item.destId;
   const pagamentoFatura=!!item.faturaMes;
+  const transferenciaCripto=transferenciaCriptoSemDestino(item);
+  if(transferenciaCripto&&data>today()){appAlert('Informe a data em que a transferência ocorreu, até hoje.');return;}
   if(vinculados){
     if(data>today()){appAlert('Movimentações de investimentos e metas não podem ter data futura.');return;}
     const historicos=S.invest.map(dest=>({dest,registros:ensureInvestHistory(dest).filter(h=>String(h.extId)===String(item.id))})).filter(x=>x.registros.length);
@@ -3480,7 +3500,7 @@ function salvarEdicaoExtrato(){
       for(const h of registros){h.data=data;h.valor=valor;}
       recalcInvestFromHistory(dest);
     }
-  }else if(['investimento','meta'].includes(item.tipo)){
+  }else if(['investimento','meta'].includes(item.tipo)&&!transferenciaCripto){
     appAlert('Este lançamento não possui vínculo com o investimento. Nenhum dado foi alterado.');return;
   }
   if(pagamentoFatura){
@@ -3493,7 +3513,7 @@ function salvarEdicaoExtrato(){
     if(Math.round(valor*100)+outros>total||total<=0){
       appAlert('O valor corrigido não pode ultrapassar o total da fatura, descontados os outros pagamentos.');return;
     }
-  }else if(!vinculados){
+  }else if(!vinculados&&!transferenciaCripto){
     const tipo=document.getElementById('extrato-edit-type').value;
     const categoria=document.getElementById('extrato-edit-category').value;
     const subcategoria=document.getElementById('extrato-edit-subcategory').value;
@@ -3629,6 +3649,9 @@ function cancelCartaoEdit(){
 
 function isCryptoInvest(item){
   return item&&item.kind==='investimento'&&item.tipo==='Cripto';
+}
+function transferenciaCriptoSemDestino(item){
+  return !!item&&item.tipo==='investimento'&&item.destinoGrupo==='criptomoedas'&&item.destId==null;
 }
 function calcCryptoValue(qtd,cotacao){
   qtd=Number(qtd||0);
@@ -4158,7 +4181,7 @@ function avaliarRetornoInvestimento(item,inicio,fim){
   const hist=ordenarHistoricoInvest(item);
   let saldo=0,base=0,aportes=0,resgates=0,rendimento=0;
   let fator=1,houveTaxa=false,baseDefinida=false,capitalObservado=false;
-  const atualizacoes=[];
+  const atualizacoes=[],pontos=[];
   for(const h of hist){
     const data=h.data||'',valor=Number(h.valor||0);
     if(!Number.isFinite(valor)||valor<0||!data||data>=fim)continue;
@@ -4189,11 +4212,12 @@ function avaliarRetornoInvestimento(item,inicio,fim){
         });
       }
     }
+    if(noPeriodo)pontos.push({id:h.id,data,tipo:h.tipo,valor:saldo,pct:houveTaxa?(fator-1)*100:capitalObservado?0:null});
   }
   if(!baseDefinida)base=saldo;
   return {base,final:saldo,aportes,resgates,rendimento,
     pct:houveTaxa?(fator-1)*100:capitalObservado?0:null,
-    inicio,fim,atualizacoes};
+    inicio,fim,atualizacoes,pontos};
 }
 function calcInvestPeriodResult(item,periodo=investPeriodo,referencia=investMes){
   const ano=referencia.getFullYear(),mes=referencia.getMonth();
@@ -4340,6 +4364,71 @@ function changeInvestChartPeriod(id,periodo){
   refreshInvestViews();
 }
 
+function changeInvestChartMetric(id,metrica){
+  investUi.metrica[id]=metrica==='valor'?'valor':'porcentagem';
+  refreshInvestViews();
+}
+
+function toggleInvestUpdateFlow(id){
+  const tipo=document.getElementById('update-flow-'+id).value;
+  document.getElementById('update-flow-fields-'+id).hidden=!tipo||tipo==='nenhum';
+  const aviso=document.getElementById('update-flow-paid-label-'+id);
+  if(aviso)aviso.hidden=tipo!=='aporte';
+}
+
+function toggleInvestCorrection(id){
+  const item=S.invest.find(x=>x.id===id),ativo=document.getElementById('update-correction-'+id).checked;
+  const ultimo=ordenarHistoricoInvest(item).slice(-1)[0];
+  for(const campo of ['data','val','crypto-qtd','crypto-cotacao','crypto-investido','crypto-preco-medio']){
+    const input=document.getElementById('update-'+campo+'-'+id);
+    if(input)input.disabled=ativo;
+  }
+  document.getElementById('update-data-'+id).value=ativo?ultimo.data:today();
+  if(ativo&&['','nenhum'].includes(document.getElementById('update-flow-'+id).value))document.getElementById('update-flow-'+id).value='aporte';
+  toggleInvestUpdateFlow(id);
+}
+
+function corrigirFluxoUltimaAtualizacao(item,tipo,valor,antes,jaDescontado=false){
+  const hist=ordenarHistoricoInvest(item),ultimo=hist.slice(-1)[0];
+  if(!ultimo||ultimo.tipo!=='atualizacao'||!['aporte','resgate'].includes(tipo)||!valorMonetarioValido(valor)||valor<=0){appAlert('Escolha aporte ou resgate e informe o valor movimentado.');return;}
+  const anterior=hist[hist.length-2];
+  if(ultimo.fluxoCorrigido||anterior&&anterior.origem==='movimentacao_na_atualizacao'&&anterior.data===ultimo.data){appAlert('Esta atualização já tem movimentação registrada. Confira o histórico para não duplicar.');return;}
+  const copia={historico:hist.slice(0,-1).map(h=>({...h}))};
+  recalcInvestFromHistory(copia);
+  const base=copia.valorAtual,saldoAntes=antes===null?base:antes;
+  const relacionados=metasReservadasNoInvestimento(item.id),ajustes=[];
+  // Só reverte reservas derivadas identificáveis, sem mexer em movimentações posteriores.
+  for(const meta of relacionados){
+    const eventos=ordenarHistoricoInvest(meta),derivado=eventos.slice(-1)[0];
+    const idLegado=String(ultimo.id).replace(/-hist$/,'')+'-meta-'+meta.id;
+    if(!derivado||derivado.tipo!=='atualizacao'||!(derivado.atualizacaoOrigem===ultimo.id||String(derivado.id)===idLegado)){
+      appAlert('Esta correção envolve metas sem vínculo de atualização identificável. Confira o histórico antes de corrigir.');return;
+    }
+    const previa={historico:eventos.slice(0,-1).map(h=>({...h}))};recalcInvestFromHistory(previa);
+    ajustes.push({meta,derivado,valor:previa.valorAtual});
+  }
+  const reservado=ajustes.reduce((sum,a)=>sum+a.valor,0)*(base>0?saldoAntes/base:1);
+  if(tipo==='resgate'&&valor>saldoAntes-reservado+0.000001||saldoAntes===0&&tipo!=='aporte'){
+    appAlert('A correção deixaria o resgate sem saldo livre suficiente.');return;
+  }
+  if(S.saldoInicial&&ultimo.data<S.saldoInicial.data){appAlert('A movimentação deve estar dentro do período do saldo inicial.');return;}
+  const idBase=novoIdGlobal()+'-correcao',extId=tipo==='aporte'&&jaDescontado?null:tipo==='resgate'||S.saldoInicial?novoIdExtrato():null;
+  const fluxo={id:idBase+'-fluxo',tipo,data:ultimo.data,valor,extId,origem:'movimentacao_na_atualizacao',jaDescontadoNoExtrato:tipo==='aporte'&&jaDescontado};
+  const index=item.historico.indexOf(ultimo);
+  const novos=antes===null?[fluxo]:[{id:idBase+'-antes',tipo:'atualizacao',data:ultimo.data,valor:antes},fluxo];
+  item.historico.splice(index,0,...novos);
+  ultimo.fluxoCorrigido=true;
+  if(extId!==null)S.extrato.push({id:extId,data:ultimo.data,desc:(tipo==='aporte'?'Investimento - ':'Resgate - ')+item.nome,tipo:tipo==='aporte'?'investimento':'entrada',categoria:tipo==='aporte'?'Investimento':'Resgate',subcategoria:item.nome,val:valor,destId:item.id});
+  const depois=saldoAntes+(tipo==='aporte'?valor:-valor);
+  for(const a of ajustes){
+    const fator=(base>0?saldoAntes/base:1)*(depois>0?ultimo.valor/depois:1);
+    a.derivado.valor=Number((a.valor*fator).toFixed(2));recalcInvestFromHistory(a.meta);
+  }
+  recalcInvestFromHistory(item);
+  investUi.acao[item.id]='';saveData();refreshInvestViews();
+  appAlert('Movimentação corrigida na última atualização. O valor final foi preservado e o rendimento foi recalculado.');
+}
+
 function saveInvestAporte(id){
   const item=S.invest.find(x=>x.id===id);
   if(!item||item.kind!=='investimento')return;
@@ -4361,54 +4450,77 @@ function saveInvestAporte(id){
 
 function saveInvestUpdate(id){
   const item=S.invest.find(x=>x.id===id);
-  if(!item)return;
-  if(item.kind==='meta'){
-    appAlert('A meta atualiza pelo rendimento do investimento onde o dinheiro está guardado.');
-    return;
-  }
+  if(!item||item.kind!=='investimento'){appAlert('Atualize o investimento ao qual a meta está vinculada.');return;}
   const data=document.getElementById('update-data-'+id).value||today();
-  if(data>today()){appAlert('Atualizações de patrimônio futuro não são permitidas.');return;}
   const relacionados=[item,...metasReservadasNoInvestimento(item.id)];
-  if(relacionados.some(x=>data<ultimaDataFinanceira(x))){appAlert('Atualize na data mais recente do histórico. Uma atualização retroativa pode alterar saldos de resgates posteriores.');return;}
-  let val=0;
-  let cryptoQtd=null;
-  let cryptoCotacao=null;
-  let cryptoInvestido=null;
-  let cryptoPrecoMedio=null;
-  if(isCryptoInvest(item)){
-    cryptoQtd=parseFloat(document.getElementById('update-crypto-qtd-'+id).value)||0;
-    cryptoCotacao=parseFloat(document.getElementById('update-crypto-cotacao-'+id).value)||0;
-    cryptoInvestido=parseFloat(document.getElementById('update-crypto-investido-'+id).value)||Number(item.cryptoInvestido||0);
-    cryptoPrecoMedio=parseFloat(document.getElementById('update-crypto-preco-medio-'+id).value)||Number(item.cryptoPrecoMedio||0);
-    val=calcCryptoValue(cryptoQtd,cryptoCotacao);
-    if(cryptoQtd<=0||cryptoCotacao<=0){appAlert('Informe quantidade e cotação atual da cripto.');return;}
-    item.cryptoQtd=cryptoQtd;
-    item.cryptoCotacao=cryptoCotacao;
-    item.cryptoPrecoMedio=cryptoPrecoMedio;
-    item.cryptoInvestido=cryptoInvestido;
-  }else{
-    val=parseFloat(document.getElementById('update-val-'+id).value);
-    if(isNaN(val)||val<0){appAlert('Informe o valor atual.');return;}
+  if(!dataISOValida(data)||data>today()||relacionados.some(x=>data<ultimaDataFinanceira(x))){
+    appAlert('Informe uma data válida, até hoje e não anterior à última movimentação do investimento e das metas.');return;
   }
-  if(!valorMonetarioValido(val)){appAlert('Valor inválido: informe no máximo duas casas decimais.');return;}
-  const valorAnterior=Number(item.valorAtual||0);
-  const fatorAtualizacao=valorAnterior>0?val/valorAnterior:1;
-  item.valorAtual=val;
-  const histId=Date.now();
-  ensureInvestHistory(item).push({id:histId+'-hist',tipo:'atualizacao',data,valor:val,saldo:item.valorAtual,cryptoQtd,cryptoCotacao,cryptoPrecoMedio,cryptoInvestido});
-  recalcInvestFromHistory(item);
-  if(valorAnterior>0&&val!==valorAnterior){
-    metasReservadasNoInvestimento(item.id).filter(x=>Number(x.valorAtual||0)>0).forEach(meta=>{
-      const metaNovoValor=Number((Number(meta.valorAtual||0)*fatorAtualizacao).toFixed(2));
-      ensureInvestHistory(meta).push({id:histId+'-meta-'+meta.id,tipo:'atualizacao',data,valor:metaNovoValor,saldo:metaNovoValor,storageId:item.id,storageNome:item.nome});
+  const tipoFluxo=document.getElementById('update-flow-'+id).value;
+  const jaDescontado=isCryptoInvest(item)&&tipoFluxo==='aporte'&&!!document.getElementById('update-flow-paid-'+id)?.checked;
+  const campoFluxo=document.getElementById('update-flow-value-'+id);
+  const campoAntes=document.getElementById('update-flow-before-'+id);
+  const temFluxo=tipoFluxo!=='nenhum',fluxo=temFluxo?Number(campoFluxo.value):0;
+  const antes=temFluxo&&campoAntes.value.trim()!==''?Number(campoAntes.value):null;
+  if(!['nenhum','aporte','resgate'].includes(tipoFluxo)){appAlert('Selecione se houve aporte, resgate ou apenas atualização do valor.');return;}
+  if(temFluxo&&(!campoFluxo.value.trim()||!valorMonetarioValido(fluxo)||fluxo<=0)||antes!==null&&!valorMonetarioValido(antes)){
+    appAlert('Informe o valor movimentado e, se disponível, o saldo antes da movimentação, em reais.');return;
+  }
+  if(temFluxo&&S.saldoInicial&&data<S.saldoInicial.data){appAlert('Registre movimentações a partir da data do saldo inicial.');return;}
+  if(document.getElementById('update-correction-'+id)?.checked){
+    corrigirFluxoUltimaAtualizacao(item,tipoFluxo,fluxo,antes,jaDescontado);return;
+  }
+  let val,cryptoQtd=null,cryptoCotacao=null,cryptoInvestido=null,cryptoPrecoMedio=null;
+  if(isCryptoInvest(item)){
+    cryptoQtd=Number(document.getElementById('update-crypto-qtd-'+id).value);
+    cryptoCotacao=Number(document.getElementById('update-crypto-cotacao-'+id).value);
+    cryptoInvestido=Number(document.getElementById('update-crypto-investido-'+id).value);
+    cryptoPrecoMedio=Number(document.getElementById('update-crypto-preco-medio-'+id).value);
+    if(!Number.isFinite(cryptoQtd)||cryptoQtd<0||!Number.isFinite(cryptoCotacao)||cryptoCotacao<=0||!valorMonetarioValido(cryptoInvestido)||!valorMonetarioValido(cryptoPrecoMedio)){
+      appAlert('Confira quantidade, cotação, valor investido e preço médio. Use valores não negativos.');return;
+    }
+    val=calcCryptoValue(cryptoQtd,cryptoCotacao);
+    const hist=ordenarHistoricoInvest(item),ultima=hist.map((h,i)=>h.tipo==='atualizacao'?i:-1).filter(i=>i>=0).pop();
+    const fluxoJaRegistrado=hist.slice(ultima===undefined?1:ultima+1).some(h=>h.tipo==='aporte'||h.tipo==='resgate');
+    const mudouQuantidade=Number(item.cryptoQtd||0)>0&&Math.abs(cryptoQtd-Number(item.cryptoQtd))>1e-10;
+    const mudouCusto=Math.abs(cryptoInvestido-Number(item.cryptoInvestido||0))>0.005;
+    if(!temFluxo&&!fluxoJaRegistrado&&(mudouQuantidade||mudouCusto)){
+      appAlert('A quantidade ou o valor investido mudou. Informe abaixo o aporte ou resgate ainda não registrado. Se a movimentação já consta no Extrato ou histórico, confira esse registro antes de atualizar.');return;
+    }
+  }else val=Number(document.getElementById('update-val-'+id).value);
+  if(!valorMonetarioValido(val)||!isCryptoInvest(item)&&!document.getElementById('update-val-'+id).value.trim()){
+    appAlert('Informe um valor atual válido, com até duas casas decimais.');return;
+  }
+  const saldoAntes=antes===null?Number(item.valorAtual||0):antes;
+  const fatorAntes=Number(item.valorAtual||0)>0?saldoAntes/Number(item.valorAtual):1;
+  const reservadoAntes=reservadoEmMetas(item.id)*fatorAntes;
+  if(tipoFluxo==='resgate'&&fluxo>saldoAntes-reservadoAntes+0.000001){appAlert('Resgate maior que o saldo livre. Resgate valores reservados pela própria meta.');return;}
+  if(saldoAntes===0&&tipoFluxo!=='aporte'&&val>0){appAlert('Registre o aporte inicial antes de atualizar o valor. Dinheiro novo não é rendimento.');return;}
+  const histId=novoIdGlobal()+'-'+ensureInvestHistory(item).length;
+  const atualizar=(valor,sufixo,detalhes={})=>{
+    const anterior=Number(item.valorAtual||0),fator=anterior>0?valor/anterior:1;
+    ensureInvestHistory(item).push({id:histId+sufixo,tipo:'atualizacao',data,valor,...detalhes});
+    recalcInvestFromHistory(item);
+    if(anterior>0&&valor!==anterior)metasReservadasNoInvestimento(item.id).forEach(meta=>{
+      const novoValor=Number((Number(meta.valorAtual||0)*fator).toFixed(2));
+      ensureInvestHistory(meta).push({id:histId+sufixo+'-meta-'+meta.id,tipo:'atualizacao',data,valor:novoValor,storageId:item.id,storageNome:item.nome,atualizacaoOrigem:histId+sufixo});
       recalcInvestFromHistory(meta);
       investUi.historico[meta.id]=false;
       investUi.mes[meta.id]=data.slice(0,7);
     });
+  };
+  // Primeiro avalia o patrimônio antigo, depois registra o fluxo, por fim o saldo final.
+  // Assim as reservas recebem rendimento, nunca o dinheiro de um aporte novo.
+  if(antes!==null)atualizar(antes,'-antes');
+  if(temFluxo){
+    const extId=jaDescontado?null:tipoFluxo==='resgate'||S.saldoInicial?novoIdExtrato():null;
+    ensureInvestHistory(item).push({id:histId+'-fluxo',tipo:tipoFluxo,data,valor:fluxo,extId,origem:'movimentacao_na_atualizacao',jaDescontadoNoExtrato:jaDescontado});
+    if(extId!==null)S.extrato.push({id:extId,data,desc:(tipoFluxo==='aporte'?'Investimento - ':'Resgate - ')+item.nome,tipo:tipoFluxo==='aporte'?'investimento':'entrada',categoria:tipoFluxo==='aporte'?'Investimento':'Resgate',subcategoria:item.nome,val:fluxo,destId:item.id});
+    recalcInvestFromHistory(item);
   }
-  investUi.acao[id]='';
-  investUi.historico[id]=false;
-  investUi.mes[id]=data.slice(0,7);
+  if(isCryptoInvest(item))Object.assign(item,{cryptoQtd,cryptoCotacao,cryptoInvestido,cryptoPrecoMedio});
+  atualizar(val,'-hist',{cryptoQtd,cryptoCotacao,cryptoInvestido,cryptoPrecoMedio});
+  investUi.acao[id]='';investUi.historico[id]=false;investUi.mes[id]=data.slice(0,7);
   saveData();refreshInvestViews();
 }
 
@@ -4463,7 +4575,9 @@ function delInvestHistory(itemId,histId){
 
 /* Painel de evolução profissional: mês e ano */
 function renderStockChart(item,mes,periodo){
-  const hist=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
+  const hist=ordenarHistoricoInvest(item);
+  const percentual=investUi.metrica[item.id]!=='valor';
+  const formatar=v=>percentual?fmtInvestPct(v):fmt(v);
   const ano=Number(mes.slice(0,4)),mesNum=Number(mes.slice(5,7)),anual=periodo==='ano';
   const inicio=anual?ano+'-01-01':mes+'-01';
   const fim=anual?String(ano+1)+'-01-01':(mesNum===12?ano+1:ano)+'-'+String(mesNum===12?1:mesNum+1).padStart(2,'0')+'-01';
@@ -4472,7 +4586,8 @@ function renderStockChart(item,mes,periodo){
   if(!anterior&&!dentro.length)return '<div class="empty">Ainda não há registros para este período.</div>';
   const base=anterior?Number(anterior.saldo||0):0;
   const ultimo=dentro.length?Number(dentro[dentro.length-1].saldo||0):base;
-  const variacao=ultimo-base,cor=variacao>=0?'#20dea7':'#ff6b7d';
+  const resultadoAteAtualizacao=avaliarRetornoInvestimento(item,inicio,fim);
+  const variacao=ultimo-base,indicador=percentual?(resultadoAteAtualizacao.pct||0):variacao,cor=indicador>=0?'#20dea7':'#ff6b7d';
   const agruparDia=evs=>{
     const map=new Map();evs.forEach(ev=>{if(ev.data)map.set(ev.data,ev);});
     return [...map.values()];
@@ -4487,15 +4602,27 @@ function renderStockChart(item,mes,periodo){
   });
   const dias=agruparDia(dentro);
   const totalDias=new Date(ano,mesNum,0).getDate();
-  const pontos=anual
+  let pontos=anual
     ?mesesAno.map((m,i)=>({x:i,label:m.label,valor:m.valor})).filter(p=>p.valor!==null&&ano+'-'+String(p.x+1).padStart(2,'0')<=today().slice(0,7))
     :[{x:0,label:'01/'+String(mesNum).padStart(2,'0'),valor:base},...dias.map(ev=>({x:Number(ev.data.slice(8,10))-1,label:ev.data.slice(8,10)+'/'+ev.data.slice(5,7),valor:Number(ev.saldo||0)}))];
+  if(percentual){
+    if(anual){
+      pontos=mesesAno.map((m,i)=>{
+        const proximo=i===11?(ano+1)+'-01-01':ano+'-'+String(i+2).padStart(2,'0')+'-01';
+        const r=avaliarRetornoInvestimento(item,inicio,proximo);
+        return {x:i,label:m.label,valor:r.pct};
+      }).filter(p=>p.valor!==null&&ano+'-'+String(p.x+1).padStart(2,'0')<=today().slice(0,7));
+    }else{
+      const diarios=agruparDia(resultadoAteAtualizacao.pontos).filter(ev=>ev.pct!==null&&ev.data<=today());
+      pontos=[...(base>0?[{x:0,label:'01/'+String(mesNum).padStart(2,'0'),valor:0}]:[]),...diarios.map(ev=>({x:Number(ev.data.slice(8,10))-1,label:ev.data.slice(8,10)+'/'+ev.data.slice(5,7),valor:ev.pct}))];
+    }
+  }
   const width=720,height=258,left=92,right=21,top=22,bottom=44;
   const plotHeight=height-top-bottom,plotWidth=width-left-right;
-  const valores=pontos.length?pontos.map(p=>p.valor):[base];
+  const valores=pontos.length?pontos.map(p=>p.valor):[percentual?0:base];
   const min=Math.min(...valores),max=Math.max(...valores),span=Math.max(1,max-min);
   const margem=Math.max(span*.18,(min===max?Math.abs(max)*.012:0),.25);
-  const yMin=Math.max(0,min-margem),yMax=max+margem,yRange=Math.max(1,yMax-yMin);
+  const yMin=percentual?min-margem:Math.max(0,min-margem),yMax=max+margem,yRange=Math.max(0.01,yMax-yMin);
   const maxX=anual?11:Math.max(1,totalDias-1);
   const xAt=x=>left+Math.max(0,Math.min(maxX,x))/maxX*plotWidth;
   const yAt=y=>top+plotHeight-(y-yMin)/yRange*plotHeight;
@@ -4533,18 +4660,17 @@ function renderStockChart(item,mes,periodo){
     const dia=1+Math.round(i*(totalDias-1)/5);
     return {x:dia-1,label:String(dia).padStart(2,'0')+'/'+String(mesNum).padStart(2,'0')};
   });
-  const svg=`<svg class="inv-evolution-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução patrimonial de ${anual?'cada mês do ano':'cada dia com registros no mês'}">
+  const svg=`<svg class="inv-evolution-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${percentual?'Rentabilidade acumulada em porcentagem':'Evolução do patrimônio em reais'} de ${anual?'cada mês do ano':'cada dia com registros no mês'}">
     <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${cor}" stop-opacity=".34"/><stop offset="100%" stop-color="${cor}" stop-opacity=".02"/></linearGradient></defs>
-    ${linhasY.map(v=>`<line x1="${left}" y1="${yAt(v).toFixed(1)}" x2="${width-right}" y2="${yAt(v).toFixed(1)}" class="inv-evolution-grid"/><text x="${left-10}" y="${(yAt(v)+4).toFixed(1)}" text-anchor="end" class="inv-evolution-axis">${fmt(v)}</text>`).join('')}
+    ${linhasY.map(v=>`<line x1="${left}" y1="${yAt(v).toFixed(1)}" x2="${width-right}" y2="${yAt(v).toFixed(1)}" class="inv-evolution-grid"/><text x="${left-10}" y="${(yAt(v)+4).toFixed(1)}" text-anchor="end" class="inv-evolution-axis">${formatar(v)}</text>`).join('')}
     ${ticksX.map(p=>`<text x="${xAt(p.x).toFixed(1)}" y="${height-14}" text-anchor="middle" class="inv-evolution-axis">${escHtml(p.label)}</text>`).join('')}
     ${area?`<path d="${area}" fill="url(#${gid})"/>`:''}
     ${linha?`<path d="${linha}" fill="none" stroke="${cor}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`:''}
-    ${coords.map(p=>`<circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="4.3" fill="#0c1919" stroke="${cor}" stroke-width="2.3"><title>${escHtml(p.label)}: ${fmt(p.valor)}</title></circle>`).join('')}
+    ${coords.map(p=>`<circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="4.3" fill="#0c1919" stroke="${cor}" stroke-width="2.3"><title>${escHtml(p.label)}: ${formatar(p.valor)}</title></circle>`).join('')}
     ${marcadoresResgateSvg}
   </svg>`;
   // Cada atualização usa a ordem efetiva do histórico. Não inclui resgates
   // registrados depois da atualização, mesmo que tenham ocorrido no mesmo dia.
-  const resultadoAteAtualizacao=avaliarRetornoInvestimento(item,inicio,fim);
   const porDia=new Map();
   for(const atualizacao of resultadoAteAtualizacao.atualizacoes)porDia.set(atualizacao.data,atualizacao);
   const resumidos=[...porDia.values()].map(ev=>({
@@ -4562,13 +4688,14 @@ function renderStockChart(item,mes,periodo){
     const cls=m.rendimento>=0?'positive':'negative';
     return `<div class="inv-evolution-item">
       <div class="inv-evolution-item-head"><strong>${m.label}</strong><span>Atualização</span></div>
-      <div class="inv-evolution-item-numbers"><span class="${cls}">${m.rendimento>0?'+':''}${fmt(m.rendimento)}</span><b class="${cls}">${fmtInvestPct(m.pct)}</b></div>
+      <div class="inv-evolution-item-numbers"><span class="${cls}">${m.rendimento>0?'+':''}${fmt(m.rendimento)}</span><b class="${cls}">${m.pct===null?'—':fmtInvestPct(m.pct)}</b></div>
       <small>Saldo: ${fmt(m.valor)}</small>
     </div>`;
   });
   const rolavel=!anual&&resumidos.length>=6;
   return `<div class="stock-chart inv-evolution">
-    <div class="inv-evolution-plot">${svg}</div>
+    <p class="hint">${percentual?'Rentabilidade acumulada no período: aportes e resgates não são lucro nem prejuízo.':'Patrimônio em reais: esta curva também sobe com aportes e cai com resgates.'} Calculada pelas avaliações registradas; sem uma avaliação na hora de cada movimentação, a porcentagem é aproximada.</p>
+    <div class="inv-evolution-plot">${pontos.length?svg:'<div class="empty">Sem capital avaliado para calcular a rentabilidade neste período.</div>'}</div>
     ${resgatesMarcados.length?`<div class="inv-evolution-resgate-events" aria-label="Resgates registrados neste período"><span class="inv-evolution-resgate-title">↓ Resgates</span>${resgatesMarcados.map(r=>`<span class="inv-evolution-resgate-chip">${escHtml(r.dataLabel)} · ${fmt(r.valor)}</span>`).join('')}</div>`:''}
     <div class="inv-evolution-summary">
       <div><span>Início do período</span><strong>${fmt(base)}</strong></div>
@@ -4882,13 +5009,16 @@ function investLogoCripto(item){
   return achada?'assets/crypto/'+achada[0]+'.svg':'';
 }
 function investSparkline(items){
-  const pontos=[];
-  for(let offset=5;offset>=0;offset--){
-    const d=new Date(investMes.getFullYear(),investMes.getMonth()-offset,1,12);
-    const total=items.reduce((s,item)=>s+calcInvestPeriodResult(item,'mes',d).final,0);
-    pontos.push(total);
+  // Os cartões mostram a mesma rentabilidade do período selecionado, sem saltos por aportes.
+  const resultado=items.length===1?calcInvestPeriodResult(items[0]):null;
+  const diarios=new Map();
+  if(resultado)for(const ponto of resultado.pontos){
+    if(ponto.pct!==null&&ponto.data<=today())diarios.set(ponto.data,ponto.pct);
   }
-  const min=Math.min(...pontos),max=Math.max(...pontos),span=Math.max(1,max-min);
+  const pontos=[...(resultado&&resultado.base>0?[0]:[]),...diarios.values()];
+  if(!pontos.length)return '';
+  if(pontos.length===1)pontos.push(pontos[0]);
+  const min=Math.min(...pontos),max=Math.max(...pontos),span=Math.max(.01,max-min);
   const coords=pontos.map((v,i)=>[(i/(pontos.length-1))*82,24-((v-min)/span)*20+2]);
   const path=coords.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
   return '<svg viewBox="0 0 82 28" aria-hidden="true"><path d="'+path+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -5156,8 +5286,9 @@ function renderDestinoCard(item){
   const mesReferencia=item.kind==='meta'?metaMes:investMes;
   const mesHist=monthKey(mesReferencia.getFullYear(),mesReferencia.getMonth()+1);
   const periodoGrafico=investUi.periodo[item.id]||'mes';
+  const metricaGrafico=investUi.metrica[item.id]||'porcentagem';
   const resultadoMes=calcInvestMonthResult(item,mesHist);
-  const histOrdenado=ensureInvestHistory(item).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||'')||String(a.id).localeCompare(String(b.id)));
+  const histOrdenado=ordenarHistoricoInvest(item);
   const inicioMes=mesHist+'-01';
   const saldoAnteriorMov=histOrdenado.filter(h=>(h.data||'')<inicioMes).slice(-1)[0];
   const saldoAnterior=saldoAnteriorMov?Number(saldoAnteriorMov.saldo||0):0;
@@ -5201,24 +5332,46 @@ function renderDestinoCard(item){
     </div>`:acao==='atualizar'&&item.kind==='investimento'?`
     <div class="goal-panel">
       <div class="goal-panel-title">Atualizar valor do mês atual</div>
+      <div class="invest-update-fields">
       ${isCryptoInvest(item)?`
       <div class="row row2">
         <input type="date" id="update-data-${item.id}" value="${today()}" title="Data em que você conferiu a cotação."/>
-        <input type="number" id="update-crypto-investido-${item.id}" value="${item.cryptoInvestido||''}" placeholder="Quanto investiu (R$)" min="0" step="0.01" title="Valor em reais que você colocou nessa cripto."/>
+        <label class="update-field">Valor investido (R$)<input type="number" id="update-crypto-investido-${item.id}" value="${item.cryptoInvestido||''}" placeholder="Quanto investiu (R$)" min="0" step="0.01" title="Valor em reais que você colocou nessa cripto."/></label>
       </div>
       <div class="row row2">
-        <input type="number" id="update-crypto-qtd-${item.id}" value="${item.cryptoQtd||''}" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade atual que você tem dessa cripto."/>
-        <input type="number" id="update-crypto-cotacao-${item.id}" value="${item.cryptoCotacao||''}" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais."/>
+        <label class="update-field">Quantidade da cripto<input type="number" id="update-crypto-qtd-${item.id}" value="${item.cryptoQtd||''}" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade atual que você tem dessa cripto."/></label>
+        <label class="update-field">Cotação atual (R$)<input type="number" id="update-crypto-cotacao-${item.id}" value="${item.cryptoCotacao||''}" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais."/></label>
       </div>
-      <div class="row row1"><input type="number" id="update-crypto-preco-medio-${item.id}" value="${item.cryptoPrecoMedio||''}" placeholder="Preço médio (R$)" min="0" step="0.01" title="Digite o seu preço médio dessa cripto."/></div>
+      <div class="row row1"><label class="update-field">Preço médio (R$)<input type="number" id="update-crypto-preco-medio-${item.id}" value="${item.cryptoPrecoMedio||''}" placeholder="Preço médio (R$)" min="0" step="0.01" title="Digite o seu preço médio dessa cripto."/></label></div>
       <div class="hint">Preço médio: ${fmt(item.cryptoPrecoMedio||0)} · Valor atual = quantidade x cotação.</div>
       `:`
       <div class="hint">Valor atual registrado: ${fmt(item.valorAtual||0)}. Informe o valor total que aparece hoje no banco.</div>
       <div class="row row2">
         <input type="date" id="update-data-${item.id}" value="${today()}" title="Data em que você conferiu o valor atualizado."/>
-        <input type="number" id="update-val-${item.id}" value="${Number(item.valorAtual||0)}" placeholder="Valor atual (R$)" min="0" step="0.01" title="Valor total que aparece hoje nesse investimento."/>
+        <label class="update-field">Valor atual (R$)<input type="number" id="update-val-${item.id}" value="${Number(item.valorAtual||0)}" placeholder="Valor atual (R$)" min="0" step="0.01" title="Valor total que aparece hoje nesse investimento."/></label>
       </div>
       `}
+      </div>
+      <div class="invest-update-flow invest-update-fields">
+        ${ordenarHistoricoInvest(item).slice(-1)[0]?.tipo==='atualizacao'?`<label class="update-correction"><input type="checkbox" id="update-correction-${item.id}" onchange="toggleInvestCorrection(${item.id})"/><span>Corrigir aporte ou resgate esquecido na última atualização salva, mantendo o valor final.</span></label>`:''}
+        <div class="update-field"><label for="update-flow-${item.id}">Movimentação ainda não registrada</label>
+          <select id="update-flow-${item.id}" onchange="toggleInvestUpdateFlow(${item.id})">
+            <option value="">Houve aporte ou resgate?</option>
+            <option value="nenhum">Nenhuma · só atualizar o valor</option>
+            <option value="aporte">Coloquei dinheiro · aporte</option>
+            <option value="resgate">Retirei dinheiro · resgate</option>
+          </select>
+        </div>
+        <p class="hint">Se já lançou no Extrato ou no histórico, escolha Nenhuma para não duplicar. Alterar o valor investido acima não registra um aporte.</p>
+        <div id="update-flow-fields-${item.id}" hidden>
+          ${isCryptoInvest(item)?`<label class="update-correction" id="update-flow-paid-label-${item.id}" hidden><input type="checkbox" id="update-flow-paid-${item.id}"/><span>Este aporte já foi descontado no Extrato, como transferência para Criptomoedas. Registrar só na moeda, sem descontar novamente.</span></label>`:''}
+          <div class="row row2">
+            <label class="update-field">Valor movimentado (R$)<input id="update-flow-value-${item.id}" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Só o dinheiro colocado ou retirado"/></label>
+            <label class="update-field">Saldo antes da movimentação (R$) · opcional<input id="update-flow-before-${item.id}" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Valor total imediatamente antes"/></label>
+          </div>
+          <p class="hint">A movimentação será registrada na data acima. Informe o valor final já com o aporte ou resgate. Sem o saldo na hora da movimentação, a rentabilidade é aproximada, usando a última avaliação.</p>
+        </div>
+      </div>
       <button onclick="saveInvestUpdate(${item.id})" title="Salva o valor atual do investimento para calcular rendimento.">Salvar valor atualizado</button>
     </div>`:acao==='resgatar'?`
     <div class="goal-panel">
@@ -5254,10 +5407,16 @@ function renderDestinoCard(item){
     <div class="goal-panel">
       <div class="chart-options">
         <div class="goal-panel-title">Gráfico de evolução</div>
-        <div class="chart-period">
+        <div class="invest-chart-filters">
+        <div class="chart-period" role="group" aria-label="Exibição do gráfico">
+          <button type="button" aria-pressed="${metricaGrafico==='porcentagem'}" class="${metricaGrafico==='porcentagem'?'active':''}" onclick="changeInvestChartMetric(${item.id},'porcentagem')">Porcentagem</button>
+          <button type="button" aria-pressed="${metricaGrafico==='valor'}" class="${metricaGrafico==='valor'?'active':''}" onclick="changeInvestChartMetric(${item.id},'valor')">Valor (R$)</button>
+        </div>
+        <div class="chart-period" role="group" aria-label="Período do gráfico">
           <button class="${periodoGrafico==='mes'?'active':''}" onclick="changeInvestChartPeriod(${item.id},'mes')" title="Mostra a evolução dentro do mês selecionado.">Mês</button>
           <button class="${periodoGrafico==='ano'?'active':''}" onclick="changeInvestChartPeriod(${item.id},'ano')" title="Mostra a evolução mês a mês no ano.">Ano</button>
         </div>
+      </div>
       </div>
       ${renderStockChart(item,mesHist,periodoGrafico)}
     </div>`:'';
