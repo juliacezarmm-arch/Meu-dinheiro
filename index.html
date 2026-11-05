@@ -5332,6 +5332,11 @@ function renderMetas(){
   }).join('')+'</div>';
 }
 
+function temAvaliacaoInvestimentoNoPeriodo(item,periodo=investPeriodo,referencia=investMes){
+  const prefixo=periodo==='ano'?String(referencia.getFullYear()):isoDate(referencia.getFullYear(),referencia.getMonth(),1).slice(0,7);
+  return ordenarHistoricoInvest(item).some(h=>h.tipo==='atualizacao'&&h.data&&h.data.startsWith(prefixo)&&h.data<=today());
+}
+
 function renderDestinoCard(item){
   recalcInvestFromHistory(item);
   const atual=item.kind==='meta'?valorMetaAtual(item):Number(item.valorAtual||0);
@@ -5492,7 +5497,8 @@ function renderDestinoCard(item){
       <div class="month-value">${metaPct.toFixed(0)}%</div>
     </div>`:'';
   if(item.kind==='investimento'){
-    const conferencia=ultimaConferenciaInvestimento(item);
+    const semAvaliacao=!temAvaliacaoInvestimentoNoPeriodo(item);
+    const conferencia=semAvaliacao?null:ultimaConferenciaInvestimento(item);
     const atual=investPeriodo==='mes'&&isoDate(investMes.getFullYear(),investMes.getMonth(),1).slice(0,7)===today().slice(0,7);
     const mensal=calcInvestPeriodResult(item);
     const periodo=atual&&conferencia?{...mensal,rendimento:conferencia.rendimento,pct:conferencia.esperado>0?conferencia.rendimento/conferencia.esperado*100:null}:mensal;
@@ -5500,8 +5506,8 @@ function renderDestinoCard(item){
     const criptoLogo=investLogoCripto(item);
     const iconePadrao=investTipoIconeResumo(visual.cls,visual.icon);
     const logoHtml=criptoLogo?`<span class="invest-type-icon ${visual.cls} inv-crypto-logo"><img alt="" src="${criptoLogo}" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span hidden class="inv-crypto-fallback">${iconePadrao}</span></span>`:`<span class="invest-type-icon ${visual.cls}">${iconePadrao}</span>`;
-    const cls=periodo.rendimento>0?'positive':periodo.rendimento<0?'negative':'neutral';
-    const pct=periodo.pct===null?'—':(periodo.pct>0?'+':'')+fmtInvestPct(periodo.pct);
+    const cls=semAvaliacao?'neutral':periodo.rendimento>0?'positive':periodo.rendimento<0?'negative':'neutral';
+    const pct=semAvaliacao||periodo.pct===null?'—':(periodo.pct>0?'+':'')+fmtInvestPct(periodo.pct);
     const periodoLabel=investPeriodo==='ano'?String(investMes.getFullYear()):mesStr(investMes.getFullYear(),investMes.getMonth());
     const menuAberto=String(investMenuId)===String(item.id);
     const menu=`<div class="inv-card-menu${menuAberto?' open':''}">
@@ -5522,9 +5528,9 @@ function renderDestinoCard(item){
           <div class="inv-card-name"><strong title="${escHtml(item.nome)}">${escHtml(item.nome)}</strong><span>${escHtml(item.tipo)}${item.banco?' · '+escHtml(item.banco):''}</span></div>
         </div>
         <div class="inv-card-stats">
-          <div class="inv-card-metric inv-card-balance"><span>Valor atual</span><strong>${fmt(periodo.final)}</strong></div>
-          <div class="inv-card-metric inv-card-yield"><span title="${atual&&conferencia?'Intervalo de '+conferencia.dataAnterior+' a '+conferencia.data+'; percentual aproximado quando houve movimentações entre avaliações':'Resultado pelas avaliações registradas no período'}">${atual&&conferencia?'Desde a última avaliação':'Rendimento ('+periodoLabel+')'}</span><div class="inv-grade-yield-values"><strong class="${cls}">${periodo.rendimento>0?'+':''}${fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div></div>
-          <span class="inv-card-spark ${cls}">${investSparkline([item])}</span>
+          <div class="inv-card-metric inv-card-balance"><span>${semAvaliacao?'Último saldo registrado':'Valor atual'}</span><strong>${fmt(periodo.final)}</strong></div>
+          <div class="inv-card-metric inv-card-yield"><span title="${semAvaliacao?'Atualize o saldo para conhecer o rendimento deste período':atual&&conferencia?'Intervalo de '+conferencia.dataAnterior+' a '+conferencia.data+'; percentual aproximado quando houve movimentações entre avaliações':'Resultado pelas avaliações registradas no período'}">${semAvaliacao?'Sem avaliação em '+periodoLabel:atual&&conferencia?'Desde a última avaliação':'Rendimento ('+periodoLabel+')'}</span><div class="inv-grade-yield-values"><strong class="${cls}">${semAvaliacao?'—':(periodo.rendimento>0?'+':'')+fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div></div>
+          <span class="inv-card-spark ${cls}">${semAvaliacao?'':investSparkline([item])}</span>
         </div>
         <div class="inv-card-menu-wrap"><button class="inv-more-btn" type="button" onclick="toggleInvestCardMenu(${item.id},event)" aria-label="Mais opções de ${escHtml(item.nome)}" aria-expanded="${menuAberto}">⋮</button>${menu}</div>
       </div>

@@ -16,7 +16,7 @@ function fixture({crypto=false,saldo=1000,meta=false}={}){
   MESES:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
   fmt:v=>'R$ '+Number(v).toFixed(2),escHtml:String,fmtInvestPct:v=>Number(v).toFixed(2)+'%'});
  vm.runInContext(`const S={extrato:[],cartao:[],cartoes:[],invest:[],saldoInicial:{valor:5000,data:'2026-09-01',idsIgnorados:[]}};const investUi={acao:{},historico:{},mes:{},metrica:{}};`,ctx);
- const functions=['dataISOValida','valorMonetarioValido','novoIdGlobal','novoIdExtrato','isCryptoInvest','calcCryptoValue','ensureInvestHistory','ordenarHistoricoInvest','recalcInvestFromHistory','ultimaDataFinanceira','reservadoEmMetas','metasReservadasNoInvestimento','avaliarRetornoInvestimento','calcInvestPeriodResult','calcInvestMonthResult','conferirAtualizacaoInvestimento','ultimaConferenciaInvestimento','saveInvestUpdate','corrigirFluxoUltimaAtualizacao','renderStockChart','investSparkline'];
+ const functions=['dataISOValida','valorMonetarioValido','novoIdGlobal','novoIdExtrato','isCryptoInvest','calcCryptoValue','ensureInvestHistory','ordenarHistoricoInvest','recalcInvestFromHistory','ultimaDataFinanceira','reservadoEmMetas','metasReservadasNoInvestimento','avaliarRetornoInvestimento','calcInvestPeriodResult','calcInvestMonthResult','temAvaliacaoInvestimentoNoPeriodo','conferirAtualizacaoInvestimento','ultimaConferenciaInvestimento','saveInvestUpdate','corrigirFluxoUltimaAtualizacao','renderStockChart','investSparkline'];
  vm.runInContext(functions.map(extract).join('\n'),ctx);
  const run=s=>vm.runInContext(s,ctx);
  ctx.seed={id:1,kind:'investimento',nome:'Teste',tipo:crypto?'Cripto':'CDI',valorAtual:saldo,totalAportado:saldo,totalResgatado:0,cryptoQtd:1,cryptoCotacao:saldo,cryptoInvestido:saldo,cryptoPrecoMedio:saldo,historico:[{id:'z-inicial',tipo:'aporte',origem:'saldo_inicial',data:'2026-09-30',valor:saldo}]};
@@ -81,4 +81,10 @@ assert.equal(f.run("conferirAtualizacaoInvestimento(S.invest[0],'2026-10-28',910
 // Atualizar saldo ignora controles antigos de correção, mesmo que tenham ficado preenchidos no DOM.
 f=fixture();f.set('flow','resgate');f.set('flow-value','');f.set('flow-before','');f.set('val',1005);f.run('saveInvestUpdate(1)');
 assert.equal(f.run('S.invest[0].valorAtual'),1005);assert.equal(f.run('S.extrato.length'),0);assert.equal(f.alerts.length,0,'Atualização comum não deve pedir valor movimentado');
+// Virar o mês ou registrar só um aporte/resgate não é uma nova avaliação.
+f=fixture();f.run(`today=()=> '2026-11-04';investMes=new Date(2026,10,4);S.invest[0].historico.push({id:'october',tipo:'atualizacao',data:'2026-10-28',valor:1010},{id:'withdraw',tipo:'resgate',data:'2026-11-02',valor:100});`);
+assert.equal(f.run('temAvaliacaoInvestimentoNoPeriodo(S.invest[0])'),false);
+assert.equal(f.run("temAvaliacaoInvestimentoNoPeriodo(S.invest[0],'mes',new Date(2026,9,1))"),true);
+f.run(`S.invest[0].historico.push({id:'november',tipo:'atualizacao',data:'2026-11-04',valor:915});`);
+assert.equal(f.run('temAvaliacaoInvestimentoNoPeriodo(S.invest[0])'),true);
 console.log('PASS: aporte/resgate na atualização, TWR, resgate integral/reinvestimento, cripto, reservas, validação sem mutação e gráficos percentual/valor mensal/anual');
