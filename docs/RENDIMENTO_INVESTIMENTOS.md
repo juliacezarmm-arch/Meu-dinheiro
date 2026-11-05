@@ -36,7 +36,7 @@ No Extrato, Investimento → Criptomoedas registra uma transferência geral: des
 
 Depois de uma transferência geral, usar **Colocar dinheiro** na moeda e marcar **Este aporte já foi descontado no Extrato**. Em seguida atualizar quantidade/cotação em **Atualizar saldo**. Isso registra o capital no histórico da moeda sem descontar novamente a conta. O custo informado e o preço médio não são usados para inventar fluxos.
 
-Aportes e resgates esquecidos em uma avaliação antiga continuam acessíveis em **Corrigir movimentação esquecida · opções avançadas**, recolhido por padrão. Esse formulário não é necessário na atualização comum.
+Aportes e resgates esquecidos ficam na ação separada **Corrigir histórico**, acessível pelo menu do investimento ou pelo próprio Histórico. Atualizar saldo não contém os campos de movimentação e ignora qualquer seleção antiga de correção. Recolher um painel não é usado como mecanismo para desligar uma operação financeira.
 
 Aportes entram no Extrato como investimentos quando há saldo inicial de controle; resgates entram como entradas classificadas em Resgate, sem serem contados como receita. Metas vinculadas acompanham a valorização do capital reservado; o aporte novo ao investimento não aumenta a reserva existente.
 

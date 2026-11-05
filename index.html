@@ -4293,7 +4293,7 @@ function sincronizarPainelInvestimento(){
   overlay.classList.toggle('invest-chart-open',tipo==='grafico');
   const titulo=document.getElementById('invest-modal-title');
   const novo=!overlay.hidden;
-  titulo.textContent=(item?item.nome:'Investimento')+' · '+({dados:'Editar dados','editar-meta':'Editar meta',atualizar:'Atualizar saldo',resgatar:'Resgatar',reservar:'Reservar saldo',liberar:'Liberar reserva',aportar:'Aportar',historico:'Histórico',grafico:'Gráfico'}[tipo]||'Detalhes');
+  titulo.textContent=(item?item.nome:'Investimento')+' · '+({dados:'Editar dados','editar-meta':'Editar meta',atualizar:'Atualizar saldo','corrigir-historico':'Corrigir histórico',resgatar:'Resgatar',reservar:'Reservar saldo',liberar:'Liberar reserva',aportar:'Aportar',historico:'Histórico',grafico:'Gráfico'}[tipo]||'Detalhes');
   content.replaceChildren(panel);
   overlay.hidden=false;
   document.body.classList.add('invest-modal-open');
@@ -4502,7 +4502,7 @@ function atualizarConferenciaInvestimento(id){
   alvo.innerHTML=renderConferenciaInvestimento(item,data,valor);
 }
 
-function saveInvestUpdate(id){
+function saveInvestUpdate(id,corrigirHistorico=false){
   const item=S.invest.find(x=>x.id===id);
   if(!item||item.kind!=='investimento'){appAlert('Atualize o investimento ao qual a meta está vinculada.');return;}
   const data=document.getElementById('update-data-'+id).value||today();
@@ -4510,7 +4510,7 @@ function saveInvestUpdate(id){
   if(!dataISOValida(data)||data>today()||relacionados.some(x=>data<ultimaDataFinanceira(x))){
     appAlert('Informe uma data válida, até hoje e não anterior à última movimentação do investimento e das metas.');return;
   }
-  const tipoFluxo=document.getElementById('update-flow-'+id)?.value??'nenhum';
+  const tipoFluxo=corrigirHistorico?(document.getElementById('update-flow-'+id)?.value??''):'nenhum';
   const jaDescontado=isCryptoInvest(item)&&tipoFluxo==='aporte'&&!!document.getElementById('update-flow-paid-'+id)?.checked;
   const campoFluxo=document.getElementById('update-flow-value-'+id);
   const campoAntes=document.getElementById('update-flow-before-'+id);
@@ -4521,7 +4521,7 @@ function saveInvestUpdate(id){
     appAlert('Informe o valor movimentado e, se disponível, o saldo antes da movimentação, em reais.');return;
   }
   if(temFluxo&&S.saldoInicial&&data<S.saldoInicial.data){appAlert('Registre movimentações a partir da data do saldo inicial.');return;}
-  if(document.getElementById('update-correction-'+id)?.checked){
+  if(corrigirHistorico&&document.getElementById('update-correction-'+id)?.checked){
     corrigirFluxoUltimaAtualizacao(item,tipoFluxo,fluxo,antes,jaDescontado);return;
   }
   let val,cryptoQtd=null,cryptoCotacao=null,cryptoInvestido=null,cryptoPrecoMedio=null;
@@ -4539,7 +4539,7 @@ function saveInvestUpdate(id){
     const mudouQuantidade=Number(item.cryptoQtd||0)>0&&Math.abs(cryptoQtd-Number(item.cryptoQtd))>1e-10;
     const mudouCusto=Math.abs(cryptoInvestido-Number(item.cryptoInvestido||0))>0.005;
     if(!temFluxo&&!fluxoJaRegistrado&&(mudouQuantidade||mudouCusto)){
-      appAlert('A quantidade ou o valor investido mudou. Registre a compra em Colocar dinheiro ou a retirada em Resgatar antes de atualizar o saldo. Se esqueceu uma movimentação antiga, use as opções avançadas.');return;
+      appAlert('A quantidade ou o valor investido mudou. Registre a compra em Colocar dinheiro ou a retirada em Resgatar antes de atualizar o saldo. Se esqueceu uma movimentação antiga, use a ação Corrigir histórico.');return;
     }
   }else val=Number(document.getElementById('update-val-'+id).value);
   if(!valorMonetarioValido(val)||!isCryptoInvest(item)&&!document.getElementById('update-val-'+id).value.trim()){
@@ -4576,6 +4576,10 @@ function saveInvestUpdate(id){
   atualizar(val,'-hist',{cryptoQtd,cryptoCotacao,cryptoInvestido,cryptoPrecoMedio});
   investUi.acao[id]='';investUi.historico[id]=false;investUi.mes[id]=data.slice(0,7);
   saveData();refreshInvestViews();
+}
+
+function saveInvestHistoryCorrection(id){
+  return saveInvestUpdate(id,true);
 }
 
 function saveInvestResgate(id){
@@ -5384,9 +5388,9 @@ function renderDestinoCard(item){
         <input type="number" id="aporte-val-${item.id}" placeholder="Valor colocado (R$)" min="0" step="0.01" title="Valor que você já tinha ou colocou agora neste investimento."/>
       </div>
       <button onclick="saveInvestAporte(${item.id})" title="Registra esse dinheiro no histórico do investimento.">Salvar dinheiro colocado</button>
-    </div>`:acao==='atualizar'&&item.kind==='investimento'?`
+    </div>`:(acao==='atualizar'||acao==='corrigir-historico')&&item.kind==='investimento'?`
     <div class="goal-panel">
-      <div class="goal-panel-title">Atualizar saldo</div>
+      <div class="goal-panel-title">${acao==='corrigir-historico'?'Corrigir movimentação esquecida':'Atualizar saldo'}</div>
       <div class="invest-update-fields">
       ${isCryptoInvest(item)?`
       <div class="row row2">
@@ -5408,16 +5412,16 @@ function renderDestinoCard(item){
       `}
       </div>
       <div id="update-conference-${item.id}">${renderConferenciaInvestimento(item,today(),Number(item.valorAtual||0))}</div>
-      <details class="invest-update-flow invest-update-fields"><summary>Corrigir movimentação esquecida · opções avançadas</summary>
+      ${acao==='corrigir-historico'?`<div class="invest-update-flow invest-update-fields">
         ${ordenarHistoricoInvest(item).slice(-1)[0]?.tipo==='atualizacao'?`<label class="update-correction"><input type="checkbox" id="update-correction-${item.id}" onchange="toggleInvestCorrection(${item.id})"/><span>Corrigir aporte ou resgate esquecido na última atualização salva, mantendo o valor final.</span></label>`:''}
         <div class="update-field"><label for="update-flow-${item.id}">Movimentação ainda não registrada</label>
           <select id="update-flow-${item.id}" onchange="toggleInvestUpdateFlow(${item.id})">
-            <option value="nenhum">Nenhuma · só atualizar o valor</option>
+            <option value="">Escolha a movimentação esquecida</option>
             <option value="aporte">Coloquei dinheiro · aporte</option>
             <option value="resgate">Retirei dinheiro · resgate</option>
           </select>
         </div>
-        <p class="hint">Se já lançou no Extrato ou no histórico, escolha Nenhuma para não duplicar. Alterar o valor investido acima não registra um aporte.</p>
+        <p class="hint">Use esta ação somente para uma movimentação esquecida. Se ela já consta no histórico, volte a Atualizar saldo para não duplicar.</p>
         <div id="update-flow-fields-${item.id}" hidden>
           ${isCryptoInvest(item)?`<label class="update-correction" id="update-flow-paid-label-${item.id}" hidden><input type="checkbox" id="update-flow-paid-${item.id}"/><span>Este aporte já foi descontado no Extrato, como transferência para Criptomoedas. Registrar só na moeda, sem descontar novamente.</span></label>`:''}
           <div class="row row2">
@@ -5426,8 +5430,8 @@ function renderDestinoCard(item){
           </div>
           <p class="hint">A movimentação será registrada na data acima. Informe o valor final já com o aporte ou resgate. Sem o saldo na hora da movimentação, a rentabilidade é aproximada, usando a última avaliação.</p>
         </div>
-      </details>
-      <button onclick="saveInvestUpdate(${item.id})" title="Salva o valor atual do investimento para calcular rendimento.">Salvar saldo atualizado</button>
+      </div>`:''}
+      <button onclick="${acao==='corrigir-historico'?'saveInvestHistoryCorrection':'saveInvestUpdate'}(${item.id})">${acao==='corrigir-historico'?'Salvar correção do histórico':'Salvar saldo atualizado'}</button>
     </div>`:acao==='resgatar'?`
     <div class="goal-panel">
       <div class="goal-panel-title">Registrar resgate</div>
@@ -5441,6 +5445,7 @@ function renderDestinoCard(item){
     <div class="goal-panel">
       <div class="history-head">
         <div class="goal-panel-title">Histórico</div>
+        ${item.kind==='investimento'?`<button type="button" onclick="toggleInvestAction(${item.id},'corrigir-historico')">Corrigir histórico</button>`:''}
       </div>
       ${saldoAnteriorHtml}
       ${historicoMes.length?historicoMes.map(h=>{
@@ -5498,6 +5503,7 @@ function renderDestinoCard(item){
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'dados')">Editar dados</button>
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'atualizar')">Atualizar saldo</button>
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'aportar')">Colocar dinheiro</button>
+      <button onclick="investMenuId=null;toggleInvestAction(${item.id},'corrigir-historico')">Corrigir histórico</button>
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'resgatar')">Resgatar</button>
       <button onclick="investMenuId=null;toggleInvestHistory(${item.id})">Histórico</button>
       <button onclick="investMenuId=null;toggleInvestChart(${item.id})">Gráfico</button>
