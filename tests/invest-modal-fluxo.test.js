@@ -31,6 +31,6 @@ const reserva=fn('movimentarReservaInterna','getMetaStorage');
 assert(reserva.includes('investUi.historico[id]=false'),'Reserva interna deve manter historico fechado');
 
 assert(html.includes('Valor atual registrado: ${fmt(item.valorAtual||0)}. Informe o valor total que aparece hoje no banco.'),'Modal deve explicar o valor atual');
-assert(html.includes('id="update-val-${item.id}" value="${Number(item.valorAtual||0)}"'),'Campo de atualizacao deve vir preenchido com o valor atual');
+assert(html.includes('id="update-val-${item.id}"')&&html.includes('value="${Number(item.valorAtual||0).toFixed(2)}"'),'Campo de atualizacao deve vir preenchido com o valor atual');
 
 console.log('PASS: historico nao abre automaticamente e atualizar valor vem pre-preenchido');

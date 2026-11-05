@@ -724,6 +724,13 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 .invest-update-fields .update-field input{width:100%;padding:6px 8px;font-size:12px;min-height:32px}
 .invest-update-flow{margin:12px 0;padding:10px;border:1px solid #384440;border-radius:9px}
 .invest-update-flow .hint{margin:6px 0;font-size:11px;line-height:1.45}
+.invest-update-flow summary{cursor:pointer;font-size:12px;color:#c5c3ba}
+.invest-update-flow[open] summary{margin-bottom:12px}
+.invest-reconciliation{margin:12px 0;padding:12px;border:1px solid #384440;border-radius:9px;font-size:12px}
+.invest-reconciliation dl{margin:10px 0}
+.invest-reconciliation dl>div{display:flex;justify-content:space-between;gap:12px;margin:7px 0}
+.invest-reconciliation dd{margin:0;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.invest-reconciliation dl>div:last-child{border-top:1px solid #384440;padding-top:9px;font-weight:700}
 .invest-update-flow .update-correction{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.4;margin:0 0 10px;color:#e6e3d9}
 .invest-update-flow .update-correction input{width:16px;min-width:16px;height:16px;margin:1px 0 0;box-shadow:none;accent-color:#9fe1cb}
 .invest-chart-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -4166,11 +4173,12 @@ function recalcInvestFromHistory(item){
     }else if(h.tipo==='atualizacao'){
       saldo=valor;
     }
+    saldo=Math.round(saldo*100)/100;
     h.saldo=saldo;
   });
   item.valorAtual=saldo;
-  item.totalAportado=totalAportado;
-  item.totalResgatado=totalResgatado;
+  item.totalAportado=Math.round(totalAportado*100)/100;
+  item.totalResgatado=Math.round(totalResgatado*100)/100;
 }
 
 // TWR por atualização: aporte/resgate muda o capital, mas seu retorno é zero.
@@ -4199,7 +4207,7 @@ function avaliarRetornoInvestimento(item,inicio,fim){
       const anterior=saldo;
       saldo=valor;
       if(noPeriodo){
-        const ganho=valor-anterior;
+        const ganho=Math.round((valor-anterior)*100)/100;
         rendimento+=ganho;
         if(anterior>0){
           fator*=valor/anterior;
@@ -4285,7 +4293,7 @@ function sincronizarPainelInvestimento(){
   overlay.classList.toggle('invest-chart-open',tipo==='grafico');
   const titulo=document.getElementById('invest-modal-title');
   const novo=!overlay.hidden;
-  titulo.textContent=(item?item.nome:'Investimento')+' · '+({dados:'Editar dados','editar-meta':'Editar meta',atualizar:'Atualizar valor',resgatar:'Resgatar',reservar:'Reservar saldo',liberar:'Liberar reserva',aportar:'Aportar',historico:'Histórico',grafico:'Gráfico'}[tipo]||'Detalhes');
+  titulo.textContent=(item?item.nome:'Investimento')+' · '+({dados:'Editar dados','editar-meta':'Editar meta',atualizar:'Atualizar saldo',resgatar:'Resgatar',reservar:'Reservar saldo',liberar:'Liberar reserva',aportar:'Aportar',historico:'Histórico',grafico:'Gráfico'}[tipo]||'Detalhes');
   content.replaceChildren(panel);
   overlay.hidden=false;
   document.body.classList.add('invest-modal-open');
@@ -4438,7 +4446,8 @@ function saveInvestAporte(id){
   const historico=ensureInvestHistory(item);
   const saldo=Number(item.valorAtual||0)+val;
   const origem=S.saldoInicial?'aporte_manual':(historico.length?'aporte_manual':'saldo_inicial');
-  const extId=S.saldoInicial?novoIdExtrato():null;
+  const jaDescontado=isCryptoInvest(item)&&!!document.getElementById('aporte-paid-'+id)?.checked;
+  const extId=S.saldoInicial&&!jaDescontado?novoIdExtrato():null;
   historico.push({id:(extId||Date.now())+'-aporte',tipo:'aporte',data,valor:val,saldo,origem,extId});
   if(extId!==null)S.extrato.push({id:extId,data,desc:'Investimento - '+item.nome,tipo:'investimento',categoria:'Investimento',subcategoria:item.nome,val,destId:item.id});
   recalcInvestFromHistory(item);
@@ -4446,6 +4455,51 @@ function saveInvestAporte(id){
   investUi.historico[id]=false;
   investUi.mes[id]=data.slice(0,7);
   saveData();refreshInvestViews();
+}
+
+function conferirAtualizacaoInvestimento(item,data,valor){
+  const hist=ordenarHistoricoInvest(item).filter(h=>h.data<=data);
+  let indice=-1;
+  hist.forEach((h,i)=>{if(h.tipo==='atualizacao')indice=i;});
+  if(indice<0)indice=hist.findIndex(h=>h.tipo==='aporte');
+  const base=indice>=0?hist[indice]:null;
+  const copia={historico:indice>=0?hist.slice(0,indice+1).map(h=>({...h})):[]};
+  recalcInvestFromHistory(copia);
+  const saldoAnterior=Math.round(copia.valorAtual*100);
+  let aportes=0,resgates=0;
+  for(const h of hist.slice(indice+1)){
+    if(h.tipo==='aporte')aportes+=Math.round(h.valor*100);
+    if(h.tipo==='resgate')resgates+=Math.round(h.valor*100);
+  }
+  const esperado=saldoAnterior+aportes-resgates;
+  return {dataAnterior:base?base.data:null,data,saldoAnterior:saldoAnterior/100,aportes:aportes/100,resgates:resgates/100,esperado:esperado/100,rendimento:(Math.round(valor*100)-esperado)/100,atravessaMes:!!base&&base.data.slice(0,7)!==data.slice(0,7)};
+}
+function ultimaConferenciaInvestimento(item){
+  const hist=ordenarHistoricoInvest(item);
+  let index=-1;hist.forEach((h,i)=>{if(h.tipo==='atualizacao')index=i;});
+  if(index<0)return null;
+  const ultimo=hist[index];
+  return conferirAtualizacaoInvestimento({historico:hist.slice(0,index)},ultimo.data,ultimo.valor);
+}
+function renderConferenciaInvestimento(item,data,valor){
+  if(!dataISOValida(data)||!valorMonetarioValido(valor))return '<p class="hint">Informe a data e o saldo atual para conferir o rendimento.</p>';
+  const c=conferirAtualizacaoInvestimento(item,data,valor);
+  const dia=d=>d?d.split('-').reverse().join('/'):'início do histórico';
+  return `<div class="invest-reconciliation" aria-live="polite"><strong>Conferência desde ${dia(c.dataAnterior)}</strong>
+    <dl><div><dt>Último saldo avaliado</dt><dd>${fmt(c.saldoAnterior)}</dd></div>
+    <div><dt>Dinheiro colocado depois</dt><dd>+ ${fmt(c.aportes)}</dd></div>
+    <div><dt>Dinheiro retirado depois</dt><dd>− ${fmt(c.resgates)}</dd></div>
+    <div><dt>Saldo esperado sem rendimento</dt><dd>${fmt(c.esperado)}</dd></div>
+    <div><dt>Saldo informado agora</dt><dd>${fmt(valor)}</dd></div>
+    <div><dt>Rendimento desde a última avaliação</dt><dd>${fmt(c.rendimento)}</dd></div></dl>
+    <p class="hint">Movimentações já registradas foram consideradas automaticamente. Se faltar um aporte ou resgate, registre na ação própria antes de atualizar.${c.atravessaMes?' Este intervalo atravessa meses; o rendimento será registrado nesta avaliação, sem inventar uma divisão mensal.':''}</p></div>`;
+}
+function atualizarConferenciaInvestimento(id){
+  const item=S.invest.find(x=>x.id===id),alvo=document.getElementById('update-conference-'+id);
+  if(!item||!alvo)return;
+  const data=document.getElementById('update-data-'+id).value;
+  const valor=isCryptoInvest(item)?calcCryptoValue(document.getElementById('update-crypto-qtd-'+id).value,document.getElementById('update-crypto-cotacao-'+id).value):Number(document.getElementById('update-val-'+id).value);
+  alvo.innerHTML=renderConferenciaInvestimento(item,data,valor);
 }
 
 function saveInvestUpdate(id){
@@ -4456,7 +4510,7 @@ function saveInvestUpdate(id){
   if(!dataISOValida(data)||data>today()||relacionados.some(x=>data<ultimaDataFinanceira(x))){
     appAlert('Informe uma data válida, até hoje e não anterior à última movimentação do investimento e das metas.');return;
   }
-  const tipoFluxo=document.getElementById('update-flow-'+id).value;
+  const tipoFluxo=document.getElementById('update-flow-'+id)?.value??'nenhum';
   const jaDescontado=isCryptoInvest(item)&&tipoFluxo==='aporte'&&!!document.getElementById('update-flow-paid-'+id)?.checked;
   const campoFluxo=document.getElementById('update-flow-value-'+id);
   const campoAntes=document.getElementById('update-flow-before-'+id);
@@ -4485,7 +4539,7 @@ function saveInvestUpdate(id){
     const mudouQuantidade=Number(item.cryptoQtd||0)>0&&Math.abs(cryptoQtd-Number(item.cryptoQtd))>1e-10;
     const mudouCusto=Math.abs(cryptoInvestido-Number(item.cryptoInvestido||0))>0.005;
     if(!temFluxo&&!fluxoJaRegistrado&&(mudouQuantidade||mudouCusto)){
-      appAlert('A quantidade ou o valor investido mudou. Informe abaixo o aporte ou resgate ainda não registrado. Se a movimentação já consta no Extrato ou histórico, confira esse registro antes de atualizar.');return;
+      appAlert('A quantidade ou o valor investido mudou. Registre a compra em Colocar dinheiro ou a retirada em Resgatar antes de atualizar o saldo. Se esqueceu uma movimentação antiga, use as opções avançadas.');return;
     }
   }else val=Number(document.getElementById('update-val-'+id).value);
   if(!valorMonetarioValido(val)||!isCryptoInvest(item)&&!document.getElementById('update-val-'+id).value.trim()){
@@ -5324,6 +5378,7 @@ function renderDestinoCard(item){
     </div>`:acao==='aportar'&&item.kind==='investimento'?`
     <div class="goal-panel">
       <div class="goal-panel-title">Colocar dinheiro no investimento</div>
+      ${isCryptoInvest(item)?`<label class="input-caption"><input type="checkbox" id="aporte-paid-${item.id}" style="width:auto"/> Este aporte já foi descontado no Extrato como transferência para Criptomoedas.</label><p class="hint">Depois de registrar o aporte, use Atualizar saldo para conferir quantidade e cotação.</p>`:''}
       <div class="row row2">
         <input type="date" id="aporte-data-${item.id}" value="${today()}" title="Data em que esse dinheiro entrou ou já existia."/>
         <input type="number" id="aporte-val-${item.id}" placeholder="Valor colocado (R$)" min="0" step="0.01" title="Valor que você já tinha ou colocou agora neste investimento."/>
@@ -5331,32 +5386,32 @@ function renderDestinoCard(item){
       <button onclick="saveInvestAporte(${item.id})" title="Registra esse dinheiro no histórico do investimento.">Salvar dinheiro colocado</button>
     </div>`:acao==='atualizar'&&item.kind==='investimento'?`
     <div class="goal-panel">
-      <div class="goal-panel-title">Atualizar valor do mês atual</div>
+      <div class="goal-panel-title">Atualizar saldo</div>
       <div class="invest-update-fields">
       ${isCryptoInvest(item)?`
       <div class="row row2">
-        <input type="date" id="update-data-${item.id}" value="${today()}" title="Data em que você conferiu a cotação."/>
+        <input type="date" id="update-data-${item.id}" oninput="atualizarConferenciaInvestimento(${item.id})" value="${today()}" title="Data em que você conferiu a cotação."/>
         <label class="update-field">Valor investido (R$)<input type="number" id="update-crypto-investido-${item.id}" value="${item.cryptoInvestido||''}" placeholder="Quanto investiu (R$)" min="0" step="0.01" title="Valor em reais que você colocou nessa cripto."/></label>
       </div>
       <div class="row row2">
-        <label class="update-field">Quantidade da cripto<input type="number" id="update-crypto-qtd-${item.id}" value="${item.cryptoQtd||''}" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade atual que você tem dessa cripto."/></label>
-        <label class="update-field">Cotação atual (R$)<input type="number" id="update-crypto-cotacao-${item.id}" value="${item.cryptoCotacao||''}" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais."/></label>
+        <label class="update-field">Quantidade da cripto<input type="number" id="update-crypto-qtd-${item.id}" oninput="atualizarConferenciaInvestimento(${item.id})" value="${item.cryptoQtd||''}" placeholder="Quantidade da cripto" min="0" step="0.00000001" title="Quantidade atual que você tem dessa cripto."/></label>
+        <label class="update-field">Cotação atual (R$)<input type="number" id="update-crypto-cotacao-${item.id}" oninput="atualizarConferenciaInvestimento(${item.id})" value="${item.cryptoCotacao||''}" placeholder="Cotação atual (R$)" min="0" step="0.01" title="Preço atual de 1 unidade da cripto em reais."/></label>
       </div>
       <div class="row row1"><label class="update-field">Preço médio (R$)<input type="number" id="update-crypto-preco-medio-${item.id}" value="${item.cryptoPrecoMedio||''}" placeholder="Preço médio (R$)" min="0" step="0.01" title="Digite o seu preço médio dessa cripto."/></label></div>
       <div class="hint">Preço médio: ${fmt(item.cryptoPrecoMedio||0)} · Valor atual = quantidade x cotação.</div>
       `:`
       <div class="hint">Valor atual registrado: ${fmt(item.valorAtual||0)}. Informe o valor total que aparece hoje no banco.</div>
       <div class="row row2">
-        <input type="date" id="update-data-${item.id}" value="${today()}" title="Data em que você conferiu o valor atualizado."/>
-        <label class="update-field">Valor atual (R$)<input type="number" id="update-val-${item.id}" value="${Number(item.valorAtual||0)}" placeholder="Valor atual (R$)" min="0" step="0.01" title="Valor total que aparece hoje nesse investimento."/></label>
+        <input type="date" id="update-data-${item.id}" oninput="atualizarConferenciaInvestimento(${item.id})" value="${today()}" title="Data em que você conferiu o valor atualizado."/>
+        <label class="update-field">Valor atual (R$)<input type="number" id="update-val-${item.id}" oninput="atualizarConferenciaInvestimento(${item.id})" value="${Number(item.valorAtual||0).toFixed(2)}" placeholder="Valor atual (R$)" min="0" step="0.01" title="Valor total que aparece hoje nesse investimento."/></label>
       </div>
       `}
       </div>
-      <div class="invest-update-flow invest-update-fields">
+      <div id="update-conference-${item.id}">${renderConferenciaInvestimento(item,today(),Number(item.valorAtual||0))}</div>
+      <details class="invest-update-flow invest-update-fields"><summary>Corrigir movimentação esquecida · opções avançadas</summary>
         ${ordenarHistoricoInvest(item).slice(-1)[0]?.tipo==='atualizacao'?`<label class="update-correction"><input type="checkbox" id="update-correction-${item.id}" onchange="toggleInvestCorrection(${item.id})"/><span>Corrigir aporte ou resgate esquecido na última atualização salva, mantendo o valor final.</span></label>`:''}
         <div class="update-field"><label for="update-flow-${item.id}">Movimentação ainda não registrada</label>
           <select id="update-flow-${item.id}" onchange="toggleInvestUpdateFlow(${item.id})">
-            <option value="">Houve aporte ou resgate?</option>
             <option value="nenhum">Nenhuma · só atualizar o valor</option>
             <option value="aporte">Coloquei dinheiro · aporte</option>
             <option value="resgate">Retirei dinheiro · resgate</option>
@@ -5371,8 +5426,8 @@ function renderDestinoCard(item){
           </div>
           <p class="hint">A movimentação será registrada na data acima. Informe o valor final já com o aporte ou resgate. Sem o saldo na hora da movimentação, a rentabilidade é aproximada, usando a última avaliação.</p>
         </div>
-      </div>
-      <button onclick="saveInvestUpdate(${item.id})" title="Salva o valor atual do investimento para calcular rendimento.">Salvar valor atualizado</button>
+      </details>
+      <button onclick="saveInvestUpdate(${item.id})" title="Salva o valor atual do investimento para calcular rendimento.">Salvar saldo atualizado</button>
     </div>`:acao==='resgatar'?`
     <div class="goal-panel">
       <div class="goal-panel-title">Registrar resgate</div>
@@ -5427,18 +5482,22 @@ function renderDestinoCard(item){
       <div class="month-value">${metaPct.toFixed(0)}%</div>
     </div>`:'';
   if(item.kind==='investimento'){
-    const periodo=calcInvestPeriodResult(item);
+    const conferencia=ultimaConferenciaInvestimento(item);
+    const atual=investPeriodo==='mes'&&isoDate(investMes.getFullYear(),investMes.getMonth(),1).slice(0,7)===today().slice(0,7);
+    const mensal=calcInvestPeriodResult(item);
+    const periodo=atual&&conferencia?{...mensal,rendimento:conferencia.rendimento,pct:conferencia.esperado>0?conferencia.rendimento/conferencia.esperado*100:null}:mensal;
     const visual=investTipoVisual(item.tipo);
     const criptoLogo=investLogoCripto(item);
     const iconePadrao=investTipoIconeResumo(visual.cls,visual.icon);
     const logoHtml=criptoLogo?`<span class="invest-type-icon ${visual.cls} inv-crypto-logo"><img alt="" src="${criptoLogo}" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span hidden class="inv-crypto-fallback">${iconePadrao}</span></span>`:`<span class="invest-type-icon ${visual.cls}">${iconePadrao}</span>`;
     const cls=periodo.rendimento>0?'positive':periodo.rendimento<0?'negative':'neutral';
-    const pct=(periodo.pct>0?'+':'')+fmtInvestPct(periodo.pct);
+    const pct=periodo.pct===null?'—':(periodo.pct>0?'+':'')+fmtInvestPct(periodo.pct);
     const periodoLabel=investPeriodo==='ano'?String(investMes.getFullYear()):mesStr(investMes.getFullYear(),investMes.getMonth());
     const menuAberto=String(investMenuId)===String(item.id);
     const menu=`<div class="inv-card-menu${menuAberto?' open':''}">
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'dados')">Editar dados</button>
-      <button onclick="investMenuId=null;toggleInvestAction(${item.id},'atualizar')">Atualizar valor</button>
+      <button onclick="investMenuId=null;toggleInvestAction(${item.id},'atualizar')">Atualizar saldo</button>
+      <button onclick="investMenuId=null;toggleInvestAction(${item.id},'aportar')">Colocar dinheiro</button>
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'resgatar')">Resgatar</button>
       <button onclick="investMenuId=null;toggleInvestHistory(${item.id})">Histórico</button>
       <button onclick="investMenuId=null;toggleInvestChart(${item.id})">Gráfico</button>
@@ -5453,7 +5512,7 @@ function renderDestinoCard(item){
         </div>
         <div class="inv-card-stats">
           <div class="inv-card-metric inv-card-balance"><span>Valor atual</span><strong>${fmt(periodo.final)}</strong></div>
-          <div class="inv-card-metric inv-card-yield"><span>Rendimento (${periodoLabel})</span><div class="inv-grade-yield-values"><strong class="${cls}">${periodo.rendimento>0?'+':''}${fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div></div>
+          <div class="inv-card-metric inv-card-yield"><span title="${atual&&conferencia?'Intervalo de '+conferencia.dataAnterior+' a '+conferencia.data+'; percentual aproximado quando houve movimentações entre avaliações':'Resultado pelas avaliações registradas no período'}">${atual&&conferencia?'Desde a última avaliação':'Rendimento ('+periodoLabel+')'}</span><div class="inv-grade-yield-values"><strong class="${cls}">${periodo.rendimento>0?'+':''}${fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div></div>
           <span class="inv-card-spark ${cls}">${investSparkline([item])}</span>
         </div>
         <div class="inv-card-menu-wrap"><button class="inv-more-btn" type="button" onclick="toggleInvestCardMenu(${item.id},event)" aria-label="Mais opções de ${escHtml(item.nome)}" aria-expanded="${menuAberto}">⋮</button>${menu}</div>
@@ -5485,7 +5544,7 @@ function renderDestinoCard(item){
     <div class="goal-actions">
       ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'dados')" title="Edite instituição, nome, rentabilidade informada e vencimento sem alterar o saldo.">Editar dados</button>`:''}
       ${item.kind==='meta'?`<button onclick="toggleInvestAction(${item.id},'editar-meta')" title="Corrige o nome, o valor-alvo e a data sem alterar reservas ou aportes.">Editar meta</button>`:''}
-      ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'atualizar')" title="Use quando o investimento mudou de valor, para calcular quanto rendeu.">Atualizar valor</button>`:''}
+      ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'atualizar')" title="Use quando o investimento mudou de valor, para calcular quanto rendeu.">Atualizar saldo</button>`:''}
       ${item.kind==='investimento'?`<button onclick="toggleInvestAction(${item.id},'resgatar')" title="Use quando retirou dinheiro desse investimento.">Resgatar</button>`:''}
       ${item.kind==='meta'&&!monitor?`<button onclick="toggleInvestAction(${item.id},'reservar')" title="Reserva uma parte do saldo já existente, sem lançar gasto ou novo investimento.">Reservar saldo</button><button onclick="toggleInvestAction(${item.id},'liberar')" title="Libera a reserva sem transferir dinheiro para o Extrato.">Liberar reserva</button>`:''}
       ${!monitor?`<button onclick="toggleInvestHistory(${item.id})" title="Mostra ou esconde tudo que entrou, saiu ou foi atualizado aqui.">${historicoAberto?'Fechar hist.':'Histórico'}</button>

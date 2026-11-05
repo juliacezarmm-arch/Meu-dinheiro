@@ -22,17 +22,21 @@ Os valores informados determinam se o patrimônio é bruto ou líquido. O aplica
 
 O percentual geral de vários investimentos continua sendo uma aproximação ponderada pelo capital de referência, não um TWR exato de carteira consolidada.
 
-## Atualizar valor
+## Atualizar saldo, colocar dinheiro e resgatar
+
+O fluxo comum tem três ações separadas. **Atualizar saldo** pede a data e o patrimônio atual (ou quantidade e cotação, em cripto), consulta o histórico automaticamente e mostra: última avaliação, aportes posteriores, resgates posteriores, saldo esperado sem rendimento, saldo atual informado e rendimento do intervalo. Não é necessário lembrar o saldo antes de uma retirada nem selecionar novamente uma movimentação já registrada.
+
+**Colocar dinheiro** registra somente um aporte novo; **Resgatar** registra somente uma retirada nova. Valores do histórico são recompostos em centavos para evitar resíduos como 97,7400000000021 no formulário.
+
+Exemplo de intervalo atravessando meses: avaliação de R$ 3.307,78 em 28/10, resgate de R$ 350,01 em 30/10 e resgates de R$ 2.820,01 e R$ 40,02 em novembro deixam saldo conhecido de R$ 97,74. Uma nova avaliação de R$ 102,49 em 04/11 reconhece R$ 4,75 de rendimento, sem lançar novamente as retiradas. O mês anterior mantém o rendimento conhecido até sua última avaliação; o resultado ainda não observado é reconhecido na nova avaliação. Não se inventa uma divisão entre dias ou meses sem dados do banco.
+
+Nos cartões do mês atual, o destaque é o rendimento desde a última avaliação, com datas do intervalo no título. Os relatórios e gráficos mensais/anuais continuam disponíveis. O percentual desse intervalo usa o saldo esperado após os fluxos e é aproximado quando não houve avaliações nas datas das movimentações.
 
 No Extrato, Investimento → Criptomoedas registra uma transferência geral: desconta o saldo da conta, aparece em azul e não altera nenhuma moeda. Criptomoedas individuais não são destinos de aportes pelo Extrato. O lançamento geral pode ser editado ou excluído sem alterar quantidade, cotação, patrimônio ou histórico das moedas.
 
-Ao atualizar uma moeda depois de uma transferência geral, informar o aporte e marcar **Este aporte já foi descontado no Extrato**. Isso registra o fluxo no histórico da moeda para separar capital de rendimento, sem gerar um segundo desconto na conta. O lançamento geral continua sem vínculo com uma moeda específica. A opção também vale para corrigir um aporte esquecido na última atualização.
+Depois de uma transferência geral, usar **Colocar dinheiro** na moeda e marcar **Este aporte já foi descontado no Extrato**. Em seguida atualizar quantidade/cotação em **Atualizar saldo**. Isso registra o capital no histórico da moeda sem descontar novamente a conta. O custo informado e o preço médio não são usados para inventar fluxos.
 
-- Informar o patrimônio final, já com as compras ou retiradas. Em cripto, ele é quantidade × cotação, arredondado para centavos.
-- Selecionar o aporte ou resgate ainda não registrado e informar somente o dinheiro novo movimentado, na data do campo de atualização.
-- Se o fluxo já consta no Extrato ou no histórico, selecionar Nenhuma. Não registrá-lo novamente.
-- Informar, se disponível, o patrimônio imediatamente antes da movimentação para melhorar a rentabilidade.
-- O campo Valor investido da cripto é informativo e não cria, sozinho, aporte ou lançamento no Extrato. Não é seguro inferir fluxos apenas pela variação do custo acumulado ou da quantidade.
+Aportes e resgates esquecidos em uma avaliação antiga continuam acessíveis em **Corrigir movimentação esquecida · opções avançadas**, recolhido por padrão. Esse formulário não é necessário na atualização comum.
 
 Aportes entram no Extrato como investimentos quando há saldo inicial de controle; resgates entram como entradas classificadas em Resgate, sem serem contados como receita. Metas vinculadas acompanham a valorização do capital reservado; o aporte novo ao investimento não aumenta a reserva existente.
 

@@ -16,7 +16,7 @@ function fixture({crypto=false,saldo=1000,meta=false}={}){
   MESES:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
   fmt:v=>'R$ '+Number(v).toFixed(2),escHtml:String,fmtInvestPct:v=>Number(v).toFixed(2)+'%'});
  vm.runInContext(`const S={extrato:[],cartao:[],cartoes:[],invest:[],saldoInicial:{valor:5000,data:'2026-09-01',idsIgnorados:[]}};const investUi={acao:{},historico:{},mes:{},metrica:{}};`,ctx);
- const functions=['dataISOValida','valorMonetarioValido','novoIdGlobal','novoIdExtrato','isCryptoInvest','calcCryptoValue','ensureInvestHistory','ordenarHistoricoInvest','recalcInvestFromHistory','ultimaDataFinanceira','reservadoEmMetas','metasReservadasNoInvestimento','avaliarRetornoInvestimento','calcInvestPeriodResult','calcInvestMonthResult','saveInvestUpdate','corrigirFluxoUltimaAtualizacao','renderStockChart','investSparkline'];
+ const functions=['dataISOValida','valorMonetarioValido','novoIdGlobal','novoIdExtrato','isCryptoInvest','calcCryptoValue','ensureInvestHistory','ordenarHistoricoInvest','recalcInvestFromHistory','ultimaDataFinanceira','reservadoEmMetas','metasReservadasNoInvestimento','avaliarRetornoInvestimento','calcInvestPeriodResult','calcInvestMonthResult','conferirAtualizacaoInvestimento','ultimaConferenciaInvestimento','saveInvestUpdate','corrigirFluxoUltimaAtualizacao','renderStockChart','investSparkline'];
  vm.runInContext(functions.map(extract).join('\n'),ctx);
  const run=s=>vm.runInContext(s,ctx);
  ctx.seed={id:1,kind:'investimento',nome:'Teste',tipo:crypto?'Cripto':'CDI',valorAtual:saldo,totalAportado:saldo,totalResgatado:0,cryptoQtd:1,cryptoCotacao:saldo,cryptoInvestido:saldo,cryptoPrecoMedio:saldo,historico:[{id:'z-inicial',tipo:'aporte',origem:'saldo_inicial',data:'2026-09-30',valor:saldo}]};
@@ -67,4 +67,15 @@ f.run(`corrigirFluxoUltimaAtualizacao(S.invest[0],'aporte',200,1100)`);assert.eq
 f=fixture({crypto:true});f.run(`S.extrato.push({id:60,data:'2026-10-28',tipo:'investimento',categoria:'Investimento',subcategoria:'Criptomoedas',val:200,destinoGrupo:'criptomoedas'});document.getElementById('update-flow-paid-1').checked=true;`);
 f.set('flow','aporte');f.set('flow-value',200);f.set('crypto-qtd',2);f.set('crypto-cotacao',600);f.set('crypto-investido',1200);f.run('saveInvestUpdate(1)');assert.equal(f.result().final,1200);assert.equal(f.result().rendimento,0);assert.equal(f.run('S.extrato.length'),1,'Transferência geral já descontada não pode gerar novo débito ao atualizar a cripto');
 f=fixture({crypto:true});f.run(`S.extrato.push({id:60,data:'2026-10-28',tipo:'investimento',val:200,destinoGrupo:'criptomoedas'});S.invest[0].historico.push({id:'forgot-hist',tipo:'atualizacao',data:'2026-10-28',valor:1200});recalcInvestFromHistory(S.invest[0]);corrigirFluxoUltimaAtualizacao(S.invest[0],'aporte',200,null,true);`);assert.equal(f.result().rendimento,0);assert.equal(f.run('S.extrato.length'),1,'Correção de atualização também respeita transferência já descontada');
+// Atualização comum usa os fluxos do histórico, inclusive quando atravessa o fechamento do mês.
+f=fixture();f.run(`today=()=> '2026-11-04';S.invest[0].historico=[{id:'initial',tipo:'aporte',data:'2026-10-27',valor:3307.78},{id:'evaluation',tipo:'atualizacao',data:'2026-10-28',valor:3307.78},{id:'w1',tipo:'resgate',data:'2026-10-30',valor:350.01},{id:'w2',tipo:'resgate',data:'2026-11-03',valor:2820.01},{id:'w3',tipo:'resgate',data:'2026-11-04',valor:40.02}];recalcInvestFromHistory(S.invest[0]);`);
+assert.equal(f.run('S.invest[0].valorAtual'),97.74,'Saldo em centavos sem resíduos de ponto flutuante');
+const conference=f.run(`conferirAtualizacaoInvestimento(S.invest[0],'2026-11-04',102.49)`);
+assert.equal(conference.esperado,97.74);assert.equal(conference.rendimento,4.75);assert.equal(conference.resgates,3210.04);assert(conference.atravessaMes);
+f.set('data','2026-11-04');f.set('val','102.49');f.run('saveInvestUpdate(1)');
+assert.equal(f.run('S.invest[0].valorAtual'),102.49);assert.equal(f.run('S.extrato.length'),0,'Conferir saldo não recria os resgates');
+assert.equal(f.run('ultimaConferenciaInvestimento(S.invest[0]).rendimento'),4.75);
+assert.equal(f.run("calcInvestMonthResult(S.invest[0],'2026-11').rendimento"),4.75);
+f=fixture();f.run(`S.invest[0].historico.push({id:'w',tipo:'resgate',data:'2026-10-28',valor:300},{id:'deposit',tipo:'aporte',data:'2026-10-28',valor:200});recalcInvestFromHistory(S.invest[0]);`);
+assert.equal(f.run("conferirAtualizacaoInvestimento(S.invest[0],'2026-10-28',910).rendimento"),10);
 console.log('PASS: aporte/resgate na atualização, TWR, resgate integral/reinvestimento, cripto, reservas, validação sem mutação e gráficos percentual/valor mensal/anual');
