@@ -727,6 +727,8 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 .invest-update-flow summary{cursor:pointer;font-size:12px;color:#c5c3ba}
 .invest-update-flow[open] summary{margin-bottom:12px}
 .invest-reconciliation{margin:12px 0;padding:12px;border:1px solid #384440;border-radius:9px;font-size:12px}
+.invest-reconciliation summary{cursor:pointer;font-weight:700}
+.invest-reconciliation summary:focus-visible{outline:2px solid #9fe1cb;outline-offset:4px;border-radius:3px}
 .invest-reconciliation dl{margin:10px 0}
 .invest-reconciliation dl>div{display:flex;justify-content:space-between;gap:12px;margin:7px 0}
 .invest-reconciliation dd{margin:0;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -4485,21 +4487,24 @@ function renderConferenciaInvestimento(item,data,valor){
   if(!dataISOValida(data)||!valorMonetarioValido(valor))return '<p class="hint">Informe a data e o saldo atual para conferir o rendimento.</p>';
   const c=conferirAtualizacaoInvestimento(item,data,valor);
   const dia=d=>d?d.split('-').reverse().join('/'):'início do histórico';
-  return `<div class="invest-reconciliation" aria-live="polite"><strong>Conferência desde ${dia(c.dataAnterior)}</strong>
+  return `<details class="invest-reconciliation" open aria-live="polite"><summary>Conferência desde ${dia(c.dataAnterior)}</summary>
     <dl><div><dt>Último saldo avaliado</dt><dd>${fmt(c.saldoAnterior)}</dd></div>
     <div><dt>Dinheiro colocado depois</dt><dd>+ ${fmt(c.aportes)}</dd></div>
     <div><dt>Dinheiro retirado depois</dt><dd>− ${fmt(c.resgates)}</dd></div>
     <div><dt>Saldo esperado sem rendimento</dt><dd>${fmt(c.esperado)}</dd></div>
     <div><dt>Saldo informado agora</dt><dd>${fmt(valor)}</dd></div>
     <div><dt>Rendimento desde a última avaliação</dt><dd>${fmt(c.rendimento)}</dd></div></dl>
-    <p class="hint">Movimentações já registradas foram consideradas automaticamente. Se faltar um aporte ou resgate, registre na ação própria antes de atualizar.${c.atravessaMes?' Este intervalo atravessa meses; o rendimento será registrado nesta avaliação, sem inventar uma divisão mensal.':''}</p></div>`;
+    <p class="hint">Movimentações já registradas foram consideradas automaticamente. Se faltar um aporte ou resgate, registre na ação própria antes de atualizar.${c.atravessaMes?' Este intervalo atravessa meses; o rendimento será registrado nesta avaliação, sem inventar uma divisão mensal.':''}</p></details>`;
 }
 function atualizarConferenciaInvestimento(id){
   const item=S.invest.find(x=>x.id===id),alvo=document.getElementById('update-conference-'+id);
   if(!item||!alvo)return;
   const data=document.getElementById('update-data-'+id).value;
   const valor=isCryptoInvest(item)?calcCryptoValue(document.getElementById('update-crypto-qtd-'+id).value,document.getElementById('update-crypto-cotacao-'+id).value):Number(document.getElementById('update-val-'+id).value);
+  const aberta=alvo.querySelector('.invest-reconciliation')?.open??true;
   alvo.innerHTML=renderConferenciaInvestimento(item,data,valor);
+  const conferencia=alvo.querySelector('.invest-reconciliation');
+  if(conferencia)conferencia.open=aberta;
 }
 
 function saveInvestUpdate(id,corrigirHistorico=false){
