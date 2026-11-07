@@ -487,9 +487,9 @@ td:last-child{white-space:normal}
 .inv-card-spark svg{width:100%;height:30px;display:block}
 .inv-card-menu-wrap{position:relative}
 .inv-more-btn{border:0;background:transparent;color:#d8ddd9;font-size:20px;line-height:1;cursor:pointer;padding:2px 5px}
-.inv-card-menu{display:none;position:absolute;right:0;top:26px;z-index:100;background:#1b1c1a;border:1px solid #454943;border-radius:9px;padding:5px;width:145px;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.inv-card-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:100;background:#1b1c1a;border:1px solid #454943;border-radius:9px;padding:6px;width:210px;max-width:calc(100vw - 40px);max-height:calc(100dvh - 100px);overflow-y:auto;box-shadow:0 12px 30px rgba(0,0,0,.55)}
 .inv-card-menu.open{display:grid}
-.inv-card-menu button{border:0;background:transparent;color:#f5f5f2;text-align:left;padding:7px 8px;border-radius:6px;font-size:10px;cursor:pointer}
+.inv-card-menu button{border:0;background:transparent;color:#f5f5f2;text-align:left;padding:10px 12px;min-height:40px;border-radius:6px;font-size:14px;line-height:1.4;cursor:pointer}
 .inv-card-menu button:hover{background:#29322f}
 .inv-card-menu button.danger{color:#ff9f99}
 .inv-compact-card>.goal-panel{display:none}
@@ -852,7 +852,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   font-size:21px;
 }
 #inv-wrap .inv-list .inv-more-btn:hover{background:#1b2c28;border-color:#456558}
-#inv-wrap .inv-list .inv-card-menu{right:0;top:31px}
+#inv-wrap .inv-list .inv-card-menu{right:0;top:calc(100% + 6px)}
 @media(max-width:760px){
   #inv-wrap .inv-list .inv-card-main{
     grid-template-columns:40px minmax(0,1fr) minmax(0,1fr) 68px 26px;
@@ -958,7 +958,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
   color:#e9f3ed;font-size:21px;cursor:pointer
 }
 #inv-wrap .inv-grade .inv-more-btn:hover{background:#1b2c28;border-color:#456558}
-#inv-wrap .inv-grade .inv-card-menu{right:0;top:31px}
+#inv-wrap .inv-grade .inv-card-menu{right:0;top:calc(100% + 6px)}
 @media(max-width:900px){
   #inv-wrap .goal-list.inv-grade{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -1062,7 +1062,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
 #inv-wrap .inv-grade .inv-more-btn[aria-expanded="true"]{
  background:#17312a;border-color:#3b6556
 }
-#inv-wrap .inv-grade .inv-card-menu{top:31px;right:0}
+#inv-wrap .inv-grade .inv-card-menu{top:calc(100% + 6px);right:0}
 #inv-wrap .inv-grade .inv-crypto-logo{background:#090f16}
 @media(max-width:780px){
  #inv-wrap .goal-list.inv-grade{grid-template-columns:minmax(0,1fr)}
@@ -1073,6 +1073,11 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
  }
  #inv-wrap .inv-grade .inv-card-yield{padding-left:8px;padding-right:6px}
  #inv-wrap .inv-grade .inv-card-stats>.inv-card-spark{padding-left:6px}
+}
+
+/* Menu de ações com texto legível e área de clique ampliada. */
+#inv-wrap .inv-list .inv-more-btn,#inv-wrap .inv-grade .inv-more-btn{
+ width:36px;min-width:36px;height:36px;font-size:26px
 }
 
 /* Gráfico de evolução personalizado com duas visualizações e cartões responsivos. */
@@ -4391,6 +4396,15 @@ function toggleInvestCardMenu(id,event){
   if(event){event.preventDefault();event.stopPropagation();}
   investMenuId=String(investMenuId)===String(id)?null:id;
   renderInvest();
+  const card=document.querySelector('.goal-card[data-invest-id="'+id+'"]');
+  const menu=card&&card.querySelector('.inv-card-menu.open');
+  if(menu){
+    const button=card.querySelector('.inv-more-btn'),rect=button.getBoundingClientRect();
+    const abaixo=window.innerHeight-rect.bottom-12,acima=rect.top-12;
+    const abrirAcima=abaixo<menu.scrollHeight&&acima>abaixo;
+    menu.style.maxHeight=Math.max(80,abrirAcima?acima:abaixo)+'px';
+    if(abrirAcima){menu.style.top='auto';menu.style.bottom='calc(100% + 6px)';}
+  }
 }
 document.addEventListener('click',event=>{
   if(!event.target.closest('.inv-card-menu')&&!event.target.closest('.inv-more-btn')&&investMenuId!==null){
