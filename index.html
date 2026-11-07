@@ -4205,51 +4205,71 @@ function recalcInvestFromHistory(item){
   item.totalResgatado=Math.round(totalResgatado*100)/100;
 }
 
-// TWR por atualização: aporte/resgate muda o capital, mas seu retorno é zero.
-// A atualização é comparada ao saldo imediatamente anterior, já ajustado pelos
-// fluxos registrados. Sem valores de mercado intradiários este é o TWR por
-// avaliação disponível (aproximação, não TWR diário exato).
+// Modified Dietz: estima o retorno usando o capital e o tempo de cada fluxo.
+// Datas são dias civis em UTC; fluxos na data final têm peso zero (fim do dia).
+function calcularDietz(inicio,fim,saldoInicial,saldoFinal,fluxos=[]){
+  const dia=s=>{
+    if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))return NaN;
+    const [a,m,d]=s.split('-').map(Number),t=Date.UTC(a,m-1,d),dt=new Date(t);
+    return dt.getUTCFullYear()===a&&dt.getUTCMonth()===m-1&&dt.getUTCDate()===d?t/86400000:NaN;
+  };
+  let a=dia(inicio);
+  const b=dia(fim);
+  let dias=b-a;
+  const invalid=motivo=>({pct:null,capitalMedio:null,dias:Number.isFinite(dias)?dias:null,motivo,estimado:true});
+  if(!Number.isFinite(a)||!Number.isFinite(b)||dias<0||!Number.isFinite(saldoInicial)||!Number.isFinite(saldoFinal)||saldoInicial<0||saldoFinal<0)return invalid('Dados insuficientes');
+  // Não dilui o capital por dias anteriores ao primeiro investimento.
+  if(saldoInicial===0){
+    const entradas=fluxos.filter(f=>f.valor>0&&dia(f.data)>=a&&dia(f.data)<=b).map(f=>dia(f.data));
+    if(entradas.length){a=Math.min(...entradas);dias=b-a;}
+  }
+  let liquido=0,ponderado=0,n=0;
+  for(const f of fluxos){
+    const t=dia(f.data);
+    if(!Number.isFinite(t)||!Number.isFinite(f.valor))return invalid('Movimentação inválida');
+    if(t<a||t>b)continue;
+    liquido+=Math.round(f.valor*100);n++;
+    if(dias>0)ponderado+=Math.round(f.valor*100)*(b-t)/dias;
+  }
+  const ganho=(Math.round(saldoFinal*100)-Math.round(saldoInicial*100)-liquido)/100;
+  if(dias===0&&n)return invalid('Sem horário das movimentações do mesmo dia');
+  const capitalMedio=(Math.round(saldoInicial*100)+(dias>0?ponderado:liquido))/100;
+  if(capitalMedio<=0)return invalid('Sem capital médio positivo');
+  return {pct:ganho/capitalMedio*100,capitalMedio,dias,motivo:null,estimado:n>0,ganho};
+}
 function avaliarRetornoInvestimento(item,inicio,fim){
   const hist=ordenarHistoricoInvest(item);
-  let saldo=0,base=0,aportes=0,resgates=0,rendimento=0;
-  let fator=1,houveTaxa=false,baseDefinida=false,capitalObservado=false;
-  const atualizacoes=[],pontos=[];
+  let saldo=0,base=0,aportes=0,resgates=0,rendimento=0,baseDefinida=false;
+  let metrica=null,dataAvaliacao=null;
+  const atualizacoes=[],pontos=[],fluxos=[];
   for(const h of hist){
     const data=h.data||'',valor=Number(h.valor||0);
     if(!Number.isFinite(valor)||valor<0||!data||data>=fim)continue;
     const noPeriodo=data>=inicio;
     if(noPeriodo&&!baseDefinida){base=saldo;baseDefinida=true;}
     if(h.tipo==='aporte'){
-      saldo+=valor;
-      if(noPeriodo)aportes+=valor;
-      if(saldo>0)capitalObservado=true;
+      saldo=Math.round((saldo+valor)*100)/100;
+      if(noPeriodo){aportes+=valor;fluxos.push({data,valor});}
     }else if(h.tipo==='resgate'){
       const retirado=Math.min(valor,Math.max(0,saldo));
-      saldo-=retirado;
-      if(noPeriodo)resgates+=retirado;
+      saldo=Math.round((saldo-retirado)*100)/100;
+      if(noPeriodo){resgates+=retirado;fluxos.push({data,valor:-retirado});}
     }else if(h.tipo==='atualizacao'){
-      const anterior=saldo;
-      saldo=valor;
+      const anterior=saldo;saldo=valor;
       if(noPeriodo){
         const ganho=Math.round((valor-anterior)*100)/100;
-        rendimento+=ganho;
-        if(anterior>0){
-          fator*=valor/anterior;
-          houveTaxa=true;
-        }
-        atualizacoes.push({
-          id:h.id,data,valor,resultado:ganho,rendimento,
-          pct:houveTaxa?(fator-1)*100:null,
-          taxaAtualizacao:anterior>0?(valor/anterior-1)*100:null
-        });
+        rendimento=Math.round((rendimento+ganho)*100)/100;
+        metrica=calcularDietz(inicio,data,base,saldo,fluxos);dataAvaliacao=data;
+        atualizacoes.push({id:h.id,data,valor,resultado:ganho,rendimento,pct:metrica.pct,taxaAtualizacao:null});
       }
     }
-    if(noPeriodo)pontos.push({id:h.id,data,tipo:h.tipo,valor:saldo,pct:houveTaxa?(fator-1)*100:capitalObservado?0:null});
+    // Movimentações posteriores à avaliação não inventam um retorno novo.
+    if(noPeriodo)pontos.push({id:h.id,data,tipo:h.tipo,valor:saldo,pct:metrica?metrica.pct:null});
   }
   if(!baseDefinida)base=saldo;
-  return {base,final:saldo,aportes,resgates,rendimento,
-    pct:houveTaxa?(fator-1)*100:capitalObservado?0:null,
-    inicio,fim,atualizacoes,pontos};
+  return {base,final:saldo,aportes:Math.round(aportes*100)/100,resgates:Math.round(resgates*100)/100,rendimento,
+    pct:metrica?metrica.pct:null,capitalMedio:metrica?metrica.capitalMedio:null,dataAvaliacao,fluxos,
+    inicio,fim,atualizacoes,pontos,metodo:'Modified Dietz',estimado:true};
 }
 function calcInvestPeriodResult(item,periodo=investPeriodo,referencia=investMes){
   const ano=referencia.getFullYear(),mes=referencia.getMonth();
@@ -4508,7 +4528,9 @@ function conferirAtualizacaoInvestimento(item,data,valor){
     if(h.tipo==='resgate')resgates+=Math.round(h.valor*100);
   }
   const esperado=saldoAnterior+aportes-resgates;
-  return {dataAnterior:base?base.data:null,data,saldoAnterior:saldoAnterior/100,aportes:aportes/100,resgates:resgates/100,esperado:esperado/100,rendimento:(Math.round(valor*100)-esperado)/100,atravessaMes:!!base&&base.data.slice(0,7)!==data.slice(0,7)};
+  const fluxos=hist.slice(indice+1).filter(h=>h.tipo==='aporte'||h.tipo==='resgate').map(h=>({data:h.data,valor:(h.tipo==='aporte'?1:-1)*h.valor}));
+  const metrica=calcularDietz(base?base.data:null,data,saldoAnterior/100,valor,fluxos);
+  return {...metrica,dataAnterior:base?base.data:null,data,saldoAnterior:saldoAnterior/100,aportes:aportes/100,resgates:resgates/100,esperado:esperado/100,rendimento:(Math.round(valor*100)-esperado)/100,atravessaMes:!!base&&base.data.slice(0,7)!==data.slice(0,7)};
 }
 function ultimaConferenciaInvestimento(item){
   const hist=ordenarHistoricoInvest(item);
@@ -4715,6 +4737,7 @@ function renderStockChart(item,mes,periodo){
       pontos=[...(base>0?[{x:0,label:'01/'+String(mesNum).padStart(2,'0'),valor:0}]:[]),...diarios.map(ev=>({x:Number(ev.data.slice(8,10))-1,label:ev.data.slice(8,10)+'/'+ev.data.slice(5,7),valor:ev.pct}))];
     }
   }
+  if(percentual&&!resultadoAteAtualizacao.dataAvaliacao)pontos=[];
   const width=720,height=258,left=92,right=21,top=22,bottom=44;
   const plotHeight=height-top-bottom,plotWidth=width-left-right;
   const valores=pontos.length?pontos.map(p=>p.valor):[percentual?0:base];
@@ -4792,7 +4815,7 @@ function renderStockChart(item,mes,periodo){
   });
   const rolavel=!anual&&resumidos.length>=6;
   return `<div class="stock-chart inv-evolution">
-    <p class="hint">${percentual?'Rentabilidade acumulada no período: aportes e resgates não são lucro nem prejuízo.':'Patrimônio em reais: esta curva também sobe com aportes e cai com resgates.'} Calculada pelas avaliações registradas; sem uma avaliação na hora de cada movimentação, a porcentagem é aproximada.</p>
+    <p class="hint">${percentual?'Rentabilidade acumulada no período: aportes e resgates não são lucro nem prejuízo.':'Patrimônio em reais: esta curva também sobe com aportes e cai com resgates.'} Retorno estimado pelo capital e pelas datas das movimentações (Modified Dietz), com fluxos no fim do dia. O saldo inicial do mês usa o último registro disponível; sem avaliação no fechamento, o resultado mensal é aproximado.</p>
     <div class="inv-evolution-plot">${pontos.length?svg:'<div class="empty">Sem capital avaliado para calcular a rentabilidade neste período.</div>'}</div>
     ${resgatesMarcados.length?`<div class="inv-evolution-resgate-events" aria-label="Resgates registrados neste período"><span class="inv-evolution-resgate-title">↓ Resgates</span>${resgatesMarcados.map(r=>`<span class="inv-evolution-resgate-chip">${escHtml(r.dataLabel)} · ${fmt(r.valor)}</span>`).join('')}</div>`:''}
     <div class="inv-evolution-summary">
@@ -5064,12 +5087,19 @@ function resumoGrupoInvestimentosPeriodo(items){
   const aportes=resultados.reduce((s,x)=>s+x.aportes,0);
   const resgates=resultados.reduce((s,x)=>s+x.resgates,0);
   const rendimento=resultados.reduce((s,x)=>s+x.rendimento,0);
-  // Retorno combinado aproximado: pondera o TWR por capital de referência
-  // em vez de dividir fluxo de caixa por aportes totais.
-  const weights=resultados.map(r=>Math.max(0,r.base+r.aportes));
-  const totalPeso=weights.reduce((sum,w)=>sum+w,0);
-  const pct=totalPeso>0?resultados.reduce((sum,r,i)=>sum+(r.pct||0)*weights[i],0)/totalPeso:null;
-  return {base,patrimonio,aportes,resgates,rendimento,pct};
+  // Consolida valores e fluxos numa janela comum, não uma média de percentuais.
+  const avaliados=resultados.filter(r=>r.dataAvaliacao).length,pendentes=resultados.length-avaliados;
+  const datas=resultados.map(r=>r.dataAvaliacao).filter(Boolean).sort();
+  const ate=datas.length?datas[datas.length-1]:null;
+  let pct=null;
+  if(ate&&resultados.length){
+    const [y,m,d]=ate.split('-').map(Number),seguinte=new Date(Date.UTC(y,m-1,d+1));
+    const fim=isoDate(seguinte.getUTCFullYear(),seguinte.getUTCMonth(),seguinte.getUTCDate());
+    const alinhados=items.map(item=>avaliarRetornoInvestimento(item,resultados[0].inicio,fim));
+    const inicial=alinhados.reduce((sum,r)=>sum+r.base,0),final=alinhados.reduce((sum,r)=>sum+r.final,0);
+    pct=calcularDietz(resultados[0].inicio,ate,inicial,final,alinhados.flatMap(r=>r.fluxos)).pct;
+  }
+  return {base,patrimonio,aportes,resgates,rendimento,pct,avaliados,pendentes,dataAvaliacao:ate,metodo:'Modified Dietz',estimado:true};
 }
 function investTipoVisual(tipo){
   const t=String(tipo||'Outro').toLocaleLowerCase('pt-BR');
@@ -5262,7 +5292,7 @@ function renderInvestTypeSummary(investimentos){
   const periodoLabel=investPeriodo==='ano'?String(ano):mesLabel;
   host.innerHTML=`<section class="invest-type-summary">
     <div class="invest-type-summary-head">
-      <div class="invest-type-title"><span class="invest-type-title-icon">◔</span><div><strong>Por tipo de investimento</strong><span>Desempenho no período selecionado (${periodoLabel}).</span></div></div>
+      <div class="invest-type-title"><span class="invest-type-title-icon">◔</span><div><strong>Por tipo de investimento</strong><span>Retorno estimado no período (${periodoLabel}) · Modified Dietz. Avaliações em datas diferentes usam os últimos saldos conhecidos.</span></div></div>
       <div class="invest-type-actions">
         <button type="button" class="invest-type-mode ${investTypeView==='tabela'?'active':''}" onclick="setInvestTypeView('tabela')">▦ Tabela</button>
         <button type="button" class="invest-type-mode ${investTypeView==='grafico'?'active':''}" onclick="setInvestTypeView('grafico')">▥ Gráfico</button>
@@ -5328,7 +5358,7 @@ function renderInvest(){
   document.getElementById('inv-rend-pct').textContent=geral.pct===null?'—':(geral.pct>0?'+':'')+fmtInvestPct(geral.pct);
   document.getElementById('inv-qtd').textContent=investimentos.length;
   const totalNote=document.getElementById('inv-total-note');if(totalNote)totalNote.textContent='Valor total investido';
-  const rendNote=document.getElementById('inv-rend-note');if(rendNote)rendNote.textContent='Resultado no '+(investPeriodo==='ano'?'ano de ':'mês de ')+periodoLabel;
+  const rendNote=document.getElementById('inv-rend-note');if(rendNote)rendNote.textContent='Resultado reconhecido no '+(investPeriodo==='ano'?'ano de ':'mês de ')+periodoLabel+' · retorno estimado'+(geral.pendentes?' · '+geral.pendentes+' sem avaliação':'');
 
   const pMonth=document.getElementById('inv-period-month'),pYear=document.getElementById('inv-period-year');
   if(pMonth)pMonth.classList.toggle('active',investPeriodo==='mes');
@@ -5548,7 +5578,7 @@ function renderDestinoCard(item){
     const conferencia=semAvaliacao?null:ultimaConferenciaInvestimento(item);
     const atual=investPeriodo==='mes'&&isoDate(investMes.getFullYear(),investMes.getMonth(),1).slice(0,7)===today().slice(0,7);
     const mensal=calcInvestPeriodResult(item);
-    const periodo=atual&&conferencia?{...mensal,rendimento:conferencia.rendimento,pct:conferencia.esperado>0?conferencia.rendimento/conferencia.esperado*100:null}:mensal;
+    const periodo=atual&&conferencia?{...mensal,rendimento:conferencia.rendimento,pct:conferencia.pct}:mensal;
     const visual=investTipoVisual(item.tipo);
     const criptoLogo=investLogoCripto(item);
     const iconePadrao=investTipoIconeResumo(visual.cls,visual.icon);
@@ -5576,7 +5606,7 @@ function renderDestinoCard(item){
         </div>
         <div class="inv-card-stats">
           <div class="inv-card-metric inv-card-balance"><span>${semAvaliacao?'Último saldo registrado':'Valor atual'}</span><strong>${fmt(periodo.final)}</strong></div>
-          <div class="inv-card-metric inv-card-yield"><span title="${semAvaliacao?'Atualize o saldo para conhecer o rendimento deste período':atual&&conferencia?'Intervalo de '+conferencia.dataAnterior+' a '+conferencia.data+'; percentual aproximado quando houve movimentações entre avaliações':'Resultado pelas avaliações registradas no período'}">${semAvaliacao?'Sem avaliação em '+periodoLabel:atual&&conferencia?'Desde a última avaliação':'Rendimento ('+periodoLabel+')'}</span><div class="inv-grade-yield-values"><strong class="${cls}">${semAvaliacao?'—':(periodo.rendimento>0?'+':'')+fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div></div>
+          <div class="inv-card-metric inv-card-yield"><span title="${semAvaliacao?'Atualize o saldo para conhecer o rendimento deste período':atual&&conferencia?'Intervalo de '+conferencia.dataAnterior+' a '+conferencia.data+'; retorno estimado pelas datas dos fluxos (Modified Dietz)':'Resultado pelas avaliações registradas no período'}">${semAvaliacao?'Sem avaliação em '+periodoLabel:atual&&conferencia?'Desde a última avaliação':'Rendimento ('+periodoLabel+')'}</span><div class="inv-grade-yield-values"><strong class="${cls}">${semAvaliacao?'—':(periodo.rendimento>0?'+':'')+fmt(periodo.rendimento)}</strong><small class="${cls}">${pct}</small></div></div>
           <span class="inv-card-spark ${cls}">${semAvaliacao?'':investSparkline([item])}</span>
         </div>
         <div class="inv-card-menu-wrap"><button class="inv-more-btn" type="button" onclick="toggleInvestCardMenu(${item.id},event)" aria-label="Mais opções de ${escHtml(item.nome)}" aria-expanded="${menuAberto}">⋮</button>${menu}</div>

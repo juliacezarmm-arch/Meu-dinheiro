@@ -16,7 +16,7 @@ const ctx=vm.createContext({
  investPeriodo:'mes',investMes:new Date(2026,9,21),
  isoDate:(y,m,d)=>new Date(y,m,d,12).toISOString().slice(0,10)
 });
-const functions=['ensureInvestHistory','ordenarHistoricoInvest','recalcInvestFromHistory','avaliarRetornoInvestimento','calcInvestPeriodResult','calcInvestMonthResult'];
+const functions=['ensureInvestHistory','ordenarHistoricoInvest','recalcInvestFromHistory','calcularDietz','avaliarRetornoInvestimento','calcInvestPeriodResult','calcInvestMonthResult'];
 vm.runInContext(functions.map(extract).join('\n'),ctx);
 const analyze=(events)=>{
  ctx.item={id:1,historico:events.map((event,i)=>({id:'e'+i,...event}))};
@@ -36,7 +36,7 @@ result=analyze([
  {tipo:'atualizacao',data:'2026-10-03',valor:1205}
 ]);
 assert.equal(result.rendimento,5);
-assert(Math.abs(result.pct-(5/1200)*100)<1e-7);
+assert(Math.abs(result.pct-(5/1100)*100)<1e-7);
 result=analyze([
  {tipo:'aporte',data:'2026-09-30',valor:1000},
  {tipo:'atualizacao',data:'2026-10-21',valor:1020},
@@ -54,4 +54,4 @@ result=analyze([
 ]);
 assert.equal(result.rendimento,-20,'Prejuizo real deve continuar negativo.');
 assert(result.pct<0);
-console.log('PASS: rendimento/TWR sem confundir resgates, aportes e prejuizo real.');
+console.log('PASS: rendimento/Modified Dietz sem confundir resgates, aportes e prejuizo real.');

@@ -16,7 +16,7 @@ function fixture({crypto=false,saldo=1000,meta=false}={}){
   MESES:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
   fmt:v=>'R$ '+Number(v).toFixed(2),escHtml:String,fmtInvestPct:v=>Number(v).toFixed(2)+'%'});
  vm.runInContext(`const S={extrato:[],cartao:[],cartoes:[],invest:[],saldoInicial:{valor:5000,data:'2026-09-01',idsIgnorados:[]}};const investUi={acao:{},historico:{},mes:{},metrica:{}};`,ctx);
- const functions=['dataISOValida','valorMonetarioValido','novoIdGlobal','novoIdExtrato','isCryptoInvest','calcCryptoValue','ensureInvestHistory','ordenarHistoricoInvest','recalcInvestFromHistory','ultimaDataFinanceira','reservadoEmMetas','metasReservadasNoInvestimento','avaliarRetornoInvestimento','calcInvestPeriodResult','calcInvestMonthResult','temAvaliacaoInvestimentoNoPeriodo','conferirAtualizacaoInvestimento','ultimaConferenciaInvestimento','saveInvestAporte','saveInvestUpdate','corrigirFluxoUltimaAtualizacao','renderStockChart','investSparkline'];
+ const functions=['dataISOValida','valorMonetarioValido','novoIdGlobal','novoIdExtrato','isCryptoInvest','calcCryptoValue','ensureInvestHistory','ordenarHistoricoInvest','recalcInvestFromHistory','ultimaDataFinanceira','reservadoEmMetas','metasReservadasNoInvestimento','calcularDietz','avaliarRetornoInvestimento','calcInvestPeriodResult','calcInvestMonthResult','temAvaliacaoInvestimentoNoPeriodo','conferirAtualizacaoInvestimento','ultimaConferenciaInvestimento','saveInvestAporte','saveInvestUpdate','corrigirFluxoUltimaAtualizacao','renderStockChart','investSparkline'];
  vm.runInContext(functions.map(extract).join('\n'),ctx);
  const run=s=>vm.runInContext(s,ctx);
  ctx.seed={id:1,kind:'investimento',nome:'Teste',tipo:crypto?'Cripto':'CDI',valorAtual:saldo,totalAportado:saldo,totalResgatado:0,cryptoQtd:1,cryptoCotacao:saldo,cryptoInvestido:saldo,cryptoPrecoMedio:saldo,historico:[{id:'z-inicial',tipo:'aporte',origem:'saldo_inicial',data:'2026-09-30',valor:saldo}]};
@@ -27,14 +27,14 @@ function fixture({crypto=false,saldo=1000,meta=false}={}){
 }
 let f=fixture();f.set('flow','aporte');f.set('flow-value',200);f.set('val',1200);f.run('saveInvestUpdate(1,true)');
 assert.equal(f.result().rendimento,0);assert.equal(f.result().pct,0);assert.equal(f.run('S.extrato[0].val'),200);assert.equal(f.run('S.extrato[0].tipo'),'investimento');
-assert(f.result().pontos.every(p=>p.pct===0),'Aporte não deve criar pico percentual');
+assert(f.result().pontos.every(p=>p.pct===null||p.pct===0),'Aporte não deve criar pico percentual');
 f=fixture({meta:true});f.set('flow','aporte');f.set('flow-value',200);f.set('flow-before',1100);f.set('val',1300);f.run('saveInvestUpdate(1,true)');
 assert.equal(f.result().rendimento,100);assert(Math.abs(f.result().pct-10)<1e-8);assert.equal(f.run('S.invest[1].valorAtual'),110,'A meta recebe rendimento, não o aporte');
 f=fixture();f.set('flow','resgate');f.set('flow-value',200);f.set('val',800);f.run('saveInvestUpdate(1,true)');
 assert.equal(f.result().rendimento,0);assert.equal(f.result().pct,0);assert.equal(f.run('S.extrato[0].categoria'),'Resgate');
 f=fixture();f.set('flow','resgate');f.set('flow-value',1000);f.set('val',0);f.run('saveInvestUpdate(1,true)');
 assert.equal(f.result().rendimento,0);f.set('flow','aporte');f.set('flow-value',100);f.set('val',110);f.run('saveInvestUpdate(1,true)');
-assert.equal(f.result().rendimento,10);assert(Math.abs(f.result().pct-10)<1e-8,'Retirada integral e reinvestimento não são prejuízo');
+assert.equal(f.result().rendimento,10);assert(Math.abs(f.result().pct-1)<1e-8,'Retirada integral e reinvestimento preservam o ganho; o percentual mensal usa o capital e as datas');
 f=fixture({crypto:true,saldo:9.73});f.set('crypto-qtd',2);f.set('crypto-cotacao',9.28);f.set('crypto-investido',19.73);
 let before=f.snapshot();f.run('saveInvestUpdate(1,true)');assert.equal(f.snapshot(),before,'Mudança de quantidade sem fluxo não deve ser salva como rendimento');assert(f.alerts.length);
 f.set('flow','aporte');f.set('flow-value',10);f.run('saveInvestUpdate(1,true)');
@@ -94,4 +94,4 @@ f=fixture({crypto:true});f.run(`document.getElementById('aporte-val-1').value='2
 f=fixture({crypto:true});f.run(`document.getElementById('aporte-val-1').value='10';`);f.set('crypto-qtd','');before=f.snapshot();f.run('saveInvestAporte(1)');assert.equal(f.snapshot(),before,'Não registrar somente dinheiro sem a nova posição da cripto');
 f=fixture({crypto:true,meta:true});f.run(`document.getElementById('aporte-val-1').value='200';`);f.set('crypto-qtd',2);f.set('crypto-cotacao',600);f.set('crypto-investido',1200);f.run('saveInvestAporte(1)');assert.equal(f.run('S.invest[1].valorAtual'),100,'Compra sem rendimento não aumenta a reserva da meta');
 f=fixture();f.run(`document.getElementById('aporte-val-1').value='200';saveInvestAporte(1);`);assert.equal(f.result().final,1200,'Aporte simples de CDI continua disponível');assert.equal(f.result().rendimento,0);
-console.log('PASS: aporte/resgate na atualização, TWR, resgate integral/reinvestimento, cripto, reservas, validação sem mutação e gráficos percentual/valor mensal/anual');
+console.log('PASS: aporte/resgate na atualização, Modified Dietz, resgate integral/reinvestimento, cripto, reservas, validação sem mutação e gráficos percentual/valor mensal/anual');
