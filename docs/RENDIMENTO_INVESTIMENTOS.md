@@ -73,3 +73,15 @@ Porcentagem é a visualização inicial. Valor (R$) continua disponível, com av
 `node tests/invest-atualizacao-fluxos.test.js` cobre aporte, resgate, reinvestimento após retirada integral, cripto com compra adicional, correção de avaliação salva, reservas, datas e valores inválidos, preservação do estado em falhas, e gráficos mensal/anual em porcentagem e reais. `node tests/invest-retorno-fluxos.test.js` cobre o encadeamento de retornos e a ordem de eventos do mesmo dia. Ambos estão no fluxo de CI.
 
 `node tests/rentabilidade-datas.test.js` verifica os pesos de datas, casos numéricos de referência, capital/datas inválidas, primeira aplicação, consolidação sem média de taxas e preservação do histórico.
+
+## Desfazer compra e posição gerada
+
+Compras de cripto salvas em conjunto têm um identificador de operação e um registro dos dados anteriores da posição. Excluir a compra pelo Histórico ou pelo Extrato desfaz também a avaliação produzida na mesma operação e seus eventos derivados em metas, preservando o vínculo entre capital e posição. A exclusão de uma avaliação da própria operação também desfaz o grupo inteiro, com aviso de confirmação.
+
+O saldo é recomposto pelo histórico restante; quantidade, cotação, custo informado e preço médio retornam ao estado anterior. Identificadores de operações antigas geradas pelo aplicativo também são reconhecidos quando o vínculo é inequívoco. Avaliações antigas sem vínculo não são apagadas por suposição: a exclusão isolada de um aporte com avaliações posteriores é bloqueada com orientação para corrigir a avaliação relacionada.
+
+Se uma versão anterior já removeu apenas o aporte e deixou uma avaliação incorreta, essa avaliação pode ser removida explicitamente pelo usuário; os dados voltam à última avaliação remanescente. O aplicativo não apaga avaliações legítimas posteriores para forçar uma subtração do aporte. Resgates sem cobertura e reservas acima do patrimônio impedem a exclusão antes de qualquer alteração. Uma transferência geral independente para Criptomoedas não é apagada ao desfazer a posição de uma moeda.
+
+Eventos do mesmo dia aparecem do mais recente para o mais antigo, respeitando a ordem de registro.
+
+`node tests/invest-exclusao-operacao.test.js` verifica desfazer compra/avaliação, exclusão pelo Extrato, identificadores antigos, avaliação órfã, metadados, metas e proteção contra lucro artificial/resgates sem saldo.

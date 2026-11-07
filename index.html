@@ -1886,7 +1886,7 @@ document.addEventListener('click',async event=>{
   if(exclusaoConfirmadaPorBotao.has(btn)){exclusaoConfirmadaPorBotao.delete(btn);return;}
   event.preventDefault();
   event.stopImmediatePropagation();
-  if(!await confirmarExclusao('Tem certeza que deseja excluir este registro? Essa ação não pode ser desfeita.'))return;
+  if(!await confirmarExclusao(btn.dataset.confirmMessage||'Tem certeza que deseja excluir este registro? Essa ação não pode ser desfeita.'))return;
   exclusaoConfirmadaPorBotao.add(btn);
   btn.click();
 },true);
@@ -4117,16 +4117,17 @@ function delCC(id){
   saveData();renderCartao();renderExtrato();updateResumo();
 }
 function delExt(id){
-  const row=S.extrato.find(x=>x.id===id);
-  if(row&&row.destId){
-    S.invest.forEach(item=>{
-      item.historico=ensureInvestHistory(item).filter(h=>h.extId!==id);
-      recalcInvestFromHistory(item);
-    });
-  }
-  S.extrato=S.extrato.filter(x=>x.id!==id);
+  const row=S.extrato.find(x=>String(x.id)===String(id));
+  if(!row)return;
+  if(row.destId){
+    const item=S.invest.find(x=>String(x.id)===String(row.destId));
+    const mov=item&&ensureInvestHistory(item).find(h=>String(h.extId)===String(row.id));
+    if(!item||!mov){appAlert('Não foi possível localizar o histórico vinculado. Nenhum dado foi alterado.');return;}
+    if(!removerOperacaoInvestimento(item,mov))return;
+  }else S.extrato=S.extrato.filter(x=>String(x.id)!==String(id));
   saveData();renderInvest();renderMetas();renderExtrato();updateResumo();
 }
+
 async function delInv(id){
   const item=S.invest.find(x=>x.id===id);
   if(!item)return;
@@ -4626,14 +4627,16 @@ function saveInvestUpdate(id,corrigirHistorico=false,compraCripto=false){
   const reservadoAntes=reservadoEmMetas(item.id)*fatorAntes;
   if(tipoFluxo==='resgate'&&fluxo>saldoAntes-reservadoAntes+0.000001){appAlert('Resgate maior que o saldo livre. Resgate valores reservados pela própria meta.');return;}
   if(saldoAntes===0&&tipoFluxo!=='aporte'&&val>0){appAlert('Registre o aporte inicial antes de atualizar o valor. Dinheiro novo não é rendimento.');return;}
-  const histId=novoIdGlobal()+'-'+ensureInvestHistory(item).length;
+  const histId=novoIdGlobal()+'-'+item.id+'-'+ensureInvestHistory(item).length;
+  const operacaoId=temFluxo?histId:null;
+  const criptoAntes=isCryptoInvest(item)&&temFluxo?Object.fromEntries(['cryptoQtd','cryptoCotacao','cryptoInvestido','cryptoPrecoMedio'].map(c=>[c,Math.max(0,Number(item[c])||0)])):null;
   const atualizar=(valor,sufixo,detalhes={})=>{
     const anterior=Number(item.valorAtual||0),fator=anterior>0?valor/anterior:1;
-    ensureInvestHistory(item).push({id:histId+sufixo,tipo:'atualizacao',data,valor,...detalhes});
+    ensureInvestHistory(item).push({id:histId+sufixo,tipo:'atualizacao',data,valor,operacaoId,criptoAntes,...detalhes});
     recalcInvestFromHistory(item);
     if(anterior>0&&valor!==anterior)metasReservadasNoInvestimento(item.id).forEach(meta=>{
       const novoValor=Number((Number(meta.valorAtual||0)*fator).toFixed(2));
-      ensureInvestHistory(meta).push({id:histId+sufixo+'-meta-'+meta.id,tipo:'atualizacao',data,valor:novoValor,storageId:item.id,storageNome:item.nome,atualizacaoOrigem:histId+sufixo});
+      ensureInvestHistory(meta).push({id:histId+sufixo+'-meta-'+meta.id,tipo:'atualizacao',data,valor:novoValor,storageId:item.id,storageNome:item.nome,atualizacaoOrigem:histId+sufixo,operacaoId});
       recalcInvestFromHistory(meta);
       investUi.historico[meta.id]=false;
       investUi.mes[meta.id]=data.slice(0,7);
@@ -4644,7 +4647,7 @@ function saveInvestUpdate(id,corrigirHistorico=false,compraCripto=false){
   if(antes!==null)atualizar(antes,'-antes');
   if(temFluxo){
     const extId=jaDescontado?null:tipoFluxo==='resgate'||S.saldoInicial?novoIdExtrato():null;
-    ensureInvestHistory(item).push({id:histId+'-fluxo',tipo:tipoFluxo,data,valor:fluxo,extId,origem:'movimentacao_na_atualizacao',jaDescontadoNoExtrato:jaDescontado});
+    ensureInvestHistory(item).push({id:histId+'-fluxo',tipo:tipoFluxo,data,valor:fluxo,extId,operacaoId,criptoAntes,origem:'movimentacao_na_atualizacao',jaDescontadoNoExtrato:jaDescontado});
     if(extId!==null)S.extrato.push({id:extId,data,desc:(tipoFluxo==='aporte'?'Investimento - ':'Resgate - ')+item.nome,tipo:tipoFluxo==='aporte'?'investimento':'entrada',categoria:tipoFluxo==='aporte'?'Investimento':'Resgate',subcategoria:item.nome,val:fluxo,destId:item.id});
     recalcInvestFromHistory(item);
   }
@@ -4689,21 +4692,65 @@ function saveInvestResgate(id){
   saveData();refreshInvestViews();
 }
 
-function delInvestHistory(itemId,histId){
-  const item=S.invest.find(x=>x.id===itemId);
-  if(!item)return;
-  const hist=ensureInvestHistory(item);
-  const mov=hist.find(h=>String(h.id)===String(histId));
-  if(mov&&mov.extId){
-    S.invest.forEach(dest=>{
-      dest.historico=ensureInvestHistory(dest).filter(h=>h.extId!==mov.extId);
-      recalcInvestFromHistory(dest);
-    });
-    S.extrato=S.extrato.filter(x=>x.id!==mov.extId);
-  }else{
-    item.historico=hist.filter(h=>String(h.id)!==String(histId));
-    recalcInvestFromHistory(item);
+function removerOperacaoInvestimento(item,mov){
+  if(!mov)return false;
+  const hist=ordenarHistoricoInvest(item);
+  let operacao=mov.operacaoId||null;
+  // Compatibilidade com compras geradas antes do campo operacaoId.
+  if(!operacao&&mov.origem==='movimentacao_na_atualizacao'&&String(mov.id).endsWith('-fluxo'))operacao=String(mov.id).slice(0,-6);
+  if(!operacao&&mov.tipo==='atualizacao'&&String(mov.id).endsWith('-hist')){
+    const prefixo=String(mov.id).slice(0,-5);
+    if(hist.some(h=>String(h.id)===prefixo+'-fluxo'&&h.origem==='movimentacao_na_atualizacao'))operacao=prefixo;
   }
+  const grupo=operacao?S.invest.flatMap(dest=>(dest.historico||[]).filter(h=>h.operacaoId===operacao||[operacao+'-fluxo',operacao+'-hist',operacao+'-antes'].includes(String(h.id)))):[mov];
+  const ids=new Set(grupo.map(h=>String(h.id))),extIds=new Set(grupo.filter(h=>h.extId!=null).map(h=>String(h.extId)));
+  const avaliacoes=new Set(grupo.filter(h=>h.tipo==='atualizacao').map(h=>String(h.id)));
+  const planos=[];
+  for(const dest of S.invest){
+    const registros=Array.isArray(dest.historico)?dest.historico:[];
+    const excluir=h=>dest===item&&ids.has(String(h.id))||h.extId!=null&&extIds.has(String(h.extId))||operacao&&h.operacaoId===operacao||h.atualizacaoOrigem&&avaliacoes.has(String(h.atualizacaoOrigem))||dest!==item&&[...avaliacoes].some(id=>String(h.id)===id.replace(/-hist$/,'')+'-meta-'+dest.id);
+    if(!registros.some(excluir))continue;
+    if(isCryptoInvest(dest)&&registros.some(h=>excluir(h)&&h.tipo==='aporte')){
+      const ordem=ordenarHistoricoInvest(dest),ultimo=Math.max(...ordem.map((h,i)=>excluir(h)?i:-1));
+      if(ordem.slice(ultimo+1).some(h=>['atualizacao','aporte','resgate'].includes(h.tipo))){
+        appAlert('Há movimentações posteriores que ainda podem incluir essa compra. Corrija ou remova os registros relacionados antes de excluir o aporte. Nenhum dado foi alterado.');return false;
+      }
+    }
+    const restantes=registros.filter(h=>!excluir(h)).map(h=>({...h}));
+    const copia={...dest,historico:restantes};
+    let saldo=0;
+    for(const h of ordenarHistoricoInvest(copia)){
+      if(h.tipo==='aporte')saldo+=Number(h.valor);
+      else if(h.tipo==='atualizacao')saldo=Number(h.valor);
+      else if(h.tipo==='resgate'){
+        if(Number(h.valor)>saldo+0.000001){appAlert('A exclusão deixaria um resgate sem saldo suficiente. Corrija os movimentos posteriores antes de excluir. Nenhum dado foi alterado.');return false;}
+        saldo-=Number(h.valor);
+      }
+    }
+    recalcInvestFromHistory(copia);planos.push({dest,copia,criptoAntes:registros.filter(excluir).find(h=>h.criptoAntes)?.criptoAntes});
+  }
+  const valorPlanejado=dest=>planos.find(p=>p.dest===dest)?.copia.valorAtual??Number(dest.valorAtual||0);
+  for(const storage of S.invest.filter(x=>x.kind==='investimento')){
+    const metas=metasReservadasNoInvestimento(storage.id);
+    const antes=Math.max(0,reservadoEmMetas(storage.id)-Number(storage.valorAtual||0));
+    const depois=Math.max(0,metas.reduce((sum,m)=>sum+valorPlanejado(m),0)-valorPlanejado(storage));
+    if(depois>antes+0.000001){appAlert('A exclusão deixaria as reservas das metas maiores que o investimento. Corrija as reservas antes de excluir. Nenhum dado foi alterado.');return false;}
+  }
+  for(const {dest,copia,criptoAntes} of planos){
+    dest.historico=copia.historico;recalcInvestFromHistory(dest);
+    if(isCryptoInvest(dest)){
+      const anterior=criptoAntes?criptoAntes:ordenarHistoricoInvest(dest).slice().reverse().find(h=>h.cryptoQtd!=null);
+      for(const campo of ['cryptoQtd','cryptoCotacao','cryptoInvestido','cryptoPrecoMedio'])dest[campo]=anterior&&Number.isFinite(Number(anterior[campo]))?Number(anterior[campo]):0;
+    }
+  }
+  S.extrato=S.extrato.filter(x=>!extIds.has(String(x.id)));
+  return true;
+}
+function delInvestHistory(itemId,histId){
+  const item=S.invest.find(x=>String(x.id)===String(itemId));
+  if(!item)return;
+  const mov=ensureInvestHistory(item).find(h=>String(h.id)===String(histId));
+  if(!removerOperacaoInvestimento(item,mov))return;
   saveData();refreshInvestViews();
 }
 
@@ -5439,7 +5486,7 @@ function renderDestinoCard(item){
   const inicioMes=mesHist+'-01';
   const saldoAnteriorMov=histOrdenado.filter(h=>(h.data||'')<inicioMes).slice(-1)[0];
   const saldoAnterior=saldoAnteriorMov?Number(saldoAnteriorMov.saldo||0):0;
-  const historicoMes=histOrdenado.filter(h=>h.data&&h.data.slice(0,7)===mesHist).sort((a,b)=>b.data.localeCompare(a.data));
+  const historicoMes=histOrdenado.filter(h=>h.data&&h.data.slice(0,7)===mesHist).reverse();
   const saldoAnteriorHtml=saldoAnterior>0?`<div class="history-row">
           <div>--</div>
           <div><strong>Saldo vindo do mês anterior</strong><div class="history-kind">Valor que já estava guardado antes deste mês.</div></div>
@@ -5560,7 +5607,7 @@ function renderDestinoCard(item){
           <div>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</div>
           <div><strong>${escHtml(nome)}</strong><div class="history-kind">${escHtml(extra)}</div></div>
           <div class="history-value" style="color:${cor}">${sinal}${fmt(h.valor||0)}</div>
-          <button class="del" onclick="delInvestHistory(${item.id},'${h.id}')" aria-label="Remover movimento" title="Remove este movimento do histórico se foi lançado errado."><i class="ti ti-x" aria-hidden="true"></i></button>
+          <button class="del" onclick="delInvestHistory(${item.id},'${h.id}')" ${h.operacaoId?'data-confirm-message="Desfazer esta operação? A compra, a posição gerada e os lançamentos vinculados serão removidos juntos."':''} aria-label="Remover movimento" title="${h.operacaoId?'Desfaz a operação completa, incluindo a compra e a posição associada.':'Remove este movimento do histórico se foi lançado errado.'}"><i class="ti ti-x" aria-hidden="true"></i></button>
         </div>`;
       }).join(''):saldoAnterior>0?'':'<div class="empty">Nenhum movimento neste mês.</div>'}
     </div>`:'';
