@@ -4088,7 +4088,29 @@ function renderCartao(){
 
 }
 
-function delCC(id){const item=S.cartao.find(x=>x.id===id);if(item&&S.extrato.some(x=>String(x.cardId)===String(item.cardId)&&x.faturaMes)){appAlert('Há pagamento vinculado a este cartão. Concilie a fatura antes de excluir compras.');return;}S.cartao=S.cartao.filter(x=>x.id!==id);saveData();renderCartao();renderExtrato();updateResumo();}
+function delCC(id){
+  const item=S.cartao.find(x=>String(x.id)===String(id));
+  if(!item)return;
+  const meses=[...new Set(S.extrato.filter(x=>x.tipo==='saida'&&String(x.cardId)===String(item.cardId)&&x.faturaMes).map(x=>x.faturaMes))];
+  const antes=meses.map(mes=>({mes,total:totalDaFaturaFinanceira(item.cardId,mes),pago:pagoNaFaturaFinanceira(item.cardId,mes)}));
+  const original=S.cartao,restantes=original.filter(x=>String(x.id)!==String(id));
+  let conflito=null;
+  // Simula todas as faturas pagas, inclusive parcelas em meses posteriores.
+  // Um pagamento em outro mês não impede remover um registro histórico duplicado.
+  try{
+    S.cartao=restantes;
+    for(const previa of antes){
+      const total=totalDaFaturaFinanceira(item.cardId,previa.mes);
+      const excesso=Math.max(0,previa.pago-total);
+      if(excesso>Math.max(0,previa.pago-previa.total)){
+        conflito={mes:previa.mes,excesso:excesso/100};break;
+      }
+    }
+  }finally{S.cartao=original;}
+  if(conflito){appAlert('Excluir este registro deixaria os pagamentos da fatura '+conflito.mes+' acima do valor devido em '+fmt(conflito.excesso)+'. Confira os pagamentos dessa fatura antes de excluir. Nenhum pagamento foi alterado.');return;}
+  S.cartao=restantes;
+  saveData();renderCartao();renderExtrato();updateResumo();
+}
 function delExt(id){
   const row=S.extrato.find(x=>x.id===id);
   if(row&&row.destId){

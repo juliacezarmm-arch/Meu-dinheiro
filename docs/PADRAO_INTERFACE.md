@@ -11,3 +11,5 @@
 **Cartão de crédito:** data de compra, data de vencimento da fatura e data efetiva do pagamento são conceitos separados. Dia habitual de pagamento é referência opcional, não comprovação de pagamento. Mudanças cadastrais não reescrevem compras antigas nem pagamentos vinculados. Preservar o marco zero definido pelo saldo inicial.
 
 Reutilizar este padrão em outros projetos e aplicativos desenvolvidos com a usuária.
+
+**Exclusão no cartão:** um pagamento vinculado não bloqueia todas as compras do cartão. Simular a remoção e conferir cada fatura paga, inclusive parcelas posteriores; bloquear apenas quando a exclusão criar ou aumentar pagamentos acima do valor devido. Preservar os pagamentos e permitir corrigir duplicatas históricas sem vínculo financeiro com essas faturas.
