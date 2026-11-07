@@ -4317,7 +4317,7 @@ function sincronizarPainelInvestimento(){
   overlay.classList.toggle('invest-chart-open',tipo==='grafico');
   const titulo=document.getElementById('invest-modal-title');
   const novo=!overlay.hidden;
-  titulo.textContent=(item?item.nome:'Investimento')+' · '+({dados:'Editar dados','editar-meta':'Editar meta',atualizar:'Atualizar saldo','corrigir-historico':'Corrigir histórico',resgatar:'Resgatar',reservar:'Reservar saldo',liberar:'Liberar reserva',aportar:'Aportar',historico:'Histórico',grafico:'Gráfico'}[tipo]||'Detalhes');
+  titulo.textContent=(item?item.nome:'Investimento')+' · '+({dados:'Editar dados','editar-meta':'Editar meta',atualizar:'Atualizar saldo','corrigir-historico':'Corrigir histórico',resgatar:'Resgatar',reservar:'Reservar saldo',liberar:'Liberar reserva',aportar:isCryptoInvest(item)?'Comprar cripto':'Colocar dinheiro',historico:'Histórico',grafico:'Gráfico'}[tipo]||'Detalhes');
   content.replaceChildren(panel);
   overlay.hidden=false;
   document.body.classList.add('invest-modal-open');
@@ -4461,9 +4461,21 @@ function corrigirFluxoUltimaAtualizacao(item,tipo,valor,antes,jaDescontado=false
   appAlert('Movimentação corrigida na última atualização. O valor final foi preservado e o rendimento foi recalculado.');
 }
 
+function atualizarCompraCripto(id,atualizarInvestido=false){
+  const item=S.invest.find(x=>x.id===id);
+  if(!isCryptoInvest(item))return;
+  if(atualizarInvestido){
+    const valor=Number(document.getElementById('aporte-val-'+id).value);
+    if(valorMonetarioValido(valor))document.getElementById('update-crypto-investido-'+id).value=(Number(item.cryptoInvestido||0)+valor).toFixed(2);
+  }
+  const qtd=Number(document.getElementById('update-crypto-qtd-'+id).value),cotacao=Number(document.getElementById('update-crypto-cotacao-'+id).value);
+  document.getElementById('crypto-purchase-preview-'+id).textContent=qtd>0&&cotacao>0?'Valor atual calculado: '+fmt(calcCryptoValue(qtd,cotacao)):'Informe quantidade total e cotação para conferir a posição.';
+}
+
 function saveInvestAporte(id){
   const item=S.invest.find(x=>x.id===id);
   if(!item||item.kind!=='investimento')return;
+  if(isCryptoInvest(item))return saveInvestUpdate(id,false,true);
   const val=parseFloat(document.getElementById('aporte-val-'+id).value);
   const data=document.getElementById('aporte-data-'+id).value||today();
   if(data>today()||!valorMonetarioValido(val)||val<=0){appAlert('Informe o valor que entrou no investimento.');return;}
@@ -4529,20 +4541,21 @@ function atualizarConferenciaInvestimento(id){
   if(conferencia)conferencia.open=aberta;
 }
 
-function saveInvestUpdate(id,corrigirHistorico=false){
+function saveInvestUpdate(id,corrigirHistorico=false,compraCripto=false){
   const item=S.invest.find(x=>x.id===id);
   if(!item||item.kind!=='investimento'){appAlert('Atualize o investimento ao qual a meta está vinculada.');return;}
-  const data=document.getElementById('update-data-'+id).value||today();
+  if(compraCripto&&!isCryptoInvest(item))return;
+  const data=document.getElementById((compraCripto?'aporte-data-':'update-data-')+id).value||today();
   const relacionados=[item,...metasReservadasNoInvestimento(item.id)];
   if(!dataISOValida(data)||data>today()||relacionados.some(x=>data<ultimaDataFinanceira(x))){
     appAlert('Informe uma data válida, até hoje e não anterior à última movimentação do investimento e das metas.');return;
   }
-  const tipoFluxo=corrigirHistorico?(document.getElementById('update-flow-'+id)?.value??''):'nenhum';
-  const jaDescontado=isCryptoInvest(item)&&tipoFluxo==='aporte'&&!!document.getElementById('update-flow-paid-'+id)?.checked;
-  const campoFluxo=document.getElementById('update-flow-value-'+id);
+  const tipoFluxo=compraCripto?'aporte':corrigirHistorico?(document.getElementById('update-flow-'+id)?.value??''):'nenhum';
+  const jaDescontado=isCryptoInvest(item)&&tipoFluxo==='aporte'&&!!document.getElementById((compraCripto?'aporte-paid-':'update-flow-paid-')+id)?.checked;
+  const campoFluxo=document.getElementById((compraCripto?'aporte-val-':'update-flow-value-')+id);
   const campoAntes=document.getElementById('update-flow-before-'+id);
   const temFluxo=tipoFluxo!=='nenhum',fluxo=temFluxo?Number(campoFluxo.value):0;
-  const antes=temFluxo&&campoAntes.value.trim()!==''?Number(campoAntes.value):null;
+  const antes=!compraCripto&&temFluxo&&campoAntes?.value.trim()!==''?Number(campoAntes.value):null;
   if(!['nenhum','aporte','resgate'].includes(tipoFluxo)){appAlert('Selecione se houve aporte, resgate ou apenas atualização do valor.');return;}
   if(temFluxo&&(!campoFluxo.value.trim()||!valorMonetarioValido(fluxo)||fluxo<=0)||antes!==null&&!valorMonetarioValido(antes)){
     appAlert('Informe o valor movimentado e, se disponível, o saldo antes da movimentação, em reais.');return;
@@ -4557,7 +4570,7 @@ function saveInvestUpdate(id,corrigirHistorico=false){
     cryptoCotacao=Number(document.getElementById('update-crypto-cotacao-'+id).value);
     cryptoInvestido=Number(document.getElementById('update-crypto-investido-'+id).value);
     cryptoPrecoMedio=Number(document.getElementById('update-crypto-preco-medio-'+id).value);
-    if(!Number.isFinite(cryptoQtd)||cryptoQtd<0||!Number.isFinite(cryptoCotacao)||cryptoCotacao<=0||!valorMonetarioValido(cryptoInvestido)||!valorMonetarioValido(cryptoPrecoMedio)){
+    if(!Number.isFinite(cryptoQtd)||cryptoQtd<0||compraCripto&&cryptoQtd<=0||!Number.isFinite(cryptoCotacao)||cryptoCotacao<=0||!valorMonetarioValido(cryptoInvestido)||!valorMonetarioValido(cryptoPrecoMedio)){
       appAlert('Confira quantidade, cotação, valor investido e preço médio. Use valores não negativos.');return;
     }
     val=calcCryptoValue(cryptoQtd,cryptoCotacao);
@@ -5413,13 +5426,25 @@ function renderDestinoCard(item){
       <button type="button" onclick="movimentarReservaInterna(${item.id},${acao==='liberar'})">Confirmar ${acao==='reservar'?'reserva':'liberação'}</button>
     </div>`:acao==='aportar'&&item.kind==='investimento'?`
     <div class="goal-panel">
-      <div class="goal-panel-title">Colocar dinheiro no investimento</div>
-      ${isCryptoInvest(item)?`<label class="input-caption"><input type="checkbox" id="aporte-paid-${item.id}" style="width:auto"/> Este aporte já foi descontado no Extrato como transferência para Criptomoedas.</label><p class="hint">Depois de registrar o aporte, use Atualizar saldo para conferir quantidade e cotação.</p>`:''}
-      <div class="row row2">
-        <input type="date" id="aporte-data-${item.id}" value="${today()}" title="Data em que esse dinheiro entrou ou já existia."/>
-        <input type="number" id="aporte-val-${item.id}" placeholder="Valor colocado (R$)" min="0" step="0.01" title="Valor que você já tinha ou colocou agora neste investimento."/>
+      <div class="goal-panel-title">${isCryptoInvest(item)?'Comprar cripto e atualizar posição':'Colocar dinheiro no investimento'}</div>
+      ${isCryptoInvest(item)?`<label class="input-caption"><input type="checkbox" id="aporte-paid-${item.id}" style="width:auto"/> Este aporte já foi descontado no Extrato como transferência para Criptomoedas.</label><p class="hint">Informe o dinheiro desta compra e a posição total que aparece na corretora depois dela. Aporte e rendimento serão registrados separadamente.</p>`:''}
+      <div class="row row2 invest-update-fields">
+        <label class="update-field">${isCryptoInvest(item)?'Data da compra':'Data do aporte'}<input type="date" id="aporte-data-${item.id}" value="${today()}" title="Data em que esse dinheiro entrou ou já existia."/></label>
+        <label class="update-field">${isCryptoInvest(item)?'Valor desta compra (R$)':'Valor colocado (R$)'}<input type="number" id="aporte-val-${item.id}" oninput="atualizarCompraCripto(${item.id},true)" placeholder="Valor colocado (R$)" min="0" step="0.01" title="Valor que você já tinha ou colocou agora neste investimento."/></label>
       </div>
-      <button onclick="saveInvestAporte(${item.id})" title="Registra esse dinheiro no histórico do investimento.">Salvar dinheiro colocado</button>
+      ${isCryptoInvest(item)?`<div class="invest-update-fields">
+        <div class="row row2">
+          <label class="update-field">Quantidade total após a compra<input type="number" id="update-crypto-qtd-${item.id}" min="0.00000001" step="0.00000001" placeholder="Total de moedas na corretora" oninput="atualizarCompraCripto(${item.id})"/></label>
+          <label class="update-field">Cotação atual por unidade (R$)<input type="number" id="update-crypto-cotacao-${item.id}" min="0.01" step="0.01" placeholder="Preço de uma moeda" oninput="atualizarCompraCripto(${item.id})"/></label>
+        </div>
+        <div class="row row2">
+          <label class="update-field">Total investido após a compra (R$)<input type="number" id="update-crypto-investido-${item.id}" value="${Number(item.cryptoInvestido||0).toFixed(2)}" min="0" step="0.01"/></label>
+          <label class="update-field">Preço médio após a compra (R$) · opcional<input type="number" id="update-crypto-preco-medio-${item.id}" min="0" step="0.01" placeholder="Se informado pela corretora"/></label>
+        </div>
+        <p class="hint">Quantidade anterior: ${Number(item.cryptoQtd||0).toLocaleString('pt-BR',{maximumFractionDigits:8})}. Informe o total após a compra, não apenas a quantidade comprada. O total investido é sugerido a partir do cadastro e pode ser corrigido; não define o rendimento.</p>
+        <p class="hint" id="crypto-purchase-preview-${item.id}" aria-live="polite">O valor atual será calculado pela quantidade total × cotação.</p>
+      </div>`:''}
+      <button onclick="saveInvestAporte(${item.id})" title="Registra esse dinheiro no histórico do investimento.">${isCryptoInvest(item)?'Salvar compra e posição':'Salvar dinheiro colocado'}</button>
     </div>`:(acao==='atualizar'||acao==='corrigir-historico')&&item.kind==='investimento'?`
     <div class="goal-panel">
       <div class="goal-panel-title">${acao==='corrigir-historico'?'Corrigir movimentação esquecida':'Atualizar saldo'}</div>
@@ -5535,7 +5560,7 @@ function renderDestinoCard(item){
     const menu=`<div class="inv-card-menu${menuAberto?' open':''}">
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'dados')">Editar dados</button>
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'atualizar')">Atualizar saldo</button>
-      <button onclick="investMenuId=null;toggleInvestAction(${item.id},'aportar')">Colocar dinheiro</button>
+      <button onclick="investMenuId=null;toggleInvestAction(${item.id},'aportar')">${isCryptoInvest(item)?'Comprar cripto':'Colocar dinheiro'}</button>
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'corrigir-historico')">Corrigir histórico</button>
       <button onclick="investMenuId=null;toggleInvestAction(${item.id},'resgatar')">Resgatar</button>
       <button onclick="investMenuId=null;toggleInvestHistory(${item.id})">Histórico</button>

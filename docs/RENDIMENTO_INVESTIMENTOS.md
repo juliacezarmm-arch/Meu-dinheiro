@@ -34,7 +34,9 @@ Nos cartões do mês atual, o destaque é o rendimento desde a última avaliaç�
 
 No Extrato, Investimento → Criptomoedas registra uma transferência geral: desconta o saldo da conta, aparece em azul e não altera nenhuma moeda. Criptomoedas individuais não são destinos de aportes pelo Extrato. O lançamento geral pode ser editado ou excluído sem alterar quantidade, cotação, patrimônio ou histórico das moedas.
 
-Depois de uma transferência geral, usar **Colocar dinheiro** na moeda e marcar **Este aporte já foi descontado no Extrato**. Em seguida atualizar quantidade/cotação em **Atualizar saldo**. Isso registra o capital no histórico da moeda sem descontar novamente a conta. O custo informado e o preço médio não são usados para inventar fluxos.
+Para criptomoedas, a ação é **Comprar cripto**: informar a data, o dinheiro desta compra, a quantidade total após a compra, a cotação atual, o total investido informado e, opcionalmente, o preço médio da corretora. O total investido é sugerido pelo cadastro anterior mais a nova compra e pode ser corrigido. O valor atual é calculado por quantidade total × cotação. A ação salva o aporte e a nova avaliação juntos, após validar todos os campos, sem exigir uma segunda atualização. O preço médio opcional ausente fica sem valor informado; ele não define o rendimento.
+
+Depois de uma transferência geral, marcar **Este aporte já foi descontado no Extrato** em Comprar cripto. Isso registra o capital e a posição da moeda sem descontar novamente a conta. Para CDI/CDB, Colocar dinheiro continua sendo um aporte simples. O custo informado e o preço médio não são usados para inventar fluxos.
 
 Aportes e resgates esquecidos ficam na ação separada **Corrigir histórico**, acessível pelo menu do investimento ou pelo próprio Histórico. Atualizar saldo não contém os campos de movimentação e ignora qualquer seleção antiga de correção. Recolher um painel não é usado como mecanismo para desligar uma operação financeira.
 
