@@ -13,3 +13,9 @@
 Reutilizar este padrão em outros projetos e aplicativos desenvolvidos com a usuária.
 
 **Exclusão no cartão:** um pagamento vinculado não bloqueia todas as compras do cartão. Simular a remoção e conferir cada fatura paga, inclusive parcelas posteriores; bloquear apenas quando a exclusão criar ou aumentar pagamentos acima do valor devido. Preservar os pagamentos e permitir corrigir duplicatas históricas sem vínculo financeiro com essas faturas.
+
+### Cancelamento de parcelamentos
+
+Na edição da compra parcelada, **Cancelar parcelamento** permite escolher a primeira fatura afetada. O sistema preserva a compra e gera créditos que compensam suas parcelas dessa fatura em diante. O crédito adicional de parcelas anteriores começa em zero e deve corresponder ao que o banco devolveu; não pode exceder o total dessas parcelas. Os créditos aparecem em Estornos, entram nos totais e previsões do cartão e não geram entrada na conta. Pagamentos já registrados permanecem intactos.
+
+**Desfazer cancelamento** remove os créditos e restaura as cobranças originais, após confirmação. Para editar dados financeiros de uma compra cancelada, primeiro desfaça o cancelamento. O cancelamento fica salvo no JSON da compra.

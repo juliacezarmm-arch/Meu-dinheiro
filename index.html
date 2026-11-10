@@ -1550,6 +1550,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
       </div>
       <div id="cc-preview" style="font-size:12px;color:var(--color-text-secondary);min-height:18px;margin-bottom:4px"></div>
       <button class="btn-green" id="cc-submit" onclick="addCartao()" title="Adiciona essa compra ao cartão escolhido."><i class="ti ti-plus" aria-hidden="true"></i> Adicionar</button>
+      <button class="btn-green" id="cc-cancel-installment" type="button" onclick="abrirCancelamentoParcelamento(editingCartaoId)" style="display:none;margin-top:8px">Cancelar parcelamento</button>
       <button class="btn-green" id="cc-cancel-edit" onclick="cancelCartaoEdit()" style="display:none;background:#242423;border:1px solid #3a3934;margin-top:8px" title="Cancela a edição e limpa o formulário.">Cancelar edição</button>
     </div>
 
@@ -1567,7 +1568,7 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     </div>
 
     <div class="section-title cc-launch-title" title="Lista de compras e parcelas do cartão no mês selecionado."><span>Lançamentos</span><span id="cc-total-display" title="Soma dos valores exibidos neste mês, incluindo eventual histórico; não confirma pagamento."></span></div>
-    <div id="cc-wrap"><div class="empty">Nenhuma compra ainda.</div></div>
+    <div id="cc-wrap"><div class="empty">Nenhum valor previsto nos próximos meses.</div></div>
 
     <div class="section-title" title="Mostra quanto o cartão já comprometeu em cada mês futuro.">Comprometimento por mês</div>
     <div class="hint">Mostra quanto você deve no cartão em cada mês futuro</div>
@@ -1714,6 +1715,16 @@ body.file-closed .nav,body.file-closed .page{opacity:.45;pointer-events:none}
     <div class="site-dialog-actions"><button type="button" class="site-button quiet" onclick="fecharJanela('extrato-editor')">Cancelar</button><button type="submit" class="site-button primary">Salvar alteração</button></div>
   </form>
 </div></div>
+<div id="installment-cancel-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="installment-cancel-title" hidden><div class="site-dialog-panel">
+<h2 id="installment-cancel-title">Cancelar parcelamento</h2>
+<p class="site-dialog-copy">As parcelas desta fatura em diante serão compensadas por créditos. A compra e os pagamentos anteriores permanecem no histórico.</p>
+<form onsubmit="event.preventDefault();salvarCancelamentoParcelamento()">
+<label class="site-field">Cancelar a partir da fatura<input id="installment-cancel-month" type="month" required onchange="previewCancelamentoParcelamento()"></label>
+<label class="site-field">Crédito de parcelas anteriores nesta fatura (R$)<input id="installment-cancel-refund" type="number" min="0" step="0.01" inputmode="decimal" value="0" oninput="previewCancelamentoParcelamento()"></label>
+<p class="site-dialog-copy">Preencha somente o que o banco devolveu de parcelas anteriores. A parcela da fatura escolhida já será compensada automaticamente.</p>
+<p id="installment-cancel-preview" class="site-dialog-copy" aria-live="polite"></p>
+<div class="site-dialog-actions"><button type="button" class="site-button quiet" onclick="fecharJanela('installment-cancel-editor')">Voltar</button><button type="submit" class="site-button primary">Confirmar cancelamento</button></div>
+</form></div></div>
 <div id="card-editor" class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="card-editor-title" hidden><div class="site-dialog-panel">
   <div class="site-dialog-heading"><span class="site-dialog-icon" aria-hidden="true">✎</span><h2 id="card-editor-title">Editar cartão</h2></div>
   <p class="site-dialog-copy">Ajuste os dados do cartão. No Extrato, a fatura é posicionada pelo dia habitual de pagamento; a outra data continua como referência da fatura.</p>
@@ -1949,6 +1960,10 @@ function validarDadosImportados(arquivo){
       }
       if(key==='cartao'&&(!Number.isInteger(Number(r.parcelas||1))||Number(r.parcelas||1)<1||Number(r.parcelas||1)>120))throw Error('Parcelamento inválido.');
        if(key==='cartao'&&r.tipo==='estorno'&&(r.parcelas!==undefined&&Number(r.parcelas)!==1||!valorMonetarioValido(Math.abs(r.val))||r.val>=0))throw Error('Estorno de cartão inválido: use valor negativo e uma única parcela.');
+      if(key==='cartao'&&r.cancelamento!==undefined){
+        const c=r.cancelamento;
+        if(!c||r.tipo!=='parcelado'||Number(r.parcelas)<2||!/^\d{4}-(0[1-9]|1[0-2])$/.test(c.desdeFatura)||!dataISOValida(c.registradoEm)||!valorMonetarioValido(c.creditoAnterior)||c.creditoAnterior<0||Math.round(c.creditoAnterior*100)>resumoCancelamentoParcelamento(r,c.desdeFatura).anterior)throw Error('Cancelamento de parcelamento inválido.');
+      }
       if(key==='cartao'&&r.parcelasPagasInformadas!==undefined&&(!Number.isInteger(r.parcelasPagasInformadas)||r.parcelasPagasInformadas<0||r.parcelasPagasInformadas>Number(r.parcelas||1)))throw Error('Quantidade de parcelas pagas inválida.');
       if(key==='invest'&&r.historico!==undefined){
         if(!Array.isArray(r.historico)||r.historico.length>100000)throw Error('Histórico de investimento inválido.');
@@ -3563,6 +3578,8 @@ function salvarEdicaoExtrato(){
 
 function resetCartaoForm(){
   editingCartaoId=null;
+  document.getElementById('cc-submit').disabled=false;
+  document.getElementById('cc-cancel-installment').style.display='none';
   document.getElementById('cc-desc').value='';
   document.getElementById('cc-val').value='';
   document.getElementById('cc-categoria').value='';
@@ -3594,6 +3611,7 @@ function addCartao(){
   const primeiraParcela=dueDateFor(new Date(data+'T12:00:00'),vencDia,0,card.closeDay);
   const registro={id:editingCartaoId||novoIdGlobal(),data,desc,tipo:tipoEfetivo,val,parcelas:n,vencDia,closeDay:card.closeDay,cardId:card.id,banco:card.bank,nomeCartao:card.nome||'',cardColor:card.color,categoria,subcategoria,gastoTipo};
   const anterior=editingCartaoId?S.cartao.find(x=>x.id===editingCartaoId):null;
+  if(anterior&&anterior.cancelamento){appAlert('Desfaça o cancelamento antes de editar esta compra.');return;}
   if(anterior&&Number.isInteger(anterior.parcelasPagasInformadas))registro.parcelasPagasInformadas=Math.min(n,anterior.parcelasPagasInformadas);
   if(anterior){
     // Permite corrigir compras do cartão mesmo depois de pagar uma fatura anterior.
@@ -3651,6 +3669,10 @@ function editCartao(id){
   document.getElementById('cc-val').value=item.val||'';
   document.getElementById('cc-submit').innerHTML='<i class="ti ti-plus" aria-hidden="true"></i> Salvar edição';
   document.getElementById('cc-cancel-edit').style.display='block';
+  document.getElementById('cc-submit').disabled=!!item.cancelamento;
+  const cancelButton=document.getElementById('cc-cancel-installment');
+  cancelButton.style.display=item.tipo==='parcelado'?'block':'none';
+  cancelButton.textContent=item.cancelamento?'Desfazer cancelamento':'Cancelar parcelamento';
   updatePreview();
   const purchaseForm=document.getElementById('card-purchase-form');
   if(purchaseForm)abrirFormularioFlutuante(purchaseForm,'Editar compra');
@@ -3773,6 +3795,58 @@ function vencimentoDaCompra(c,indice){
   return dueDateFor(base,dia,indice,c.closeDay);
 }
 
+let parcelamentoEmCancelamento=null;
+function resumoCancelamentoParcelamento(c,mes){
+  let anterior=0,atual=0,futuro=0,quantidade=0;
+  for(let i=0;i<Number(c.parcelas||1);i++){
+    const d=vencimentoDaCompra(c,i),key=isoDate(d.getFullYear(),d.getMonth(),1).slice(0,7),v=Math.round(valorParcela(c,i)*100);
+    if(key<mes)anterior+=v;
+    else{quantidade++;if(key===mes)atual+=v;else futuro+=v;}
+  }
+  return {anterior,atual,futuro,quantidade};
+}
+function parcelasDeCancelamento(c){
+  if(!c.cancelamento)return [];
+  const parcelas=[],mes=c.cancelamento.desdeFatura;
+  for(let i=0;i<Number(c.parcelas||1);i++){
+    const d=vencimentoDaCompra(c,i),key=isoDate(d.getFullYear(),d.getMonth(),1).slice(0,7);
+    if(key<mes)continue;
+    parcelas.push({id:c.id+'-cancel-'+i+'-0',linhaId:c.id+'-cancel-'+i,compraId:c.id,cardId:c.cardId,data:isoDate(d.getFullYear(),d.getMonth(),d.getDate()),desc:'Cancelamento parcela '+(i+1)+'/'+c.parcelas+' — '+c.desc,tipo:'cartao',categoria:c.categoria,subcategoria:c.subcategoria,val:-valorParcela(c,i),cancelamentoCartao:true,auto:true});
+  }
+  if(Number(c.cancelamento.creditoAnterior)>0){
+    const [y,m]=mes.split('-').map(Number),d=new Date(y,m,0);
+    parcelas.push({id:c.id+'-cancel-anteriores-0',linhaId:c.id+'-cancel-anteriores',compraId:c.id,cardId:c.cardId,data:isoDate(y,m-1,Math.min(c.vencDia||10,d.getDate())),desc:'Crédito de parcelas anteriores — '+c.desc,tipo:'cartao',categoria:c.categoria,subcategoria:c.subcategoria,val:-Number(c.cancelamento.creditoAnterior),cancelamentoCartao:true,auto:true});
+  }
+  return parcelas;
+}
+async function abrirCancelamentoParcelamento(id){
+  const c=S.cartao.find(x=>String(x.id)===String(id));
+  if(!c||c.tipo!=='parcelado')return;
+  if(c.cancelamento){
+    if(!await appConfirm('Desfazer este cancelamento? Os créditos serão removidos e as parcelas originais voltarão às faturas. Os pagamentos registrados serão mantidos.'))return;
+    delete c.cancelamento;resetCartaoForm();fecharPainelFlutuante();saveData();renderCartao();renderExtrato();updateResumo();return;
+  }
+  parcelamentoEmCancelamento=c.id;
+  document.getElementById('installment-cancel-month').value=isoDate(cartaoMes.getFullYear(),cartaoMes.getMonth(),1).slice(0,7);
+  document.getElementById('installment-cancel-refund').value='0';
+  fecharPainelFlutuante();previewCancelamentoParcelamento();abrirJanela('installment-cancel-editor');
+}
+function previewCancelamentoParcelamento(){
+  const c=S.cartao.find(x=>String(x.id)===String(parcelamentoEmCancelamento));if(!c)return;
+  const mes=document.getElementById('installment-cancel-month').value;
+  const r=resumoCancelamentoParcelamento(c,mes),credito=Number(document.getElementById('installment-cancel-refund').value||0);
+  document.getElementById('installment-cancel-preview').textContent='Crédito nesta fatura: '+fmt(r.atual/100+credito)+'. Parcelas compensadas: '+r.quantidade+'. Parcelas anteriores: até '+fmt(r.anterior/100)+'. Confira com o estorno do banco.';
+}
+function salvarCancelamentoParcelamento(){
+  const c=S.cartao.find(x=>String(x.id)===String(parcelamentoEmCancelamento));if(!c||c.cancelamento)return;
+  const mes=document.getElementById('installment-cancel-month').value,credito=Number(document.getElementById('installment-cancel-refund').value||0);
+  const r=resumoCancelamentoParcelamento(c,mes);
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)||!valorMonetarioValido(credito)||credito<0||Math.round(credito*100)>r.anterior||(!r.quantidade&&credito===0)){appAlert('Informe uma fatura válida e confira o crédito das parcelas anteriores.');return;}
+  c.cancelamento={desdeFatura:mes,creditoAnterior:credito,registradoEm:today()};
+  parcelamentoEmCancelamento=null;fecharJanela('installment-cancel-editor');resetCartaoForm();saveData();renderCartao();renderExtrato();updateResumo();
+  appAlert('Parcelamento cancelado. Créditos registrados na fatura; pagamentos anteriores preservados.');
+}
+
 function getMesMap(){
   const map={};
   S.cartao.forEach(c=>{
@@ -3785,6 +3859,7 @@ function getMesMap(){
       const key=monthKey(venc.getFullYear(),venc.getMonth());
       map[key]=(Math.round((map[key]||0)*100)+Math.round(parc*100))/100;
     }
+    if(c.cancelamento)for(const p of parcelasDeCancelamento(c)){const d=new Date(p.data+'T12:00:00'),key=monthKey(d.getFullYear(),d.getMonth());map[key]=(Math.round((map[key]||0)*100)+Math.round(p.val*100))/100;}
   });
   const limite=new Date();limite.setFullYear(limite.getFullYear()+10);
   for(const card of S.cartoes){
@@ -3822,6 +3897,7 @@ function getParcelasCartao(){
         auto:true
       });
     }
+    if(c.cancelamento)parcelas.push(...parcelasDeCancelamento(c));
   });
   const limite=new Date();
   const alvo=[limite,new Date(cartaoMes),new Date(resumoMes)].reduce((max,d)=>d>max?d:max,limite);
@@ -4009,7 +4085,7 @@ function renderCartao(){
   document.getElementById('cc-mes').textContent=fmt(map[nowKey]||0);
   document.getElementById('cc-prox').textContent=fmt(map[nextKey]||0);
 
-  const keys=Object.keys(map).sort().filter(k=>k>=nowKey).slice(0,6);
+  const keys=Object.keys(map).sort().filter(k=>k>=nowKey&&Math.round(map[k]*100)!==0).slice(0,6);
   const maxVal=Math.max(...Object.values(map).map(Math.abs),1);
   const tl=document.getElementById('cc-timeline');
   if(!keys.length){tl.innerHTML='<div class="empty">Nenhuma compra ainda.</div>';}
@@ -4035,6 +4111,7 @@ function renderCartao(){
     .sort((a,b)=>b.data.localeCompare(a.data));
   const mensalidades=mensalidadesCartaoNoMes(viewYear,viewMonth);
   const parcelasNesteMes=parcelasFiltradas.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth));
+  rows.push(...parcelasNesteMes.filter(p=>p.cancelamentoCartao).map(p=>({...p,id:p.linhaId,tipo:'estorno',creditoCancelamento:true,vencDia:Number(p.data.slice(8,10))})));
   const totalVisivel=somarValoresCartaoNoMes(rows,parcelasNesteMes);
   const totalTodosMes=parcelasTodas.filter(x=>isSameMonthDate(x.data,viewYear,viewMonth))
     .reduce((centavos,x)=>centavos+Math.round(Number(x.val||0)*100),0)/100;
@@ -4059,7 +4136,7 @@ function renderCartao(){
         const qtdParcelas=Number(r.parcelas)||1;
         const parcelado=r.tipo==='parcelado';
         const mensalidade=!!r.mensalidadeCartao;
-        const tipoLabel=mensalidade?'Mensalidade':r.tipo==='estorno'?'Estorno':parcelado?'Parcelado':'À vista';
+        const tipoLabel=r.cancelamento&&faturaKey>=r.cancelamento.desdeFatura?'Cancelado':mensalidade?'Mensalidade':r.tipo==='estorno'?'Estorno':parcelado?'Parcelado':'À vista';
         const venc='dia '+(r.vencDia||10);
         const nomeProduto=(S.cartoes.find(card=>String(card.id)===String(r.cardId))||{}).nome||r.nomeCartao||'';
         const desc=r.banco?`${r.desc} (${r.banco}${nomeProduto?' · '+nomeProduto:''})`:r.desc;
@@ -4070,7 +4147,9 @@ function renderCartao(){
         const historico=S.saldoInicial&&parcelaDoMes&&parcelaDoMes.data<S.saldoInicial.data;
         const cat=`${r.subcategoria||'Sem categoria'}${historico?' · Histórico anterior à abertura':''}`;
         let actions='';
-        if(mensalidade){
+        if(r.creditoCancelamento){
+          actions=`<button class="del" type="button" onclick="editCartao(${Number(r.compraId)})" aria-label="Ver cancelamento">✎</button>`;
+        }else if(mensalidade){
           actions=`<button class="del" type="button" onclick="editarCartaoCadastrado(${Number(r.cardId)})" aria-label="Editar mensalidade">✎</button><button class="del" type="button" data-feeaction="1" onclick="abrirExclusaoMensalidadeCartao(${Number(r.cardId)},'${faturaKey}')" aria-label="Remover mensalidade" title="Escolher como excluir esta mensalidade."><i class="ti ti-x" aria-hidden="true"></i></button>`;
         }else if(r.recorrenciaId){
           const existente=Array.isArray(S.recorrentes)&&S.recorrentes.some(x=>String(x.id)===String(r.recorrenciaId)&&!x.excluida);
@@ -4082,7 +4161,7 @@ function renderCartao(){
         }else{
           actions=`<button class="del" type="button" onclick="editCartao(${r.id})" aria-label="Editar" title="Edita esta compra.">✎</button><button class="del" type="button" onclick="delCC(${r.id})" aria-label="Remover" title="Apaga esta compra à vista do cartão."><i class="ti ti-x" aria-hidden="true"></i></button>`;
         }
-        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge ${r.tipo==='estorno'?'b-estorno':'b-compra'}">${mensalidade?'Mensalidade':r.previsto?'Previsto':r.recorrenciaId?'Recorrente':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${parcelasPagasConfirmadas(r)}/${qtdParcelas}</span>`:'—'}</td><td class="cc-money${r.tipo==='estorno'?' cc-credit':''}">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
+        return `<tr><td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}</td><td class="cc-description">${escHtml(desc)}<div class="cc-subcategory">${escHtml(cat)}</div></td><td><span class="badge ${r.tipo==='estorno'?'b-estorno':'b-compra'}">${mensalidade?'Mensalidade':r.previsto?'Previsto':r.recorrenciaId?'Recorrente':tipoLabel}</span></td><td>${venc}</td><td class="cc-installments">${parcelado&&!r.previsto?`<span class="cc-paid-status" title="Parcelas quitadas / parcelas totais; não altera saldo.">${r.cancelamento&&faturaKey>=r.cancelamento.desdeFatura?'Cancelado':parcelasPagasConfirmadas(r)+'/'+qtdParcelas}</span>`:'—'}</td><td class="cc-money${r.tipo==='estorno'?' cc-credit':''}">${valorDoMes}</td><td class="cc-actions">${actions}</td></tr>`;
       }).join('');
       const subtotal=titulo==='Mensalidade do cartão'
         ?itens.reduce((s,r)=>s+Number(r.val||0),0)
